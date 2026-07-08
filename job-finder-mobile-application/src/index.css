@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* BASE STYLES FOR SUPREME READABILITY */
+#mobile_sim_frame {
+  /* Screen & Container background in Light Mode */
+  --color-slate-50: #f8fafc;
+  --color-white: #ffffff;
+  
+  /* Text and Legibility - High Contrast Dark Slate Palette for Light Mode */
+  --color-slate-950: #020617; /* Very deep charcoal/black */
+  --color-slate-900: #0f172a; /* Clear dark slate */
+  --color-slate-800: #1e293b; /* Readable dark gray */
+  --color-slate-700: #334155; /* Slate gray */
+  --color-slate-600: #475569; /* Medium dark slate */
+  --color-slate-500: #3f4e64; /* Strong contrast secondary text (previously too light) */
+  --color-slate-400: #314057; /* Raised contrast for small labels/captions (previously #94a3b8, unreadable) */
+  --color-slate-300: #2a384e; /* High contrast for subheadings (previously #cbd5e1, unreadable) */
+  
+  /* Borders and backgrounds in Light Mode */
+  --color-slate-200: #e2e8f0; /* Clear boundary border */
+  --color-slate-150: #edf2f7; 
+  --color-slate-100: #f1f5f9; /* Card inner highlight background */
+}
+
+/* HIGH CONTRAST STYLES FOR IMMERSIVE DARK MODE */
+#mobile_sim_frame.dark {
+  /* Screen & Container background in Dark Mode */
+  --color-slate-50: #0d0d11; /* Deepest dark slate/black background */
+  --color-white: #16161c; /* Dark card background */
+  
+  /* Text colors - Light Slate on Dark */
+  --color-slate-950: #ffffff; /* Pure white text */
+  --color-slate-900: #f8fafc; /* Light slate text */
+  --color-slate-800: #f1f5f9;
+  --color-slate-700: #cbd5e1;
+  --color-slate-600: #94a3b8;
+  --color-slate-500: #64748b; /* Secondary text color */
+  --color-slate-400: #4b5563; /* Muted text color */
+  --color-slate-300: #374151; /* Dark details */
+  
+  /* Borders & Background highlights in Dark Mode */
+  --color-slate-200: #2c2c35; /* Input/card border */
+  --color-slate-150: #24242c;
+  --color-slate-100: #1d1d24; /* Darker bg for inner elements */
+}
+
+/* Smooth fade-in effects for UI navigation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom scrollbar hiding */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* FORCE TEXT COLOR INSIDE FORM INPUTS, TEXTAREAS, SELECTS FOR GUARANTEED LIGHT/DARK MODE LEGIBILITY */
+#mobile_sim_frame input,
+#mobile_sim_frame textarea,
+#mobile_sim_frame select {
+  color: #0f172a !important; /* Force high contrast dark slate text in light mode */
+}
+
+/* BUT IN DARK MODE, WE WANT THEM TO BE LIGHT TEXT */
+#mobile_sim_frame.dark input,
+#mobile_sim_frame.dark textarea,
+#mobile_sim_frame.dark select {
+  color: #f8fafc !important; /* Force off-white text in dark mode */
+}
+
+/* EXCEPT IN THE SELECT OPTION DROPDOWNS WHERE WE NEED TO PREVENT INVISIBLE LETTERS IN BROWSER DROPDOWNS */
+#mobile_sim_frame option {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+#mobile_sim_frame.dark option {
+  color: #f8fafc !important;
+  background-color: #16161c !important;
+}
+
+/* Ensure placeholder colors are very readable */
+#mobile_sim_frame input::placeholder,
+#mobile_sim_frame textarea::placeholder {
+  color: #4b5563 !important; /* Ensure clear placeholder contrast in light mode */
+}
+
+#mobile_sim_frame.dark input::placeholder,
+#mobile_sim_frame.dark textarea::placeholder {
+  color: #94a3b8 !important; /* Ensure clear placeholder contrast in dark mode */
+}
