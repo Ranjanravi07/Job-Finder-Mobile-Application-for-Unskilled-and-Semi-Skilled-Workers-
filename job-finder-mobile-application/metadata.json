@@ -1,0 +1,6 @@
+{
+  "name": "Job Finder Mobile Application",
+  "description": "A native Flutter-based mobile application designed for unskilled and semi-skilled workers in Nepal, with a complete interactive mobile simulator, local persistence, real-time voice-to-profile extraction with Gemini, and fully exportable Flutter source code.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
