@@ -34,6 +34,7 @@ export interface WorkerProfile {
   availability: string; // e.g. "Immediate", "Part-time"
   bio?: string;
   govId?: string;
+  govIdFiles?: string[];
   profilePhoto?: string;
 }
 
@@ -47,6 +48,7 @@ export interface EmployerProfile {
   type: 'business' | 'individual';
   role?: string;
   govId?: string;
+  govIdFiles?: string[];
   profilePhoto?: string;
 }
 

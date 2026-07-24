@@ -116,8 +116,19 @@ export default function MobileSimulator() {
   const [empSetupLocation, setEmpSetupLocation] = useState<string>('Balkumari, Lalitpur');
   const [empSetupGovIdType, setEmpSetupGovIdType] = useState<string>('citizenship');
   const [empSetupGovIdNum, setEmpSetupGovIdNum] = useState<string>('');
-  const [empSetupGovIdFile, setEmpSetupGovIdFile] = useState<string>('');
+  const [empSetupGovIdFiles, setEmpSetupGovIdFiles] = useState<string[]>([]);
   const [empSetupPhoto, setEmpSetupPhoto] = useState<string>('');
+
+  // Worker Profile Setup (photo + gov id)
+  const [workerSetupPhoto, setWorkerSetupPhoto] = useState<string>('');
+  const [workerSetupGovIdType, setWorkerSetupGovIdType] = useState<string>('citizenship');
+  const [workerSetupGovIdNum, setWorkerSetupGovIdNum] = useState<string>('');
+  const [workerSetupGovIdFiles, setWorkerSetupGovIdFiles] = useState<string[]>([]);
+  // Separate front/back file names for citizenship uploads
+  const [workerSetupGovIdFrontFile, setWorkerSetupGovIdFrontFile] = useState<string>('');
+  const [workerSetupGovIdBackFile, setWorkerSetupGovIdBackFile] = useState<string>('');
+  const [empSetupGovIdFrontFile, setEmpSetupGovIdFrontFile] = useState<string>('');
+  const [empSetupGovIdBackFile, setEmpSetupGovIdBackFile] = useState<string>('');
 
   // Employer Profile Edit states
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
@@ -132,12 +143,12 @@ export default function MobileSimulator() {
   // Worker Profile Edit states
   const [editWorkerName, setEditWorkerName] = useState<string>('');
   const [editWorkerPhone, setEditWorkerPhone] = useState<string>('');
-  const [editWorkerWage, setEditWorkerWage] = useState<string>('');
   const [editWorkerRole, setEditWorkerRole] = useState<string>('laborer');
+  const [editWorkerExperience, setEditWorkerExperience] = useState<string>('');
   const [editWorkerLocation, setEditWorkerLocation] = useState<string>('Balkumari, Lalitpur');
   const [editWorkerGovId, setEditWorkerGovId] = useState<string>('');
   const [editWorkerPhoto, setEditWorkerPhoto] = useState<string>('');
-  const [editWorkerBio, setEditWorkerBio] = useState<string>('');
+  
 
   // System settings state variables
   const [voiceFeedbackEnabled, setVoiceFeedbackEnabled] = useState<boolean>(() => getLocalData('sys_voice_feedback', true));
@@ -285,8 +296,7 @@ export default function MobileSimulator() {
         mainSkill: "electrician",
         experience: "3 Years",
         expectedWage: 1200,
-        location: "Balkumari, Lalitpur",
-        bio: "Simulated extraction: " + text
+        location: "Balkumari, Lalitpur"
       });
     } finally {
       setParsingVoice(false);
@@ -310,13 +320,19 @@ export default function MobileSimulator() {
     // Set mock user id based on phone
     const mockId = `worker-${phone}`;
     setUserId(mockId);
-    
-    // Check if worker already has a profile
-    const existing = workers.find(w => w.phone === phone);
-    if (existing) {
+
+    // Check if user has any profile (worker or employer)
+    const existingWorker = workers.find(w => w.phone === phone);
+    const existingEmployer = employers.find(e => e.phone === phone);
+
+    if (existingWorker) {
       setRole('worker');
       setScreen('worker_home');
+    } else if (existingEmployer) {
+      setRole('employer');
+      setScreen('employer_home');
     } else {
+      // No profile exists - go to role selection to create profile
       setScreen('role_selection');
     }
   };
@@ -332,7 +348,10 @@ export default function MobileSimulator() {
       expectedWageType: 'daily',
       location: profileData.location || 'Balkumari, Lalitpur',
       availability: 'Immediate',
-      bio: profileData.bio || 'Willing to work hard.'
+      bio: '',
+      profilePhoto: profileData.profilePhoto || workerSetupPhoto || '',
+      govId: profileData.govId || (workerSetupGovIdType ? `${workerSetupGovIdType.toUpperCase()} - ${workerSetupGovIdNum}` : undefined),
+      govIdFiles: profileData.govIdFiles || workerSetupGovIdFiles || []
     };
     setWorkers(prev => [...prev, newProfile]);
     setRole('worker');
@@ -367,6 +386,7 @@ export default function MobileSimulator() {
       type: profileData.type || 'individual',
       role: profileData.role || 'Contractor',
       govId: profileData.govId || 'CIT-12345-NP',
+      govIdFiles: profileData.govIdFiles || empSetupGovIdFiles || [],
       profilePhoto: profileData.profilePhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80'
     };
     setEmployers(prev => [...prev, newProfile]);
@@ -407,9 +427,9 @@ export default function MobileSimulator() {
     
     setApplications(prev => [...prev, newApp]);
     speakAloud(
-      lang === 'ne' 
-        ? "आवेदन सफलतापूर्वक पठाइयो। रोजगारदाताले छिट्टै सम्पर्क गर्नेछ।" 
-        : "Application submitted successfully. The employer will contact you shortly.", 
+      lang === 'ne'
+        ? "आवेदन सफलतापूर्वक पठाइयो। रोजगारदाताले छिट्टै सम्पर्क गर्नेछ।"
+        : "Application submitted successfully. The employer will contact you shortly.",
       lang
     );
   };
@@ -723,8 +743,8 @@ export default function MobileSimulator() {
               <button
                 onClick={() => {
                   const existingWorker = workers.find(w => w.phone === phone);
+                  setRole('worker');
                   if (existingWorker) {
-                    setRole('worker');
                     setScreen('worker_home');
                   } else {
                     setScreen('worker_profile_creation');
@@ -751,8 +771,8 @@ export default function MobileSimulator() {
               <button
                 onClick={() => {
                   const existingEmployer = employers.find(e => e.phone === phone);
+                  setRole('employer');
                   if (existingEmployer) {
-                    setRole('employer');
                     setScreen('employer_home');
                   } else {
                     setScreen('employer_profile_creation');
@@ -794,6 +814,157 @@ export default function MobileSimulator() {
               </p>
             </div>
 
+            {/* Profile Photo Selector / Upload for Worker */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-150 shadow-sm flex flex-col items-center text-center space-y-2 mt-3">
+              <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                {lang === 'ne' ? 'प्रोफाइल फोटो (कामदार)' : 'Profile Photo (Worker)'}
+              </label>
+              <div className="relative">
+                <img
+                  src={workerSetupPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80'}
+                  alt="Profile preview"
+                  referrerPolicy="no-referrer"
+                  className="w-16 h-16 rounded-full border-2 border-indigo-500 object-cover bg-slate-100 shadow-sm"
+                />
+                <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full border border-white shadow-sm">
+                  <Plus className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <div className="space-y-1 w-full">
+                <p className="text-[9px] text-slate-400 font-bold">{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस् (एक मात्र)' : 'Upload a single profile photo'}</p>
+                <div className="pt-1 flex justify-center">
+                  <label className="inline-block px-3 py-1 bg-slate-50 border border-slate-200 text-[10px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                    <span>{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस्' : 'Upload photo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setWorkerSetupPhoto(URL.createObjectURL(file));
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Government ID Upload for Worker */}
+            <div className="bg-slate-100/80 p-3.5 rounded-2xl border border-slate-200 space-y-2.5 mt-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-extrabold text-indigo-950 uppercase tracking-wider block">🛡️ {lang === 'ne' ? 'सरकारी परिचय-पत्र' : 'Government ID'}</label>
+                <span className="text-[8px] bg-indigo-600/10 text-indigo-700 px-2 py-0.5 rounded font-black">REQUIRED</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={workerSetupGovIdType}
+                  onChange={(e) => setWorkerSetupGovIdType(e.target.value)}
+                  className="bg-white px-2.5 py-2 rounded-xl border border-slate-200 text-[11px] font-bold focus:outline-none focus:border-indigo-600"
+                >
+                  <option value="citizenship">{lang === 'ne' ? 'नागरिकता प्रमाण-पत्र' : 'Citizenship Card'}</option>
+                  <option value="nid">{lang === 'ne' ? 'राष्ट्रिय परिचयपत्र (NID)' : 'National ID (NID)'}</option>
+                  <option value="license">{lang === 'ne' ? 'सवारी चालक अनुमति' : 'Driving License'}</option>
+                  <option value="pan">{lang === 'ne' ? 'प्यान/भ्याट (PAN Card)' : 'PAN / VAT Card'}</option>
+                </select>
+
+                <input
+                  type="text"
+                  value={workerSetupGovIdNum}
+                  onChange={(e) => setWorkerSetupGovIdNum(e.target.value)}
+                  placeholder={lang === 'ne' ? 'आईडी नम्बर' : 'ID Number (e.g., 55-01-78)'}
+                  className="bg-white px-3 py-2 rounded-xl border border-slate-200 text-[11px] font-bold focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div className="space-y-3">
+                {workerSetupGovIdType === 'citizenship' ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                      <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
+                      <label htmlFor="worker-govid-front" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                        <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload front'}</span>
+                      </label>
+                      <input
+                        id="worker-govid-front"
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = URL.createObjectURL(file);
+                            setWorkerSetupGovIdFrontFile(url);
+                            setWorkerSetupGovIdFiles(prev => {
+                              const back = workerSetupGovIdBackFile ? [workerSetupGovIdBackFile] : [];
+                              return [url, ...back].filter(Boolean);
+                            });
+                          }
+                        }}
+                      />
+                      {workerSetupGovIdFrontFile && (
+                        <img src={workerSetupGovIdFrontFile} alt="id front" className="mt-2 w-20 h-12 object-cover rounded-md border" />
+                      )}
+                    </div>
+
+                    <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                      <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
+                      <label htmlFor="worker-govid-back" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                        <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload back'}</span>
+                      </label>
+                      <input
+                        id="worker-govid-back"
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = URL.createObjectURL(file);
+                            setWorkerSetupGovIdBackFile(url);
+                            setWorkerSetupGovIdFiles(prev => {
+                              const front = workerSetupGovIdFrontFile ? [workerSetupGovIdFrontFile] : [];
+                              return [...front, url].filter(Boolean);
+                            });
+                          }
+                        }}
+                      />
+                      {workerSetupGovIdBackFile && (
+                        <img src={workerSetupGovIdBackFile} alt="id back" className="mt-2 w-20 h-12 object-cover rounded-md border" />
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = URL.createObjectURL(file);
+                          setWorkerSetupGovIdFiles([url]);
+                        }
+                      }}
+                    />
+                    <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                    {workerSetupGovIdFiles && workerSetupGovIdFiles.length > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <Check className="h-3 w-3 text-emerald-500" />
+                        <img src={workerSetupGovIdFiles[0]} alt="uploaded id" className="w-20 h-12 object-cover rounded-md border" />
+                      </div>
+                    ) : (
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'परिचय-पत्रको फोटो अपलोड गर्नुहोस्' : 'Upload ID photo'}</p>
+                        <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Smart AI Voice Box */}
             <div className="mt-4 p-4 rounded-2xl bg-slate-900 text-white relative shadow-md overflow-hidden">
               <div className="absolute top-0 right-0 p-1 bg-gradient-to-l from-emerald-500 to-sky-500 h-1.5 w-full" />
@@ -820,19 +991,23 @@ export default function MobileSimulator() {
             <form onSubmit={(e) => {
               e.preventDefault();
               const nameInput = (document.getElementById('p_name') as HTMLInputElement)?.value;
-              const wageInput = parseInt((document.getElementById('p_wage') as HTMLInputElement)?.value) || 1000;
-              const skillInput = (document.getElementById('p_skill') as HTMLSelectElement)?.value || 'laborer';
-              const expInput = (document.getElementById('p_exp') as HTMLSelectElement)?.value || 'Fresher';
-              const locInput = (document.getElementById('p_loc') as HTMLSelectElement)?.value || 'Balkumari, Lalitpur';
-              const bioInput = (document.getElementById('p_bio') as HTMLTextAreaElement)?.value || '';
+              const skillInput = (document.getElementById('p_skill') as HTMLInputElement)?.value || 'laborer';
+              const expInput = (document.getElementById('p_exp') as HTMLInputElement)?.value || 'Fresher';
+              const locInput = (document.getElementById('p_loc') as HTMLInputElement)?.value || 'Balkumari, Lalitpur';
+
+              if (workerSetupGovIdType === 'citizenship' && workerSetupGovIdFiles.length < 2) {
+                alert(lang === 'ne' ? 'कृपया नागरिकताको अगाडि र पछाडिको फोटो अपलोड गर्नुहोस्।' : 'Please upload both front and back images of the Citizenship card.');
+                return;
+              }
 
               handleCreateWorkerProfile({
                 name: nameInput,
-                expectedWage: wageInput,
                 mainSkill: skillInput,
                 experience: expInput,
                 location: locInput,
-                bio: bioInput
+                profilePhoto: workerSetupPhoto,
+                govId: `${workerSetupGovIdType.toUpperCase()} - ${workerSetupGovIdNum}`,
+                govIdFiles: workerSetupGovIdFiles
               });
             }} className="mt-5 space-y-4 flex-1">
               {/* Full Name */}
@@ -855,51 +1030,28 @@ export default function MobileSimulator() {
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                   {lang === 'ne' ? 'मुख्य सिप' : 'Primary Skill'}
                 </label>
-                <select
+                <input
                   id="p_skill"
-                  value={voiceParsedProfile?.mainSkill || 'laborer'}
+                  defaultValue={voiceParsedProfile?.mainSkill || 'laborer'}
                   onChange={(e) => setVoiceParsedProfile(prev => prev ? { ...prev, mainSkill: e.target.value } : { mainSkill: e.target.value })}
+                  placeholder={lang === 'ne' ? 'मुख्य सिप लेख्नुहोस्' : 'Type primary skill / role'}
                   className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-slate-900"
-                >
-                  {SKILL_CATEGORIES.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {lang === 'ne' ? cat.nameNe : cat.nameEn}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
-              {/* Wage and Experience Row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    {lang === 'ne' ? 'दैनिक ज्याला' : 'Daily Wage (NPR)'}
-                  </label>
-                  <input
-                    id="p_wage"
-                    type="number"
-                    required
-                    defaultValue={voiceParsedProfile?.expectedWage || 1000}
-                    placeholder="1000"
-                    className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-slate-900"
-                  />
-                </div>
-
+              {/* Experience Row */}
+              <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                     {lang === 'ne' ? 'अनुभव' : 'Experience'}
                   </label>
-                  <select
+                  <input
                     id="p_exp"
-                    value={voiceParsedProfile?.experience || 'Fresher'}
+                    defaultValue={voiceParsedProfile?.experience || 'Fresher'}
                     onChange={(e) => setVoiceParsedProfile(prev => prev ? { ...prev, experience: e.target.value } : { experience: e.target.value })}
+                    placeholder={lang === 'ne' ? 'वर्ष/अनुभव लेख्नुहोस्' : 'Type years or description (e.g. 2 Years)'}
                     className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none"
-                  >
-                    <option value="Fresher">{lang === 'ne' ? 'नयाँ (Fresher)' : 'Fresher'}</option>
-                    <option value="1 Year">{lang === 'ne' ? '१ वर्ष' : '1 Year'}</option>
-                    <option value="2 Years">{lang === 'ne' ? '२ वर्ष' : '2 Years'}</option>
-                    <option value="5 Years">{lang === 'ne' ? '५ वर्षभन्दा बढी' : '5+ Years'}</option>
-                  </select>
+                  />
                 </div>
               </div>
 
@@ -908,31 +1060,18 @@ export default function MobileSimulator() {
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                   {lang === 'ne' ? 'ठेगाना' : 'Your Location'}
                 </label>
-                <select
-                  id="p_loc"
-                  value={voiceParsedProfile?.location || 'Balkumari, Lalitpur'}
-                  onChange={(e) => setVoiceParsedProfile(prev => prev ? { ...prev, location: e.target.value } : { location: e.target.value })}
-                  className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none"
-                >
-                  {NEPAL_LOCATIONS.map(loc => (
-                    <option key={loc} value={loc}>{loc}</option>
-                  ))}
-                </select>
+                <div>
+                  <input
+                    id="p_loc"
+                    defaultValue={voiceParsedProfile?.location || 'Balkumari, Lalitpur'}
+                    placeholder="Type your location"
+                    className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none"
+                  />
+                  
+                </div>
               </div>
 
-              {/* Bio */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {lang === 'ne' ? 'आफ्नो बारेमा छोटो जानकारी' : 'Short Bio / Intro'}
-                </label>
-                <textarea
-                  id="p_bio"
-                  rows={2}
-                  defaultValue={voiceParsedProfile?.bio || ''}
-                  placeholder={lang === 'ne' ? 'काम सम्बन्धी अनुभव...' : 'Describe your work availability...'}
-                  className="w-full bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none"
-                />
-              </div>
+              {/* Short bio removed from worker creation form */}
 
               {/* Submit */}
               <button
@@ -972,21 +1111,27 @@ export default function MobileSimulator() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (!empSetupName.trim()) {
-                    alert(lang === 'ne' ? 'कृपया आफ्नो नाम लेख्नुहोस्।' : 'Please enter your full name.');
-                    return;
-                  }
-                  if (!empSetupGovIdNum.trim()) {
-                    alert(lang === 'ne' ? 'कृपया सरकारी परिचय-पत्र नम्बर हाल्नुहोस्।' : 'Please enter your Government ID number.');
-                    return;
-                  }
+                      if (!empSetupName.trim()) {
+                        alert(lang === 'ne' ? 'कृपया आफ्नो नाम लेख्नुहोस्।' : 'Please enter your full name.');
+                        return;
+                      }
+                      if (!empSetupGovIdNum.trim()) {
+                        alert(lang === 'ne' ? 'कृपया सरकारी परिचय-पत्र नम्बर हाल्नुहोस्।' : 'Please enter your Government ID number.');
+                        return;
+                      }
+                      if (empSetupGovIdType === 'citizenship' && empSetupGovIdFiles.length < 2) {
+                        alert(lang === 'ne' ? 'कृपया नागरिकताको अगाडि र पछाडिको फोटो अपलोड गर्नुहोस्।' : 'Please upload both front and back images of the Citizenship card.');
+                        return;
+                      }
                   handleCreateEmployerProfile({
                     name: empSetupName,
                     companyName: empSetupCompany || 'Individual',
                     phone: phone,
                     location: empSetupLocation,
                     role: empSetupRole,
+                    type: 'individual',
                     govId: `${empSetupGovIdType.toUpperCase()} - ${empSetupGovIdNum}`,
+                    govIdFiles: empSetupGovIdFiles,
                     profilePhoto: empSetupPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
                     isVerified: true
                   });
@@ -1013,31 +1158,10 @@ export default function MobileSimulator() {
 
                   {/* Preset quick avatars or file uploader */}
                   <div className="space-y-1 w-full">
-                    <p className="text-[9px] text-slate-400 font-bold">
-                      {lang === 'ne' ? 'फोटो छान्नुहोस् वा फाइल राख्नुहोस्:' : 'Select a preset or upload:'}
-                    </p>
-                    <div className="flex gap-2 justify-center">
-                      {[
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
-                        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&h=150&q=80',
-                        'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&h=150&q=80'
-                      ].map((imgUrl, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setEmpSetupPhoto(imgUrl)}
-                          className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${
-                            empSetupPhoto === imgUrl ? 'border-indigo-600 scale-105' : 'border-transparent hover:border-slate-300'
-                          }`}
-                        >
-                          <img src={imgUrl} alt={`Avatar preset ${idx}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        </button>
-                      ))}
-                    </div>
-                    {/* Simulated manual upload button */}
-                    <div className="pt-1">
+                    <p className="text-[9px] text-slate-400 font-bold">{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस् (एक मात्र)' : 'Upload a single profile photo'}</p>
+                    <div className="pt-1 flex justify-center">
                       <label className="inline-block px-3 py-1 bg-slate-50 border border-slate-200 text-[10px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
-                        <span>{lang === 'ne' ? 'आफ्नो फोटो राख्नुहोस्' : 'Upload custom photo'}</span>
+                        <span>{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस्' : 'Upload photo'}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1095,31 +1219,27 @@ export default function MobileSimulator() {
                       <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                         {lang === 'ne' ? 'भूमिका' : 'Role / Title'}
                       </label>
-                      <select
+                      <input
                         value={empSetupRole}
                         onChange={(e) => setEmpSetupRole(e.target.value)}
+                        placeholder={lang === 'ne' ? 'भूमिका/पद लेख्नुहोस्' : 'Type role / title'}
                         className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-600 shadow-sm"
-                      >
-                        <option value="Contractor">{lang === 'ne' ? 'ठेकेदार (Contractor)' : 'Contractor'}</option>
-                        <option value="Sub-contractor">{lang === 'ne' ? 'सहायक ठेकेदार' : 'Sub-contractor'}</option>
-                        <option value="Home Owner">{lang === 'ne' ? 'घरधनी / व्यक्तिगत' : 'Home Owner / Builder'}</option>
-                        <option value="Business Owner">{lang === 'ne' ? 'व्यवसाय मालिक' : 'Business Owner'}</option>
-                      </select>
+                      />
                     </div>
 
                     <div className="space-y-0.5">
                       <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                         {lang === 'ne' ? 'स्थान' : 'Primary Location'}
                       </label>
-                      <select
-                        value={empSetupLocation}
-                        onChange={(e) => setEmpSetupLocation(e.target.value)}
-                        className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-600 shadow-sm"
-                      >
-                        {NEPAL_LOCATIONS.map(loc => (
-                          <option key={loc} value={loc}>{loc}</option>
-                        ))}
-                      </select>
+                      <div>
+                        <input
+                          value={empSetupLocation}
+                          onChange={(e) => setEmpSetupLocation(e.target.value)}
+                          placeholder="Type your location"
+                          className="w-full bg-white px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-600 shadow-sm"
+                        />
+                        
+                      </div>
                     </div>
                   </div>
 
@@ -1141,7 +1261,7 @@ export default function MobileSimulator() {
                   <div className="bg-slate-100/80 p-3.5 rounded-2xl border border-slate-200 space-y-2.5">
                     <div className="flex justify-between items-center">
                       <label className="text-[10px] font-extrabold text-indigo-950 uppercase tracking-wider block">
-                        🛡️ {lang === 'ne' ? 'सरकारी परिचय-पत्र (सत्यापन)' : 'Government ID Verification'}
+                         {lang === 'ne' ? 'सरकारी परिचय-पत्र (सत्यापन)' : 'Government ID Verification'}
                       </label>
                       <span className="text-[8px] bg-indigo-600/10 text-indigo-700 px-2 py-0.5 rounded font-black">COMPULSORY</span>
                     </div>
@@ -1153,6 +1273,7 @@ export default function MobileSimulator() {
                         className="bg-white px-2.5 py-2 rounded-xl border border-slate-200 text-[11px] font-bold focus:outline-none focus:border-indigo-600"
                       >
                         <option value="citizenship">{lang === 'ne' ? 'नागरिकता प्रमाण-पत्र' : 'Citizenship Card'}</option>
+                        <option value="nid">{lang === 'ne' ? 'राष्ट्रिय परिचयपत्र (NID)' : 'National ID (NID)'}</option>
                         <option value="license">{lang === 'ne' ? 'सवारी चालक अनुमति' : 'Driving License'}</option>
                         <option value="pan">{lang === 'ne' ? 'प्यान/भ्याट (PAN Card)' : 'PAN / VAT Card'}</option>
                         <option value="registration">{lang === 'ne' ? 'कम्पनी दर्ता प्रमाण' : 'Business Registry'}</option>
@@ -1170,29 +1291,88 @@ export default function MobileSimulator() {
 
                     {/* Simulated Document Upload Box */}
                     <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setEmpSetupGovIdFile(file.name);
-                          }
-                        }}
-                      />
-                      <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
-                      {empSetupGovIdFile ? (
-                        <p className="text-[10px] text-indigo-600 font-extrabold flex items-center gap-1">
-                          <Check className="h-3 w-3 text-emerald-500" />
-                          <span>{empSetupGovIdFile}</span>
-                        </p>
+                      {empSetupGovIdType === 'citizenship' ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                            <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
+                            <label htmlFor="emp-govid-front" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                              <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload front'}</span>
+                            </label>
+                            <input
+                              id="emp-govid-front"
+                              type="file"
+                              accept="image/*,application/pdf"
+                              className="sr-only"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const url = URL.createObjectURL(file);
+                                  setEmpSetupGovIdFrontFile(url);
+                                  setEmpSetupGovIdFiles(prev => {
+                                    const back = empSetupGovIdBackFile ? [empSetupGovIdBackFile] : [];
+                                    return [url, ...back].filter(Boolean);
+                                  });
+                                }
+                              }}
+                            />
+                            {empSetupGovIdFrontFile && (
+                              <img src={empSetupGovIdFrontFile} alt="emp id front" className="mt-2 w-20 h-12 object-cover rounded-md border" />
+                            )}
+                          </div>
+
+                          <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                            <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
+                            <label htmlFor="emp-govid-back" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                              <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload back'}</span>
+                            </label>
+                            <input
+                              id="emp-govid-back"
+                              type="file"
+                              accept="image/*,application/pdf"
+                              className="sr-only"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const url = URL.createObjectURL(file);
+                                  setEmpSetupGovIdBackFile(url);
+                                  setEmpSetupGovIdFiles(prev => {
+                                    const front = empSetupGovIdFrontFile ? [empSetupGovIdFrontFile] : [];
+                                    return [...front, url].filter(Boolean);
+                                  });
+                                }
+                              }}
+                            />
+                            {empSetupGovIdBackFile && (
+                              <img src={empSetupGovIdBackFile} alt="emp id back" className="mt-2 w-20 h-12 object-cover rounded-md border" />
+                            )}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="space-y-0.5">
-                          <p className="text-[10px] text-slate-700 font-bold">
-                            {lang === 'ne' ? 'परिचय-पत्रको फोटो खिच्नुहोस् / अपलोड' : 'Snap photo / drag-drop doc'}
-                          </p>
-                          <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const url = URL.createObjectURL(file);
+                                setEmpSetupGovIdFiles([url]);
+                              }
+                            }}
+                          />
+                          <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                          {empSetupGovIdFiles && empSetupGovIdFiles.length > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Check className="h-3 w-3 text-emerald-500" />
+                              <img src={empSetupGovIdFiles[0]} alt="uploaded id" className="w-20 h-12 object-cover rounded-md border" />
+                            </div>
+                          ) : (
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'परिचय-पत्रको फोटो अपलोड गर्नुहोस्' : 'Upload ID photo'}</p>
+                              <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1565,80 +1745,6 @@ export default function MobileSimulator() {
                 </div>
               )}
 
-              {/* === TAB: SYNC === */}
-              {workerTab === 'sync' && (
-                <div className="flex-1 p-5 space-y-4 animate-fadeIn flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-1.5">
-                      <RefreshCw className="h-4.5 w-4.5 text-indigo-500" />
-                      <span>{lang === 'ne' ? 'सिंक र अफलाइन प्रणाली' : 'Sync HUD Manager'}</span>
-                    </h2>
-
-                    {/* Network connectivity toggle simulation */}
-                    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                      <div className="space-y-1">
-                        <span className="text-xs font-extrabold text-slate-900">{lang === 'ne' ? 'इन्टरनेट जडान' : 'Internet Connection'}</span>
-                        <p className="text-[10px] text-slate-400">{lang === 'ne' ? 'वाइफाइ वा मोबाइल डाटा' : 'Toggle WiFi/Mobile Data'}</p>
-                      </div>
-                      <button
-                        onClick={() => setIsOnline(!isOnline)}
-                        className={`px-4 py-2 rounded-xl text-xs font-extrabold border transition-all ${
-                          isOnline 
-                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
-                            : 'bg-red-500/10 text-red-500 border-red-500/20'
-                        }`}
-                      >
-                        {isOnline ? (lang === 'ne' ? 'अनलाइन' : 'ONLINE') : (lang === 'ne' ? 'अफलाइन' : 'OFFLINE')}
-                      </button>
-                    </div>
-
-                    {/* Sync actions card */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4 text-center">
-                      <div className="mx-auto w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center relative">
-                        {isSyncing ? (
-                          <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-8 w-8 text-indigo-600" />
-                        )}
-                        {isSyncing && (
-                          <span className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
-                        )}
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-xs font-extrabold text-slate-900">{lang === 'ne' ? 'डाटाबेस सिंक्रोनाइजेसन' : 'Offline Database Sync'}</span>
-                        <p className="text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-                          {lang === 'ne' 
-                            ? 'मोबाइल डाटा महँगो हुन्छ। नेपालको जुनसुकै स्थानमा काम खोज्न पहिले नै सबै विज्ञापनहरू फोनमा सिंक गर्नुहोस्।' 
-                            : 'Wages and listings are downloaded locally. Find labor opportunities without burning mobile data balances at site.'}
-                        </p>
-                      </div>
-
-                      {isSyncing ? (
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="bg-indigo-600 h-full transition-all duration-150" style={{ width: `${syncProgress}%` }} />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleSyncDatabase}
-                          className="w-full py-3.5 rounded-xl bg-slate-900 text-white text-xs font-black hover:bg-slate-800 transition-colors active:scale-95"
-                        >
-                          {lang === 'ne' ? 'अहिले नै सिंक गर्नुहोस्' : 'SYNCHRONIZE OFFLINE DATABASE'}
-                        </button>
-                      )}
-
-                      <div className="text-[10px] text-slate-400 font-bold flex justify-between px-1">
-                        <span>Last sync: {lastSyncTime}</span>
-                        <span>Cache: {jobs.length} jobs stored</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-[9px] text-center text-slate-400 font-bold">
-                    ROJGAR Nepalese Labor Platform • Version 1.0.2 Offline HUD
-                  </p>
-                </div>
-              )}
 
               {/* === TAB: PROFILE === */}
               {workerTab === 'profile' && (
@@ -1673,8 +1779,7 @@ export default function MobileSimulator() {
                       mainSkill: 'laborer',
                       experience: '2 Years',
                       expectedWage: 1200,
-                      location: 'Balkumari, Lalitpur',
-                      bio: 'Construction site bricklayer and manual helper.'
+                      location: 'Balkumari, Lalitpur'
                     };
 
                     if (isEditingProfile) {
@@ -1773,33 +1878,17 @@ export default function MobileSimulator() {
                               </div>
                             </div>
 
-                            {/* Wage and Location */}
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                                  {lang === 'ne' ? 'दैनिक ज्याला' : 'Daily Wage'}
-                                </label>
+                            {/* Location */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                                {lang === 'ne' ? 'स्थान' : 'Location'}
+                              </label>
+                              <div>
                                 <input
-                                  type="number"
-                                  value={editWorkerWage}
-                                  onChange={(e) => setEditWorkerWage(e.target.value)}
-                                  className="w-full bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                                />
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                                  {lang === 'ne' ? 'स्थान' : 'Location'}
-                                </label>
-                                <select
                                   value={editWorkerLocation}
                                   onChange={(e) => setEditWorkerLocation(e.target.value)}
                                   className="w-full bg-white px-2 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                                >
-                                  {NEPAL_LOCATIONS.map(loc => (
-                                    <option key={loc} value={loc}>{loc}</option>
-                                  ))}
-                                </select>
+                                />
                               </div>
                             </div>
 
@@ -1808,31 +1897,28 @@ export default function MobileSimulator() {
                               <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                                 {lang === 'ne' ? 'मुख्य सिप / भूमिका' : 'Primary Skill / Role'}
                               </label>
-                              <select
+                              <input
                                 value={editWorkerRole}
                                 onChange={(e) => setEditWorkerRole(e.target.value)}
-                                className="w-full bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                              >
-                                {SKILL_CATEGORIES.map(cat => (
-                                  <option key={cat.id} value={cat.id}>
-                                    {lang === 'ne' ? cat.nameNe : cat.nameEn}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {/* Bio */}
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                                {lang === 'ne' ? 'जानकारी' : 'Short Bio'}
-                              </label>
-                              <textarea
-                                value={editWorkerBio}
-                                onChange={(e) => setEditWorkerBio(e.target.value)}
-                                rows={2}
+                                placeholder={lang === 'ne' ? 'मुख्य सिप / भूमिका' : 'Primary skill / role'}
                                 className="w-full bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-emerald-500"
                               />
                             </div>
+
+                            {/* Experience */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                                {lang === 'ne' ? 'अनुभव' : 'Experience'}
+                              </label>
+                              <input
+                                value={editWorkerExperience}
+                                onChange={(e) => setEditWorkerExperience(e.target.value)}
+                                placeholder={lang === 'ne' ? 'वर्ष/अनुभव लेख्नुहोस्' : 'Type years or description (e.g. 2 Years)'}
+                                className="w-full bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                              />
+                            </div>
+
+                            {/* Short bio removed from worker edit form */}
 
                             {/* Actions */}
                             <div className="flex gap-2 pt-2 border-t border-slate-100">
@@ -1855,10 +1941,9 @@ export default function MobileSimulator() {
                                   handleUpdateWorkerProfile({
                                     name: editWorkerName,
                                     phone: editWorkerPhone || activeWorker.phone,
-                                    expectedWage: parseInt(editWorkerWage) || activeWorker.expectedWage,
                                     location: editWorkerLocation,
                                     mainSkill: editWorkerRole,
-                                    bio: editWorkerBio,
+                                    experience: editWorkerExperience,
                                     govId: editWorkerGovId,
                                     profilePhoto: editWorkerPhoto || activeWorker.profilePhoto
                                   });
@@ -1916,38 +2001,35 @@ export default function MobileSimulator() {
                             <div className="flex justify-between items-center text-xs">
                               <span className="font-bold text-slate-400">{lang === 'ne' ? 'सरकारी परिचय-पत्र' : 'Govt Verification ID'}</span>
                               {activeWorker.govId ? (
-                                <span className="font-extrabold text-slate-800 flex items-center gap-1">
-                                  <span>🛡️ {activeWorker.govId}</span>
-                                </span>
+                                <div className="flex items-center gap-3">
+                                  <div className="font-extrabold text-slate-800 flex items-center gap-1">🛡️ {activeWorker.govId}</div>
+                                  {activeWorker.govIdFiles && activeWorker.govIdFiles.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                      {activeWorker.govIdFiles.map((f, idx) => (
+                                        <img key={idx} src={f} alt={`govid-${idx}`} className="w-12 h-8 object-cover rounded-sm border" />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 text-[10px]">
                                   {lang === 'ne' ? 'सत्यापन आवश्यक' : 'Not Provided'}
                                 </span>
                               )}
                             </div>
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="font-bold text-slate-400">{lang === 'ne' ? 'दैनिक ज्याला' : 'Expected Daily Wage'}</span>
-                              <span className="font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100 text-[11px]">
-                                Rs. {activeWorker.expectedWage} / Day
-                              </span>
-                            </div>
-                            {activeWorker.bio && (
-                              <div className="pt-2 border-t border-slate-50 text-[11px] text-slate-500 italic font-medium">
-                                "{activeWorker.bio}"
-                              </div>
-                            )}
+                            {/* Expected wage removed from profile display */}
+                            {/* Short bio hidden from profile summary */}
                           </div>
 
                           <button
                             onClick={() => {
                               setEditWorkerName(activeWorker.name);
                               setEditWorkerPhone(activeWorker.phone);
-                              setEditWorkerWage(activeWorker.expectedWage.toString());
                               setEditWorkerRole(activeWorker.mainSkill);
+                              setEditWorkerExperience(activeWorker.experience || '');
                               setEditWorkerLocation(activeWorker.location);
                               setEditWorkerGovId(activeWorker.govId || '');
                               setEditWorkerPhoto(activeWorker.profilePhoto || '');
-                              setEditWorkerBio(activeWorker.bio || '');
                               setIsEditingProfile(true);
                             }}
                             className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-emerald-600 font-extrabold text-xs rounded-xl border border-slate-200 transition-colors flex items-center justify-center gap-1.5 active:scale-[0.98]"
@@ -2102,7 +2184,6 @@ export default function MobileSimulator() {
                 { id: 'jobs', label: lang === 'ne' ? 'कामहरू' : 'Jobs', icon: Briefcase },
                 { id: 'applications', label: lang === 'ne' ? 'आवेदन' : 'Applications', icon: ClipboardList },
                 { id: 'chat', label: lang === 'ne' ? 'च्याट' : 'Chat', icon: MessageSquare },
-                { id: 'sync', label: lang === 'ne' ? 'सिंक HUD' : 'Sync HUD', icon: RefreshCw },
                 { id: 'profile', label: lang === 'ne' ? 'प्रोफाइल' : 'Profile', icon: Settings }
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -2206,9 +2287,7 @@ export default function MobileSimulator() {
                             </span>
                           </div>
 
-                          <p className="text-[11px] text-slate-500 italic font-medium leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            "{worker.bio || 'Available for immediate labor placement.'}"
-                          </p>
+                              {/* Worker short bio removed from employer listing */}
 
                           <div className="flex items-center gap-2 pt-1">
                             <button
@@ -2497,80 +2576,6 @@ export default function MobileSimulator() {
                 </div>
               )}
 
-              {/* === TAB: SYNC === */}
-              {employerTab === 'sync' && (
-                <div className="flex-1 p-5 space-y-4 animate-fadeIn flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-1.5">
-                      <RefreshCw className="h-4.5 w-4.5 text-indigo-500" />
-                      <span>{lang === 'ne' ? 'सिंक र अफलाइन प्रणाली' : 'Sync HUD Manager'}</span>
-                    </h2>
-
-                    {/* Network connectivity toggle simulation */}
-                    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                      <div className="space-y-1">
-                        <span className="text-xs font-extrabold text-slate-900">{lang === 'ne' ? 'इन्टरनेट जडान' : 'Internet Connection'}</span>
-                        <p className="text-[10px] text-slate-400">{lang === 'ne' ? 'वाइफाइ वा मोबाइल डाटा' : 'Toggle WiFi/Mobile Data'}</p>
-                      </div>
-                      <button
-                        onClick={() => setIsOnline(!isOnline)}
-                        className={`px-4 py-2 rounded-xl text-xs font-extrabold border transition-all ${
-                          isOnline 
-                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
-                            : 'bg-red-500/10 text-red-500 border-red-500/20'
-                        }`}
-                      >
-                        {isOnline ? (lang === 'ne' ? 'अनलाइन' : 'ONLINE') : (lang === 'ne' ? 'अफलाइन' : 'OFFLINE')}
-                      </button>
-                    </div>
-
-                    {/* Sync actions card */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4 text-center">
-                      <div className="mx-auto w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center relative">
-                        {isSyncing ? (
-                          <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-8 w-8 text-indigo-600" />
-                        )}
-                        {isSyncing && (
-                          <span className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
-                        )}
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-xs font-extrabold text-slate-900">{lang === 'ne' ? 'डाटाबेस सिंक्रोनाइजेसन' : 'Offline Database Sync'}</span>
-                        <p className="text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-                          {lang === 'ne' 
-                            ? 'मोबाइल डाटा महँगो हुन्छ। नेपालको जुनसुकै स्थानमा काम खोज्न पहिले नै सबै विज्ञापनहरू फोनमा सिंक गर्नुहोस्।' 
-                            : 'Wages and listings are downloaded locally. Find labor opportunities without burning mobile data balances at site.'}
-                        </p>
-                      </div>
-
-                      {isSyncing ? (
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="bg-indigo-600 h-full transition-all duration-150" style={{ width: `${syncProgress}%` }} />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleSyncDatabase}
-                          className="w-full py-3.5 rounded-xl bg-slate-900 text-white text-xs font-black hover:bg-slate-800 transition-colors active:scale-95"
-                        >
-                          {lang === 'ne' ? 'अहिले नै सिंक गर्नुहोस्' : 'SYNCHRONIZE OFFLINE DATABASE'}
-                        </button>
-                      )}
-
-                      <div className="text-[10px] text-slate-400 font-bold flex justify-between px-1">
-                        <span>Last sync: {lastSyncTime}</span>
-                        <span>Cache: {jobs.length} jobs stored</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-[9px] text-center text-slate-400 font-bold">
-                    ROJGAR Nepalese Labor Platform • Version 1.0.2 Offline HUD
-                  </p>
-                </div>
-              )}
 
               {/* === TAB: PROFILE === */}
               {employerTab === 'profile' && (
@@ -2691,31 +2696,25 @@ export default function MobileSimulator() {
                                 <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                                   {lang === 'ne' ? 'भूमिका' : 'Role'}
                                 </label>
-                                <select
+                                <input
                                   value={editEmpRole}
                                   onChange={(e) => setEditEmpRole(e.target.value)}
+                                  placeholder={lang === 'ne' ? 'भूमिका' : 'Role'}
                                   className="w-full bg-white px-2 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-[#1A73E8]"
-                                >
-                                  <option value="Contractor">Contractor</option>
-                                  <option value="Sub-contractor">Sub-contractor</option>
-                                  <option value="Home Owner">Home Owner</option>
-                                  <option value="Business Owner">Business Owner</option>
-                                </select>
+                                />
                               </div>
 
                               <div className="space-y-1">
                                 <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                                   {lang === 'ne' ? 'स्थान' : 'Location'}
                                 </label>
-                                <select
-                                  value={editEmpLocation}
-                                  onChange={(e) => setEditEmpLocation(e.target.value)}
-                                  className="w-full bg-white px-2 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-[#1A73E8]"
-                                >
-                                  {NEPAL_LOCATIONS.map(loc => (
-                                    <option key={loc} value={loc}>{loc}</option>
-                                  ))}
-                                </select>
+                                <div>
+                                  <input
+                                    value={editEmpLocation}
+                                    onChange={(e) => setEditEmpLocation(e.target.value)}
+                                    className="w-full bg-white px-2 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-[#1A73E8]"
+                                  />
+                                </div>
                               </div>
                             </div>
 
@@ -2819,9 +2818,16 @@ export default function MobileSimulator() {
                             </div>
                             <div className="flex justify-between items-center text-xs">
                               <span className="font-bold text-slate-400">{lang === 'ne' ? 'सरकारी परिचय-पत्र' : 'Government Verification ID'}</span>
-                              <span className="font-extrabold text-[#1A73E8] bg-[#1A73E8]/5 px-2 py-0.5 rounded border border-[#1A73E8]/10 text-[10px]">
-                                {activeEmp.govId || 'N/A'}
-                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="font-extrabold text-[#1A73E8] bg-[#1A73E8]/5 px-2 py-0.5 rounded border border-[#1A73E8]/10 text-[10px]">{activeEmp.govId || 'N/A'}</span>
+                                {activeEmp.govIdFiles && activeEmp.govIdFiles.length > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    {activeEmp.govIdFiles.map((f, idx) => (
+                                      <img key={idx} src={f} alt={`emp-govid-${idx}`} className="w-12 h-8 object-cover rounded-sm border" />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -3021,7 +3027,6 @@ export default function MobileSimulator() {
                 { id: 'post', label: lang === 'ne' ? 'थप्नुहोस्' : 'Post Job', icon: Plus },
                 { id: 'applicants', label: lang === 'ne' ? 'आवेदक' : 'Applicants', icon: ClipboardList },
                 { id: 'chat', label: lang === 'ne' ? 'च्याट' : 'Chat', icon: MessageSquare },
-                { id: 'sync', label: lang === 'ne' ? 'सिंक HUD' : 'Sync HUD', icon: RefreshCw },
                 { id: 'profile', label: lang === 'ne' ? 'प्रोफाइल' : 'Profile', icon: Settings }
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -3259,9 +3264,7 @@ export default function MobileSimulator() {
                   <p>🛠️ <strong>Skill:</strong> {voiceParsedProfile.mainSkill?.toUpperCase()}</p>
                   <p>💰 <strong>Wage:</strong> Rs. {voiceParsedProfile.expectedWage} / day</p>
                   <p>📍 <strong>Location:</strong> {voiceParsedProfile.location}</p>
-                  {voiceParsedProfile.bio && (
-                    <p className="text-[11px] text-slate-400 italic">"{voiceParsedProfile.bio}"</p>
-                  )}
+                  {/* voiceParsedProfile short bio omitted */}
                 </div>
 
                 <div className="flex gap-2 pt-1">
