@@ -31,6 +31,8 @@ export default function MobileSimulator() {
   const [phone, setPhone] = useState<string>('');
   const [otpSent, setOtpSent] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
+  const [simulatorOtp, setSimulatorOtp] = useState<string>('');
+  const [notification, setNotification] = useState<{message: string, visible: boolean} | null>(null);
   const [role, setRole] = useState<UserRole | null>(() => getLocalData('sim_role', null));
   const [userId, setUserId] = useState<string>(() => getLocalData('sim_user_id', ''));
   
@@ -304,36 +306,79 @@ export default function MobileSimulator() {
   };
 
   // Quick Action methods
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     if (phone.length < 10) {
       alert(lang === 'ne' ? 'कृपया १० अंकको सहि मोबाइल नम्बर हाल्नुहोस्।' : 'Please enter a valid 10-digit mobile number.');
       return;
     }
-    setOtpSent(true);
+    
+    try {
+      const res = await fetch('/api/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setOtpSent(true);
+        // Show OTP in notification panel for simulator mode (in production, remove this)
+        setNotification({
+          message: lang === 'ne' ? `OTP: ${data.simulatorOtp}` : `OTP: ${data.simulatorOtp}`,
+          visible: true
+        });
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => {
+          setNotification(null);
+        }, 15000);
+      } else {
+        alert(data.error || (lang === 'ne' ? 'ओटिपी पठाउनमा समस्या भयो।' : 'Failed to send OTP.'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert(lang === 'ne' ? 'सर्भर त्रुटि।' : 'Server error.');
+    }
   };
 
-  const handleVerifyOtp = () => {
-    if (otpCode !== '123456' && otpCode.trim() !== '') {
-      alert(lang === 'ne' ? 'गलत ओटिपी कोड! कृपया १२३४५६ प्रयोग गर्नुहोस्।' : 'Invalid OTP. Please use 123456 to login.');
+  const handleVerifyOtp = async () => {
+    if (otpCode.trim() === '') {
+      alert(lang === 'ne' ? 'कृपया ओटिपी कोड हाल्नुहोस्।' : 'Please enter the OTP code.');
       return;
     }
-    // Set mock user id based on phone
-    const mockId = `worker-${phone}`;
-    setUserId(mockId);
+    
+    try {
+      const res = await fetch('/api/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp: otpCode })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        // Set mock user id based on phone
+        const mockId = `worker-${phone}`;
+        setUserId(mockId);
 
-    // Check if user has any profile (worker or employer)
-    const existingWorker = workers.find(w => w.phone === phone);
-    const existingEmployer = employers.find(e => e.phone === phone);
+        // Check if user has any profile (worker or employer)
+        const existingWorker = workers.find(w => w.phone === phone);
+        const existingEmployer = employers.find(e => e.phone === phone);
 
-    if (existingWorker) {
-      setRole('worker');
-      setScreen('worker_home');
-    } else if (existingEmployer) {
-      setRole('employer');
-      setScreen('employer_home');
-    } else {
-      // No profile exists - go to role selection to create profile
-      setScreen('role_selection');
+        if (existingWorker) {
+          setRole('worker');
+          setScreen('worker_home');
+        } else if (existingEmployer) {
+          setRole('employer');
+          setScreen('employer_home');
+        } else {
+          // No profile exists - go to role selection to create profile
+          setScreen('role_selection');
+        }
+      } else {
+        alert(data.error || (lang === 'ne' ? 'गलत ओटिपी कोड।' : 'Invalid OTP.'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert(lang === 'ne' ? 'सर्भर त्रुटि।' : 'Server error.');
     }
   };
 
@@ -606,6 +651,29 @@ export default function MobileSimulator() {
         </div>
       </div>
 
+      {/* Notification Panel */}
+      {notification && notification.visible && (
+        <div className="absolute top-12 left-0 right-0 z-50 px-4 animate-slideDown">
+          <div className="bg-slate-900/95 backdrop-blur-sm text-white p-4 rounded-2xl shadow-lg border border-slate-700">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-emerald-500/20 rounded-full">
+                <MessageSquare className="h-4 w-4 text-emerald-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Job Finder</p>
+                <p className="text-sm font-semibold mt-0.5">{notification.message}</p>
+              </div>
+              <button 
+                onClick={() => setNotification(null)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Screen Wrapper (Scrollable view inside the phone) */}
       <div className="flex-1 bg-slate-50 flex flex-col overflow-y-auto overflow-x-hidden relative" id="mobile_sim_screen_content">
         
@@ -672,7 +740,7 @@ export default function MobileSimulator() {
                 <p className="text-xs text-slate-500 leading-relaxed">
                   {lang === 'ne' 
                     ? 'सुरक्षित प्रवेशको लागि आफ्नो मोबाइल नम्बर राख्नुहोस्। पासवर्ड चाहिँदैन।' 
-                    : 'Enter your 10-digit mobile number. No email or passwords required.'}
+                    : 'Enter your 10-digit mobile number.'}
                 </p>
               </div>
 
@@ -698,12 +766,9 @@ export default function MobileSimulator() {
 
                 {otpSent && (
                   <div className="space-y-1.5 animate-fadeIn">
-                    <div className="flex justify-between items-center">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        {lang === 'ne' ? '६-अंकको ओटिपी कोड हाल्नुहोस्' : '6-Digit OTP Code'}
-                      </label>
-                      <span className="text-[10px] text-emerald-600 font-bold">Code sent: 123456</span>
-                    </div>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {lang === 'ne' ? '६-अंकको ओटिपी कोड हाल्नुहोस्' : '6-Digit OTP Code'}
+                    </label>
                     <input
                       type="text"
                       maxLength={6}
@@ -794,10 +859,6 @@ export default function MobileSimulator() {
                   </p>
                 </div>
               </button>
-            </div>
-
-            <div className="pb-2 text-center">
-              <p className="text-[10px] text-slate-400">NCIT Minor Project - 2026</p>
             </div>
           </div>
         )}

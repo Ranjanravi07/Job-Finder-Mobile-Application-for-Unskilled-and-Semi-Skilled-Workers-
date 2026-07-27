@@ -164,10 +164,11 @@ export default function UserAccountsPanel({ search, adminProfile }: { search: st
             : u
         )
       );
-      setSelectedUser(null);
-      setEditPassword("");
     } catch (err) {
       console.error("Failed to update user", err);
+    } finally {
+      setSelectedUser(null);
+      setEditPassword("");
     }
   };
 

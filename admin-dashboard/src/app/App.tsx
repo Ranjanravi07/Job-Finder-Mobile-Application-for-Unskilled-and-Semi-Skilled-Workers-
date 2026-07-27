@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTheme } from "next-themes";
-import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 import Login from "./components/Login";
 import UserLogin from "./components/UserLogin";
@@ -133,9 +132,9 @@ const activityDot: Record<string, string> = {
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
-  { icon: HardHat, label: "Job Seekers", id: "seekers", badge: "4.2k" },
-  { icon: Building2, label: "Employers", id: "employers", badge: "312" },
-  { icon: Briefcase, label: "Job Listings", id: "jobs", badge: "89" },
+  { icon: HardHat, label: "Job Seekers", id: "seekers", badge: "0" },
+  { icon: Building2, label: "Employers", id: "employers", badge: "0" },
+  { icon: Briefcase, label: "Job Listings", id: "jobs", badge: "0" },
   { icon: FileText, label: "Applications", id: "applications" },
   { icon: CheckCircle, label: "Placements", id: "placements" },
   { icon: Users, label: "User Accounts", id: "accounts" },
@@ -144,10 +143,10 @@ const navItems = [
 ];
 
 const kpiCards = [
-  { label: "Registered Workers", value: "4,218", change: "+12.4%", up: true, sub: "vs last month", icon: HardHat, color: "text-violet-400" },
-  { label: "Active Employers", value: "312", change: "+8.7%", up: true, sub: "vs last month", icon: Building2, color: "text-sky-400" },
-  { label: "Successful Placements", value: "1,591", change: "+16.2%", up: true, sub: "this year", icon: CheckCircle, color: "text-emerald-400" },
-  { label: "Open Job Listings", value: "89", change: "-4.3%", up: false, sub: "vs last week", icon: Briefcase, color: "text-amber-400" },
+  { label: "Registered Workers", value: "0", change: "0%", up: true, sub: "vs last month", icon: HardHat, color: "text-violet-400" },
+  { label: "Active Employers", value: "0", change: "0%", up: true, sub: "vs last month", icon: Building2, color: "text-sky-400" },
+  { label: "Successful Placements", value: "0", change: "0%", up: true, sub: "this year", icon: CheckCircle, color: "text-emerald-400" },
+  { label: "Open Job Listings", value: "0", change: "0%", up: false, sub: "vs last week", icon: Briefcase, color: "text-amber-400" },
 ];
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -173,9 +172,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"registrations" | "placements">("registrations");
   const [globalSearch, setGlobalSearch] = useState("");
   const [userMode, setUserMode] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<ReturnType<typeof onAuthStateChanged> extends (cb: (u: infer U) => any) => any ? U : never>(null as any);
-  const [adminProfile, setAdminProfile] = useState({ username: "Juan Admin", email: "juan@jobfinder.ph" });
-  const [loginDate] = useState(() => new Date());
+  const [firebaseUser, setFirebaseUser] = useState<import("firebase/auth").User | null>(null);
+  const [adminProfile, setAdminProfile] = useState({ username: "Admin", email: "" });
+  const [loginDate, setLoginDate] = useState(() => new Date());
 
   const handleProfileSave = (username: string, email: string) => {
     setAdminProfile({ username, email });
@@ -189,27 +188,23 @@ export default function App() {
     .slice(0, 2)
     .toUpperCase();
 
-  const handleLogin = () => {
+  const handleLogin = (_user: import("firebase/auth").User, profile: { username: string; email: string }) => {
     localStorage.setItem("jobfinder-auth", "true");
+    setAdminProfile(profile);
+    setLoginDate(new Date());
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (auth) await auth.signOut();
     localStorage.removeItem("jobfinder-auth");
+    setAdminProfile({ username: "Admin", email: "" });
     setIsAuthenticated(false);
   };
 
   const handleUserLogin = () => {
     setUserMode(true);
   };
-
-  useEffect(() => {
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-    });
-    return unsubscribe;
-  }, []);
 
   const handleUserLogout = async () => {
     if (auth) await auth.signOut();

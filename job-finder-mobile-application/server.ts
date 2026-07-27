@@ -8,6 +8,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -16,6 +17,18 @@ const PORT = 3000;
 
 // Parse JSON bodies
 app.use(express.json());
+
+// In-memory OTP storage (in production, use a database with proper indexing)
+interface OTPData {
+  phone: string;
+  hashedOtp: string;
+  expiresAt: number;
+  attempts: number;
+}
+
+const otpStore = new Map<string, OTPData>();
+const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_ATTEMPTS = 5;
 
 // Initialize Gemini Client
 const apiKey = process.env.GEMINI_API_KEY;
@@ -37,6 +50,113 @@ if (apiKey) {
 // API Routes
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", geminiEnabled: !!apiKey });
+});
+
+// Generate cryptographically secure 6-digit OTP
+function generateSecureOTP(): string {
+  const otp = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+  return otp;
+}
+
+// Hash OTP for secure storage
+function hashOTP(otp: string): string {
+  return crypto.createHash('sha256').update(otp).digest('hex');
+}
+
+// Clean expired OTPs
+function cleanExpiredOTPs() {
+  const now = Date.now();
+  for (const [key, data] of otpStore.entries()) {
+    if (data.expiresAt < now) {
+      otpStore.delete(key);
+    }
+  }
+}
+
+// OTP Generation endpoint
+app.post("/api/otp/send", async (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone || phone.length !== 10) {
+    return res.status(400).json({ error: "Invalid phone number. Must be 10 digits." });
+  }
+
+  // Clean expired OTPs first
+  cleanExpiredOTPs();
+
+  // Generate secure OTP
+  const otp = generateSecureOTP();
+  const hashedOtp = hashOTP(otp);
+  const expiresAt = Date.now() + OTP_EXPIRY_MS;
+
+  // Store OTP data (in production, use database)
+  otpStore.set(phone, {
+    phone,
+    hashedOtp,
+    expiresAt,
+    attempts: 0
+  });
+
+  // In production, integrate with SMS gateway here
+  // For now, log the OTP (in simulator mode)
+  console.log(`[OTP] Generated for +977${phone}: ${otp} (expires in 5 minutes)`);
+
+  // Return success (don't return actual OTP in production)
+  res.json({ 
+    success: true, 
+    message: "OTP sent successfully",
+    // For simulator mode only - remove in production
+    simulatorOtp: otp 
+  });
+});
+
+// OTP Verification endpoint
+app.post("/api/otp/verify", async (req, res) => {
+  const { phone, otp } = req.body;
+
+  if (!phone || !otp) {
+    return res.status(400).json({ error: "Phone number and OTP are required" });
+  }
+
+  // Clean expired OTPs
+  cleanExpiredOTPs();
+
+  const otpData = otpStore.get(phone);
+  if (!otpData) {
+    return res.status(400).json({ error: "OTP expired or not found. Please request a new OTP." });
+  }
+
+  // Check if expired
+  if (Date.now() > otpData.expiresAt) {
+    otpStore.delete(phone);
+    return res.status(400).json({ error: "OTP has expired. Please request a new OTP." });
+  }
+
+  // Check attempt limit
+  if (otpData.attempts >= MAX_ATTEMPTS) {
+    otpStore.delete(phone);
+    return res.status(429).json({ error: "Maximum verification attempts exceeded. Please request a new OTP." });
+  }
+
+  // Verify OTP
+  const hashedInput = hashOTP(otp);
+  if (hashedInput !== otpData.hashedOtp) {
+    otpData.attempts += 1;
+    otpStore.set(phone, otpData);
+    const remainingAttempts = MAX_ATTEMPTS - otpData.attempts;
+    return res.status(400).json({ 
+      error: "Invalid OTP", 
+      remainingAttempts 
+    });
+  }
+
+  // OTP verified successfully - delete it
+  otpStore.delete(phone);
+
+  res.json({ 
+    success: true, 
+    message: "OTP verified successfully" 
+  });
 });
 
 // Server-side voice dictation parsing endpoint
