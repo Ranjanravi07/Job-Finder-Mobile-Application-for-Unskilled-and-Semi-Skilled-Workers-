@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import {
   Building2, MapPin, Users, MoreVertical, CheckCircle, Ban, Trash2,
   X, Phone, CreditCard, Briefcase,
@@ -10,50 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-
-type Status = "pending" | "active" | "inactive";
-
-interface Employer {
-  id: string;
-  name: string;       // company name
-  industry: string;   // primary role / industry
-  location: string;
-  workers: number;
-  status: Status;
-  // profile details
-  contactPerson: string;
-  phone: string;
-  govIdNumber: string;
-  govIdImage: string;   // URL or empty
-  profilePhoto: string; // URL or empty
-}
-
-const initialEmployers: Employer[] = [
-  {
-    id: "E-201", name: "SunBuild Corp.",      industry: "Construction", location: "Manila",      workers: 124, status: "pending",
-    contactPerson: "Marco Dela Rosa",   phone: "+63 912 100 2001", govIdNumber: "BIR-2024-E0201", govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "E-202", name: "Reyes Household",     industry: "Domestic",     location: "Quezon City", workers: 3,   status: "pending",
-    contactPerson: "Ana Reyes",         phone: "+63 917 200 3002", govIdNumber: "BIR-2024-E0202", govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "E-203", name: "FiliTex Mills",       industry: "Factory",      location: "Caloocan",    workers: 86,  status: "pending",
-    contactPerson: "Roberto Filio",     phone: "+63 918 300 4003", govIdNumber: "BIR-2024-E0203", govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "E-204", name: "Shield Pro Security", industry: "Security",     location: "Makati",      workers: 45,  status: "pending",
-    contactPerson: "Dante Escudo",      phone: "+63 919 400 5004", govIdNumber: "BIR-2024-E0204", govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "E-205", name: "QuickShip PH",        industry: "Logistics",    location: "Pasig",       workers: 32,  status: "pending",
-    contactPerson: "Rina Velasco",      phone: "+63 920 500 6005", govIdNumber: "BIR-2024-E0205", govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "E-206", name: "MetroBuild Inc.",     industry: "Construction", location: "Taguig",      workers: 67,  status: "pending",
-    contactPerson: "Jun Serrano",       phone: "+63 921 600 7006", govIdNumber: "BIR-2024-E0206", govIdImage: "", profilePhoto: "",
-  },
-];
+import type { ActiveFilters } from "../App";
+import { type Employer, type EmployerStatus as Status } from "../../data";
 
 const statusStyle: Record<Status, string> = {
   active:   "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
@@ -191,8 +150,12 @@ function ProfileModal({ employer, onClose }: { employer: Employer; onClose: () =
   );
 }
 
-export default function EmployersPanel({ search }: { search: string }) {
-  const [employers, setEmployers] = useState<Employer[]>(initialEmployers);
+export default function EmployersPanel({ search, filters, employers, setEmployers }: {
+  search: string;
+  filters?: ActiveFilters;
+  employers: Employer[];
+  setEmployers: React.Dispatch<React.SetStateAction<Employer[]>>;
+}) {
   const [selected, setSelected] = useState<Employer | null>(null);
 
   const approve = (id: string) =>
@@ -206,12 +169,16 @@ export default function EmployersPanel({ search }: { search: string }) {
     if (selected?.id === id) setSelected(null);
   };
 
-  const filtered = employers.filter(
-    (e) =>
-      e.name.toLowerCase().includes(search.toLowerCase()) ||
-      e.industry.toLowerCase().includes(search.toLowerCase()) ||
-      e.location.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = employers.filter((e) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      e.name.toLowerCase().includes(q) ||
+      e.industry.toLowerCase().includes(q) ||
+      e.location.toLowerCase().includes(q);
+    const matchStatus   = !filters?.status.length   || filters.status.includes(e.status);
+    const matchIndustry = !filters?.industry.length || filters.industry.includes(e.industry);
+    return matchSearch && matchStatus && matchIndustry;
+  });
 
   return (
     <>

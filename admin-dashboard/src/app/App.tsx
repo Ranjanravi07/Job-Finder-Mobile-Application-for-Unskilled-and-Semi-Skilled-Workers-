@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTheme } from "next-themes";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
 import Login from "./components/Login";
-import UserLogin from "./components/UserLogin";
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +28,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   AreaChart,
@@ -51,62 +52,67 @@ import PlacementsPanel from "./components/panels/PlacementsPanel";
 import UserAccountsPanel from "./components/panels/UserAccountsPanel";
 import ReportsPanel from "./components/panels/ReportsPanel";
 import SettingsPanel from "./components/panels/SettingsPanel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "./components/ui/dropdown-menu";
 
-const registrationData = [
-  { month: "Jan", workers: 120, employers: 18 },
-  { month: "Feb", workers: 185, employers: 24 },
-  { month: "Mar", workers: 240, employers: 31 },
-  { month: "Apr", workers: 198, employers: 27 },
-  { month: "May", workers: 310, employers: 42 },
-  { month: "Jun", workers: 278, employers: 38 },
-  { month: "Jul", workers: 390, employers: 55 },
-  { month: "Aug", workers: 425, employers: 61 },
-  { month: "Sep", workers: 512, employers: 74 },
-  { month: "Oct", workers: 480, employers: 68 },
-  { month: "Nov", workers: 560, employers: 82 },
-  { month: "Dec", workers: 634, employers: 91 },
-];
+// ─── Filter types ──────────────────────────────────────────────────────────────
+export interface ActiveFilters {
+  status: string[];      // multi-select
+  skill: string[];       // multi-select
+  industry: string[];    // multi-select (employers)
+  jobType: string[];     // multi-select (job listings)
+  minRating: number;     // seekers
+}
 
-const placementData = [
-  { month: "Jan", placed: 58 },
-  { month: "Feb", placed: 72 },
-  { month: "Mar", placed: 94 },
-  { month: "Apr", placed: 86 },
-  { month: "May", placed: 118 },
-  { month: "Jun", placed: 104 },
-  { month: "Jul", placed: 139 },
-  { month: "Aug", placed: 152 },
-  { month: "Sep", placed: 178 },
-  { month: "Oct", placed: 165 },
-  { month: "Nov", placed: 201 },
-  { month: "Dec", placed: 224 },
-];
+const defaultFilters: ActiveFilters = {
+  status: [], skill: [], industry: [], jobType: [], minRating: 0,
+};
 
-const categoryData = [
-  { name: "Construction", value: 32, color: "#7c5cfc" },
-  { name: "Domestic Help", value: 22, color: "#36d1b7" },
-  { name: "Factory Work", value: 18, color: "#f7c948" },
-  { name: "Security Guard", value: 13, color: "#5ca4fc" },
-  { name: "Delivery", value: 10, color: "#e8455a" },
-  { name: "Others", value: 5, color: "#a78bfa" },
-];
+// Options per section
+const FILTER_CONFIG: Record<string, { label: string; key: keyof ActiveFilters; options: string[] }[]> = {
+  seekers: [
+    { label: "Status",      key: "status",    options: ["pending", "active", "inactive"] },
+    { label: "Skill",       key: "skill",     options: ["Construction", "Domestic Help", "Factory Work", "Security Guard", "Delivery Rider"] },
+    { label: "Min Rating",  key: "minRating", options: ["4.0", "4.5", "4.8"] },
+  ],
+  employers: [
+    { label: "Status",   key: "status",   options: ["pending", "active", "inactive"] },
+    { label: "Industry", key: "industry", options: ["Construction", "Domestic", "Factory", "Security", "Logistics"] },
+  ],
+  applications: [
+    { label: "Status", key: "status", options: ["hired", "pending", "rejected"] },
+    { label: "Skill",  key: "skill",  options: ["Construction", "Domestic Help", "Factory Work", "Security Guard", "Delivery Rider"] },
+  ],
+  jobs: [
+    { label: "Status", key: "status",  options: ["open", "closed", "paused"] },
+    { label: "Type",   key: "jobType", options: ["Daily", "Monthly"] },
+  ],
+};
 
-const recentApplications = [
-  { id: "APP-1042", worker: "Ramon dela Cruz", skill: "Construction", employer: "SunBuild Corp.", location: "Manila", status: "hired", date: "Dec 28, 2024" },
-  { id: "APP-1041", worker: "Maria Santos", skill: "Domestic Help", employer: "Reyes Household", location: "Quezon City", status: "pending", date: "Dec 28, 2024" },
-  { id: "APP-1040", worker: "Eduardo Bautista", skill: "Factory Work", employer: "FiliTex Mills", location: "Caloocan", status: "hired", date: "Dec 27, 2024" },
-  { id: "APP-1039", worker: "Josefina Reyes", skill: "Security Guard", employer: "Shield Pro Security", location: "Makati", status: "rejected", date: "Dec 27, 2024" },
-  { id: "APP-1038", worker: "Benjamin Lim", skill: "Delivery Rider", employer: "QuickShip PH", location: "Pasig", status: "hired", date: "Dec 26, 2024" },
-  { id: "APP-1037", worker: "Lourdes Magno", skill: "Domestic Help", employer: "Cruz Family", location: "Marikina", status: "pending", date: "Dec 26, 2024" },
-  { id: "APP-1036", worker: "Arturo Villanueva", skill: "Construction", employer: "MetroBuild Inc.", location: "Taguig", status: "hired", date: "Dec 25, 2024" },
-];
+// Panels that support filtering
+const FILTERABLE = new Set(["seekers", "employers", "applications", "jobs"]);
 
-const recentWorkers = [
-  { name: "Carina Ocampo", skill: "Factory Work", location: "Navotas", rating: 4.8, joined: "Dec 28" },
-  { name: "Rolando Tupas", skill: "Construction", location: "Malabon", rating: 4.5, joined: "Dec 27" },
-  { name: "Nena Escuadro", skill: "Domestic Help", location: "Valenzuela", rating: 4.9, joined: "Dec 27" },
-  { name: "Felix Domingo", skill: "Delivery Rider", location: "San Juan", rating: 4.3, joined: "Dec 26" },
-];
+import {
+  registrationData,
+  placementData,
+  categoryData,
+  applications as appData,
+  seekers as seekerData,
+  employers as employerData,
+  jobs as jobData,
+  type Seeker,
+  type Employer,
+  type Job,
+} from "./data";
+
+const recentApplications = appData;
 
 const activityItems = [
   { text: "New employer SunBuild Corp. registered", time: "5 min ago", type: "employer" },
@@ -130,25 +136,6 @@ const activityDot: Record<string, string> = {
   system: "bg-slate-400",
 };
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
-  { icon: HardHat, label: "Job Seekers", id: "seekers", badge: "0" },
-  { icon: Building2, label: "Employers", id: "employers", badge: "0" },
-  { icon: Briefcase, label: "Job Listings", id: "jobs", badge: "0" },
-  { icon: FileText, label: "Applications", id: "applications" },
-  { icon: CheckCircle, label: "Placements", id: "placements" },
-  { icon: Users, label: "User Accounts", id: "accounts" },
-  { icon: Activity, label: "Reports", id: "reports" },
-  { icon: Settings, label: "Settings", id: "settings" },
-];
-
-const kpiCards = [
-  { label: "Registered Workers", value: "0", change: "0%", up: true, sub: "vs last month", icon: HardHat, color: "text-violet-400" },
-  { label: "Active Employers", value: "0", change: "0%", up: true, sub: "vs last month", icon: Building2, color: "text-sky-400" },
-  { label: "Successful Placements", value: "0", change: "0%", up: true, sub: "this year", icon: CheckCircle, color: "text-emerald-400" },
-  { label: "Open Job Listings", value: "0", change: "0%", up: false, sub: "vs last week", icon: Briefcase, color: "text-amber-400" },
-];
-
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -171,13 +158,79 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<"registrations" | "placements">("registrations");
   const [globalSearch, setGlobalSearch] = useState("");
-  const [userMode, setUserMode] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<import("firebase/auth").User | null>(null);
   const [adminProfile, setAdminProfile] = useState({ username: "Admin", email: "" });
   const [loginDate, setLoginDate] = useState(() => new Date());
+  const [currentUid, setCurrentUid] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<ActiveFilters>(defaultFilters);
 
-  const handleProfileSave = (username: string, email: string) => {
+  // ─── Lifted data state ───────────────────────────────────────────────────────
+  const [seekerList,   setSeekerList]   = useState<Seeker[]>(seekerData);
+  const [employerList, setEmployerList] = useState<Employer[]>(employerData);
+  const [jobList,      setJobList]      = useState<Job[]>(jobData);
+
+  // Derived counts — recomputed on every render when lists change
+  const totalWorkers    = seekerList.length;
+  const totalEmployers  = employerList.length;
+  const openJobs        = jobList.filter((j) => j.status === "open").length;
+  const totalPlacements = appData.filter((a) => a.status === "hired").length;
+
+  const navItems = [
+    { icon: LayoutDashboard, label: "Dashboard",    id: "dashboard" },
+    { icon: HardHat,         label: "Job Seekers",  id: "seekers",      badge: totalWorkers.toString() },
+    { icon: Building2,       label: "Employers",    id: "employers",    badge: totalEmployers.toString() },
+    { icon: Briefcase,       label: "Job Listings", id: "jobs",         badge: openJobs.toString() },
+    { icon: FileText,        label: "Applications", id: "applications" },
+    { icon: CheckCircle,     label: "Placements",   id: "placements" },
+    { icon: Users,           label: "User Accounts",id: "accounts" },
+    { icon: Activity,        label: "Reports",      id: "reports" },
+    { icon: Settings,        label: "Settings",     id: "settings" },
+  ];
+
+  const kpiCards = [
+    { label: "Registered Workers",    value: totalWorkers.toLocaleString(),    change: "+12.4%", up: true,  sub: "vs last month", icon: HardHat,     color: "text-violet-400" },
+    { label: "Active Employers",      value: totalEmployers.toLocaleString(),  change: "+8.7%",  up: true,  sub: "vs last month", icon: Building2,   color: "text-sky-400" },
+    { label: "Successful Placements", value: totalPlacements.toLocaleString(), change: "+16.2%", up: true,  sub: "this year",     icon: CheckCircle, color: "text-emerald-400" },
+    { label: "Open Job Listings",     value: openJobs.toLocaleString(),        change: "-4.3%",  up: false, sub: "vs last week",  icon: Briefcase,   color: "text-amber-400" },
+  ];
+
+  const recentWorkers = seekerList.slice(0, 4).map((s, i) => ({
+    name: s.name, skill: s.skill, location: s.location, rating: s.rating,
+    joined: "Dec " + (28 - i),
+  }));
+
+  // Reset filters whenever the user navigates to a new section
+  const handleNavChange = (id: string) => {
+    setActiveNav(id);
+    setActiveFilters(defaultFilters);
+  };
+
+  const toggleArrayFilter = (key: "status" | "skill" | "industry" | "jobType", value: string) => {
+    setActiveFilters((prev) => {
+      const arr = prev[key] as string[];
+      return {
+        ...prev,
+        [key]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
+      };
+    });
+  };
+
+  const setRatingFilter = (value: number) => {
+    setActiveFilters((prev) => ({ ...prev, minRating: prev.minRating === value ? 0 : value }));
+  };
+
+  const activeFilterCount = activeFilters.status.length + activeFilters.skill.length +
+    activeFilters.industry.length + activeFilters.jobType.length + (activeFilters.minRating > 0 ? 1 : 0);
+
+  const handleProfileSave = async (username: string, email: string) => {
     setAdminProfile({ username, email });
+    // Persist back to Firestore so the name survives re-login
+    if (db && currentUid) {
+      try {
+        await setDoc(doc(db, "users", currentUid), { name: username, email }, { merge: true });
+      } catch (err) {
+        console.error("Failed to persist profile to Firestore", err);
+      }
+    }
   };
 
   // Derive initials from username (up to 2 letters)
@@ -191,6 +244,7 @@ export default function App() {
   const handleLogin = (_user: import("firebase/auth").User, profile: { username: string; email: string }) => {
     localStorage.setItem("jobfinder-auth", "true");
     setAdminProfile(profile);
+    setCurrentUid(_user.uid);
     setLoginDate(new Date());
     setIsAuthenticated(true);
   };
@@ -199,42 +253,16 @@ export default function App() {
     if (auth) await auth.signOut();
     localStorage.removeItem("jobfinder-auth");
     setAdminProfile({ username: "Admin", email: "" });
+    setCurrentUid(null);
     setIsAuthenticated(false);
-  };
-
-  const handleUserLogin = () => {
-    setUserMode(true);
-  };
-
-  const handleUserLogout = async () => {
-    if (auth) await auth.signOut();
-    setUserMode(false);
-    setFirebaseUser(null);
   };
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light");
   };
 
-  if (!isAuthenticated && !userMode) {
-    return <Login onLogin={handleLogin} onSwitchToUser={() => setUserMode(true)} />;
-  }
-
-  if (userMode && !firebaseUser) {
-    return <UserLogin onLogin={handleUserLogin} />;
-  }
-
-  if (userMode && firebaseUser) {
-    return (
-      <div className="size-full flex bg-background text-foreground overflow-hidden" style={{ fontFamily: "'Geist', system-ui, sans-serif" }}>
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <HardHat className="w-12 h-12 text-primary" />
-          <h1 className="text-xl font-semibold">Welcome, {firebaseUser.email}</h1>
-          <p className="text-xs text-muted-foreground">User Dashboard</p>
-          <button onClick={handleUserLogout} className="mt-4 px-4 py-2 rounded-md bg-primary text-white text-sm">Logout</button>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
@@ -273,7 +301,7 @@ export default function App() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveNav(item.id)}
+                onClick={() => handleNavChange(item.id)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-150 w-full text-left relative ${
                   active
                     ? "bg-primary/10 text-primary"
@@ -370,20 +398,114 @@ export default function App() {
                 <Monitor className="w-3.5 h-3.5" />
               )}
             </button>
-            <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md px-3 py-1.5 transition-colors">
-              <Filter className="w-3 h-3" /> Filter
-            </button>
+            {FILTERABLE.has(activeNav) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className={`flex items-center gap-1.5 text-xs border rounded-md px-3 py-1.5 transition-colors ${
+                    activeFilterCount > 0
+                      ? "bg-primary/10 text-primary border-primary/30"
+                      : "text-muted-foreground hover:text-foreground border-border"
+                  }`}>
+                    <SlidersHorizontal className="w-3 h-3" />
+                    Filter
+                    {activeFilterCount > 0 && (
+                      <span className="ml-0.5 bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  {(FILTER_CONFIG[activeNav] ?? []).map((group) => (
+                    <div key={group.key}>
+                      <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider pt-2">
+                        {group.label}
+                      </DropdownMenuLabel>
+                      {group.options.map((opt) => {
+                        if (group.key === "minRating") {
+                          const val = parseFloat(opt);
+                          return (
+                            <DropdownMenuCheckboxItem
+                              key={opt}
+                              checked={activeFilters.minRating === val}
+                              onCheckedChange={() => setRatingFilter(val)}
+                            >
+                              ≥ {opt} ★
+                            </DropdownMenuCheckboxItem>
+                          );
+                        }
+                        const arr = activeFilters[group.key] as string[];
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={opt}
+                            checked={arr.includes(opt)}
+                            onCheckedChange={() =>
+                              toggleArrayFilter(group.key as "status" | "skill" | "industry" | "jobType", opt)
+                            }
+                            className="capitalize"
+                          >
+                            {opt}
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+                      <DropdownMenuSeparator />
+                    </div>
+                  ))}
+                  <DropdownMenuItem
+                    onClick={() => setActiveFilters(defaultFilters)}
+                    className="text-xs text-muted-foreground justify-center"
+                    disabled={activeFilterCount === 0}
+                  >
+                    Clear all filters
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <button className="relative w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
             </button>
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                {adminInitials}
-              </div>
-              <span className="text-sm text-foreground font-medium">{adminProfile.username.split(" ")[0]}</span>
-              <ChevronDown className="w-3 h-3 text-muted-foreground" />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors select-none">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                    {adminInitials}
+                  </div>
+                  <span className="text-sm text-foreground font-medium">{adminProfile.username.split(" ")[0]}</span>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  <p className="font-semibold text-foreground truncate">{adminProfile.username}</p>
+                  <p className="truncate">{adminProfile.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => handleNavChange("accounts")}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  User Accounts
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => handleNavChange("settings")}
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="gap-2 cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -461,7 +583,7 @@ export default function App() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
-                    <XAxis dataKey="month" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="date" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
                     <Tooltip content={<ChartTooltip />} />
                     <Area key="workers" type="monotone" dataKey="workers" name="Workers" stroke="#7c5cfc" strokeWidth={2} fill="url(#gWorker)" dot={false} activeDot={{ r: 4, fill: "#7c5cfc", strokeWidth: 0 }} />
@@ -470,7 +592,7 @@ export default function App() {
                 ) : (
                   <BarChart data={placementData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
-                    <XAxis dataKey="month" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="date" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
                     <Tooltip content={<ChartTooltip />} />
                     <Bar key="placed" dataKey="placed" name="Placements" fill="#7c5cfc" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
@@ -531,7 +653,9 @@ export default function App() {
                   <h2 className="text-sm font-semibold text-foreground">Recent Applications</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">Latest job application activity</p>
                 </div>
-                <button className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
+                <button
+                  onClick={() => handleNavChange("applications")}
+                  className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
                   View all →
                 </button>
               </div>
@@ -589,7 +713,7 @@ export default function App() {
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-sm font-semibold text-foreground">New Job Seekers</h2>
-                  <button className="text-xs text-primary hover:text-primary/80 font-medium">View all →</button>
+                  <button onClick={() => handleNavChange("seekers")} className="text-xs text-primary hover:text-primary/80 font-medium">View all →</button>
                 </div>
                 <div className="space-y-3">
                   {recentWorkers.map((w) => (
@@ -648,12 +772,12 @@ export default function App() {
             </div>
             </div>
           )}
-          {activeNav === "seekers" && <JobSeekersPanel search={globalSearch} />}
-          {activeNav === "employers" && <EmployersPanel search={globalSearch} />}
-          {activeNav === "jobs" && <JobListingsPanel search={globalSearch} />}
-          {activeNav === "applications" && <ApplicationsPanel search={globalSearch} />}
+          {activeNav === "seekers" && <JobSeekersPanel search={globalSearch} filters={activeFilters} seekers={seekerList} setSeekers={setSeekerList} />}
+          {activeNav === "employers" && <EmployersPanel search={globalSearch} filters={activeFilters} employers={employerList} setEmployers={setEmployerList} />}
+          {activeNav === "jobs" && <JobListingsPanel search={globalSearch} filters={activeFilters} jobs={jobList} setJobs={setJobList} />}
+          {activeNav === "applications" && <ApplicationsPanel search={globalSearch} filters={activeFilters} />}
           {activeNav === "placements" && <PlacementsPanel search={globalSearch} />}
-          {activeNav === "accounts" && <UserAccountsPanel search={globalSearch} adminProfile={adminProfile} />}
+          {activeNav === "accounts" && <UserAccountsPanel search={globalSearch} adminProfile={adminProfile} onProfileChange={handleProfileSave} />}
           {activeNav === "reports" && <ReportsPanel search={globalSearch} />}
           {activeNav === "settings" && <SettingsPanel search={globalSearch} username={adminProfile.username} email={adminProfile.email} onSave={handleProfileSave} />}
         </main>

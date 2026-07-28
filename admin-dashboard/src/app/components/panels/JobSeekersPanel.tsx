@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import {
   MapPin, Star, MoreVertical, CheckCircle, Ban, Trash2,
   X, Phone, CreditCard, Briefcase, User,
@@ -10,73 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-
-type Status = "pending" | "active" | "inactive";
-
-interface Seeker {
-  id: string;
-  name: string;
-  skill: string;
-  location: string;
-  rating: number;
-  status: Status;
-  // profile details
-  phone: string;
-  govIdNumber: string;
-  govIdImage: string;   // URL or placeholder
-  profilePhoto: string; // URL or placeholder
-}
-
-const initialSeekers: Seeker[] = [
-  {
-    id: "W-1042", name: "Ramon dela Cruz",  skill: "Construction",   location: "Manila",
-    rating: 4.8, status: "pending",
-    phone: "+63 912 345 6789", govIdNumber: "PSN-2024-00142",
-    govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "W-1041", name: "Maria Santos",     skill: "Domestic Help",  location: "Quezon City",
-    rating: 4.6, status: "pending",
-    phone: "+63 917 234 5678", govIdNumber: "PSN-2024-00187",
-    govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "W-1040", name: "Eduardo Bautista", skill: "Factory Work",   location: "Caloocan",
-    rating: 4.9, status: "pending",
-    phone: "+63 918 876 5432", govIdNumber: "PSN-2024-00203",
-    govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "W-1039", name: "Josefina Reyes",   skill: "Security Guard", location: "Makati",
-    rating: 4.3, status: "pending",
-    phone: "+63 919 111 2233", govIdNumber: "PSN-2024-00219",
-    govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "W-1038", name: "Benjamin Lim",     skill: "Delivery Rider", location: "Pasig",
-    rating: 4.5, status: "pending",
-    phone: "+63 920 444 5566", govIdNumber: "PSN-2024-00231",
-    govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "W-1037", name: "Lourdes Magno",    skill: "Domestic Help",  location: "Marikina",
-    rating: 4.7, status: "pending",
-    phone: "+63 921 667 8899", govIdNumber: "PSN-2024-00248",
-    govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "W-1036", name: "Arturo Villanueva",skill: "Construction",   location: "Taguig",
-    rating: 4.2, status: "pending",
-    phone: "+63 922 321 0987", govIdNumber: "PSN-2024-00261",
-    govIdImage: "", profilePhoto: "",
-  },
-  {
-    id: "W-1035", name: "Carina Ocampo",    skill: "Factory Work",   location: "Navotas",
-    rating: 4.8, status: "pending",
-    phone: "+63 923 555 7744", govIdNumber: "PSN-2024-00275",
-    govIdImage: "", profilePhoto: "",
-  },
-];
+import type { ActiveFilters } from "../App";
+import { type Seeker, type SeekerStatus as Status } from "../../data";
 
 const statusStyle: Record<Status, string> = {
   active:   "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
@@ -216,8 +152,12 @@ function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void
   );
 }
 
-export default function JobSeekersPanel({ search }: { search: string }) {
-  const [seekers, setSeekers] = useState<Seeker[]>(initialSeekers);
+export default function JobSeekersPanel({ search, filters, seekers, setSeekers }: {
+  search: string;
+  filters?: ActiveFilters;
+  seekers: Seeker[];
+  setSeekers: React.Dispatch<React.SetStateAction<Seeker[]>>;
+}) {
   const [selected, setSelected] = useState<Seeker | null>(null);
 
   const approve = (id: string) =>
@@ -231,12 +171,19 @@ export default function JobSeekersPanel({ search }: { search: string }) {
     if (selected?.id === id) setSelected(null);
   };
 
-  const filtered = seekers.filter(
-    (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.skill.toLowerCase().includes(search.toLowerCase()) ||
-      s.location.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = seekers.filter((s) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      s.name.toLowerCase().includes(q) ||
+      s.skill.toLowerCase().includes(q) ||
+      s.location.toLowerCase().includes(q);
+
+    const matchStatus  = !filters?.status.length   || filters.status.includes(s.status);
+    const matchSkill   = !filters?.skill.length    || filters.skill.includes(s.skill);
+    const matchRating  = !filters?.minRating       || s.rating >= filters.minRating;
+
+    return matchSearch && matchStatus && matchSkill && matchRating;
+  });
 
   return (
     <>

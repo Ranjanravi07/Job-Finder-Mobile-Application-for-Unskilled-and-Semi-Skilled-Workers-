@@ -17,10 +17,9 @@ import type { User } from "firebase/auth";
 
 interface LoginProps {
   onLogin: (user: User, profile: { username: string; email: string }) => void;
-  onSwitchToUser: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToUser }) => {
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -47,21 +46,23 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToUser }) => {
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = cred.user;
 
-      // Try to load name from Firestore users collection
-      let username = user.displayName || user.email?.split("@")[0] || "Admin";
-      if (db) {
-        try {
-          const snap = await getDoc(doc(db, "users", user.uid));
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data?.name) username = data.name;
-          }
-        } catch {
-          // Firestore read failed — fall back to auth display name
-        }
-      }
-
+      // Use whatever we have immediately — don't block login on Firestore
+      const username = user.displayName || user.email?.split("@")[0] || "Admin";
       onLogin(user, { username, email: user.email ?? email.trim() });
+
+      // Fetch the saved name from Firestore in the background and update if found
+      if (db) {
+        getDoc(doc(db, "users", user.uid))
+          .then((snap) => {
+            if (snap.exists()) {
+              const data = snap.data();
+              if (data?.name) {
+                onLogin(user, { username: data.name, email: user.email ?? email.trim() });
+              }
+            }
+          })
+          .catch(() => {/* silent — auth already succeeded */});
+      }
     } catch (err: any) {
       // Map Firebase error codes to friendly messages
       const code: string = err?.code ?? "";
@@ -90,8 +91,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToUser }) => {
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
             <HardHat className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground tracking-tight">JobFinder PH</h2>
-          <p className="text-xs text-muted-foreground">Admin Console</p>
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">Job Finder Admin Panel</h2>
+          <p className="text-xs text-muted-foreground">Admin Dashboard</p>
         </div>
 
         {/* Form */}
@@ -168,13 +169,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToUser }) => {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <button
-          onClick={onSwitchToUser}
-          className="text-xs text-primary hover:text-primary/80 font-medium"
-        >
-          Worker / Employer Login
-        </button>
       </div>
     </div>
   );
