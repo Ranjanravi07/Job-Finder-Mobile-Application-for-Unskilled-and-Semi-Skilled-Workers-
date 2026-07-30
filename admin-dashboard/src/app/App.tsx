@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { auth, db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import Login from "./components/Login";
 import {
   LayoutDashboard,
@@ -162,6 +163,72 @@ export default function App() {
   const [loginDate, setLoginDate] = useState(() => new Date());
   const [currentUid, setCurrentUid] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(defaultFilters);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' }>>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // ─── Firebase auth state listener ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!auth) {
+      setAuthLoading(false);
+      return;
+    }
+
+    // Add timeout to force authLoading to false if Firebase takes too long
+    const timeoutId = setTimeout(() => {
+      console.warn("Auth state check timeout - forcing loading to false");
+      setAuthLoading(false);
+    }, 5000); // 5 second timeout
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      clearTimeout(timeoutId);
+      
+      if (user) {
+        // User is signed in
+        setCurrentUid(user.uid);
+        localStorage.setItem("jobfinder-auth", "true");
+        
+        // Set basic profile from auth data immediately
+        setAdminProfile({
+          username: user.displayName || user.email?.split("@")[0] || "Admin",
+          email: user.email || ""
+        });
+        setIsAuthenticated(true);
+        
+        // Fetch user profile from Firestore in background (non-blocking)
+        if (db) {
+          getDoc(doc(db, "users", user.uid))
+            .then((docSnap) => {
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setAdminProfile({
+                  username: data.name || user.displayName || user.email?.split("@")[0] || "Admin",
+                  email: data.email || user.email || ""
+                });
+              }
+            })
+            .catch((err: any) => {
+              // Silent fail - profile already set from auth data
+              if (err?.code !== "unavailable") {
+                console.error("Failed to fetch user profile from Firestore:", err);
+              }
+            });
+        }
+      } else {
+        // User is signed out
+        setCurrentUid(null);
+        localStorage.removeItem("jobfinder-auth");
+        setAdminProfile({ username: "Admin", email: "" });
+        setIsAuthenticated(false);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
+  }, [auth, db]);
 
   // ─── Lifted data state ───────────────────────────────────────────────────────
   const [seekerList,   setSeekerList]   = useState<Seeker[]>(seekerData);
@@ -173,6 +240,67 @@ export default function App() {
   const totalEmployers  = employerList.length;
   const openJobs        = jobList.filter((j) => j.status === "open").length;
   const totalPlacements = appData.filter((a) => a.status === "hired").length;
+
+  // ─── Notification logic based on activity ─────────────────────────────────────
+  useEffect(() => {
+    const newNotifications: Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' }> = [];
+    
+    // Check for new workers (last 5)
+    const recentWorkers = seekerList.slice(-5);
+    recentWorkers.forEach((worker, index) => {
+      if (worker.id && !notifications.find(n => n.id === `worker-${worker.id}`)) {
+        newNotifications.push({
+          id: `worker-${worker.id}`,
+          message: `New worker registered: ${worker.name}`,
+          time: new Date(),
+          type: 'worker'
+        });
+      }
+    });
+
+    // Check for new employers (last 3)
+    const recentEmployers = employerList.slice(-3);
+    recentEmployers.forEach((employer, index) => {
+      if (employer.id && !notifications.find(n => n.id === `employer-${employer.id}`)) {
+        newNotifications.push({
+          id: `employer-${employer.id}`,
+          message: `New employer joined: ${employer.company}`,
+          time: new Date(),
+          type: 'employer'
+        });
+      }
+    });
+
+    // Check for new jobs (last 3)
+    const recentJobs = jobList.slice(-3);
+    recentJobs.forEach((job, index) => {
+      if (job.id && !notifications.find(n => n.id === `job-${job.id}`)) {
+        newNotifications.push({
+          id: `job-${job.id}`,
+          message: `New job posted: ${job.title}`,
+          time: new Date(),
+          type: 'job'
+        });
+      }
+    });
+
+    // Check for new placements (last 2)
+    const recentPlacements = appData.filter((a) => a.status === "hired").slice(-2);
+    recentPlacements.forEach((placement, index) => {
+      if (placement.id && !notifications.find(n => n.id === `placement-${placement.id}`)) {
+        newNotifications.push({
+          id: `placement-${placement.id}`,
+          message: `New placement: ${placement.seekerName} hired`,
+          time: new Date(),
+          type: 'placement'
+        });
+      }
+    });
+
+    if (newNotifications.length > 0) {
+      setNotifications(prev => [...newNotifications.reverse(), ...prev].slice(0, 20));
+    }
+  }, [seekerList, employerList, jobList, appData]);
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard",    id: "dashboard" },
@@ -242,11 +370,9 @@ export default function App() {
     .toUpperCase();
 
   const handleLogin = (_user: import("firebase/auth").User, profile: { username: string; email: string }) => {
-    localStorage.setItem("jobfinder-auth", "true");
-    setAdminProfile(profile);
-    setCurrentUid(_user.uid);
+    // The auth state listener will handle profile fetching and state updates
+    // Just update the login date for display purposes
     setLoginDate(new Date());
-    setIsAuthenticated(true);
   };
 
   const handleLogout = async () => {
@@ -262,6 +388,16 @@ export default function App() {
   };
 
   if (!isAuthenticated) {
+    if (authLoading) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Loading...
+          </div>
+        </div>
+      );
+    }
     return <Login onLogin={handleLogin} />;
   }
 
@@ -778,7 +914,7 @@ export default function App() {
           {activeNav === "applications" && <ApplicationsPanel search={globalSearch} filters={activeFilters} />}
           {activeNav === "placements" && <PlacementsPanel search={globalSearch} />}
           {activeNav === "accounts" && <UserAccountsPanel search={globalSearch} adminProfile={adminProfile} onProfileChange={handleProfileSave} />}
-          {activeNav === "reports" && <ReportsPanel search={globalSearch} />}
+          {activeNav === "reports" && <ReportsPanel search={globalSearch} totalWorkers={totalWorkers} totalEmployers={totalEmployers} totalPlacements={totalPlacements} openJobs={openJobs} seekerList={seekerList} employerList={employerList} jobList={jobList} appData={appData} />}
           {activeNav === "settings" && <SettingsPanel search={globalSearch} username={adminProfile.username} email={adminProfile.email} onSave={handleProfileSave} />}
         </main>
       </div>

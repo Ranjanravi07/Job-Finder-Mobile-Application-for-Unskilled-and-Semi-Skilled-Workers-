@@ -1,5 +1,17 @@
 import { ArrowUpRight, ArrowDownRight, Users, Briefcase, CheckCircle, Activity } from "lucide-react";
 
+interface ReportsPanelProps {
+  search: string;
+  totalWorkers: number;
+  totalEmployers: number;
+  totalPlacements: number;
+  openJobs: number;
+  seekerList: any[];
+  employerList: any[];
+  jobList: any[];
+  appData: any[];
+}
+
 const monthlyStats = [
   { month: "Jan", workers: 120, employers: 18, placements: 58 },
   { month: "Feb", workers: 185, employers: 24, placements: 72 },
@@ -15,14 +27,16 @@ const monthlyStats = [
   { month: "Dec", workers: 634, employers: 91, placements: 224 },
 ];
 
-const summary = [
-  { label: "Total Workers", value: "4,218", change: "+12.4%", up: true, icon: Users, color: "text-violet-400" },
-  { label: "Total Employers", value: "312", change: "+8.7%", up: true, icon: Briefcase, color: "text-sky-400" },
-  { label: "Total Placements", value: "1,591", change: "+16.2%", up: true, icon: CheckCircle, color: "text-emerald-400" },
-  { label: "Active Jobs", value: "89", change: "-4.3%", up: false, icon: Activity, color: "text-amber-400" },
+const getSummary = (totalWorkers: number, totalEmployers: number, totalPlacements: number, openJobs: number) => [
+  { label: "Total Workers", value: totalWorkers.toLocaleString(), change: "+12.4%", up: true, icon: Users, color: "text-violet-400" },
+  { label: "Total Employers", value: totalEmployers.toLocaleString(), change: "+8.7%", up: true, icon: Briefcase, color: "text-sky-400" },
+  { label: "Total Placements", value: totalPlacements.toLocaleString(), change: "+16.2%", up: true, icon: CheckCircle, color: "text-emerald-400" },
+  { label: "Active Jobs", value: openJobs.toLocaleString(), change: "-4.3%", up: false, icon: Activity, color: "text-amber-400" },
 ];
 
-export default function ReportsPanel({ search }: { search: string }) {
+export default function ReportsPanel({ search, totalWorkers, totalEmployers, totalPlacements, openJobs }: ReportsPanelProps) {
+  const summary = getSummary(totalWorkers, totalEmployers, totalPlacements, openJobs);
+
   return (
     <div className="space-y-5">
       <div>

@@ -33,8 +33,7 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import { db } from "../../../firebase";
-import { isFirebaseConfigured, initError } from "../../../firebase";
+import { db, isFirebaseConfigured } from "../../../firebase";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Account {
@@ -96,7 +95,9 @@ export default function UserAccountsPanel({
 
   // ── Real-time listener from Firestore ──────────────────────────────────────
   useEffect(() => {
+    console.log("UserAccountsPanel: useEffect fired", { firebaseReady, db: !!db });
     if (!firebaseReady || !db) {
+      console.log("UserAccountsPanel: Firebase not ready, setting loading false");
       setLoading(false);
       return;
     }
@@ -104,10 +105,12 @@ export default function UserAccountsPanel({
     setLoading(true);
     setFetchErr(null);
 
+    console.log("UserAccountsPanel: Setting up Firestore listener for users collection");
     const q = query(collection(db, "users"), orderBy("name"));
     const unsub = onSnapshot(
       q,
       (snap) => {
+        console.log("UserAccountsPanel: Firestore snapshot received, docs:", snap.docs.length);
         const data: Account[] = snap.docs.map((d) => {
           const raw = d.data();
           return {
@@ -119,17 +122,23 @@ export default function UserAccountsPanel({
             lastLogin: raw.lastLogin ?? "Never",
           };
         });
+        console.log("UserAccountsPanel: Setting accounts:", data);
         setAccounts(data);
         setLoading(false);
       },
-      (err) => {
-        setFetchErr(err.message);
+      (err: any) => {
+        console.error("UserAccountsPanel: Firestore error:", err);
+        if (err?.code === "unavailable") {
+          setFetchErr("Firestore is unavailable. Please enable Firestore Database in your Firebase Console at: https://console.firebase.google.com/project/admin-dashboard-of-job-finder/firestore");
+        } else {
+          setFetchErr(err.message);
+        }
         setLoading(false);
       }
     );
 
     return unsub; // cleanup on unmount
-  }, [firebaseReady]);
+  }, [firebaseReady, db]);
 
   // ── Sync settings profile → matching row in Firestore ──────────────────────
   useEffect(() => {
@@ -139,7 +148,7 @@ export default function UserAccountsPanel({
       name:  adminProfile.username,
       email: adminProfile.email,
     }).catch(() => {/* silent */});
-  }, [adminProfile?.username, adminProfile?.email]);
+  }, [adminProfile?.username, adminProfile?.email, firebaseReady, db, auth?.currentUser]);
 
   // ── Filtered list for search ───────────────────────────────────────────────
   const filtered = accounts.filter((a) =>
@@ -167,20 +176,20 @@ export default function UserAccountsPanel({
     try {
       const cred = await createUserWithEmailAndPassword(auth!, email.trim(), password);
 
-      // Close dialog immediately — don't wait for Firestore write
-      resetForm();
-      setOpen(false);
-      setAdding(false);
-
-      // Write to Firestore in the background
-      setDoc(doc(db!, "users", cred.user.uid), {
+      // Write to Firestore before closing dialog to ensure data persistence
+      await setDoc(doc(db!, "users", cred.user.uid), {
         name:      name.trim(),
         email:     email.trim(),
         role,
         status,
         lastLogin: "Never",
         createdAt: serverTimestamp(),
-      }).catch((err) => console.error("Firestore write failed:", err));
+      });
+
+      // Close dialog after successful write
+      resetForm();
+      setOpen(false);
+      setAdding(false);
 
     } catch (err: any) {
       const code: string = err?.code ?? "";
@@ -264,7 +273,6 @@ export default function UserAccountsPanel({
       {!firebaseReady && (
         <p className="text-xs text-amber-400 bg-amber-500/10 rounded-md px-3 py-2">
           Firebase is not configured. Configure VITE_FIREBASE_* env vars to enable cloud sync.
-          {initError && <span className="block mt-1 text-rose-300">{initError}</span>}
         </p>
       )}
 
