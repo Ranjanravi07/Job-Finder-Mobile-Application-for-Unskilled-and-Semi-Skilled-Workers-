@@ -80,6 +80,7 @@ export default function UserAccountsPanel({
   const [showPassword, setShowPassword] = useState(false);
   const [addErr,       setAddErr]      = useState("");
   const [adding,       setAdding]      = useState(false);
+  const [nameTouched,  setNameTouched] = useState(false);
 
   // ── Edit dialog ──
   const [selectedUser,     setSelectedUser]     = useState<Account | null>(null);
@@ -140,16 +141,6 @@ export default function UserAccountsPanel({
     return unsub; // cleanup on unmount
   }, [firebaseReady, db]);
 
-  // ── Sync settings profile → matching row in Firestore ──────────────────────
-  useEffect(() => {
-    if (!adminProfile || !firebaseReady || !db || !auth?.currentUser) return;
-    const uid = auth.currentUser.uid;
-    updateDoc(doc(db, "users", uid), {
-      name:  adminProfile.username,
-      email: adminProfile.email,
-    }).catch(() => {/* silent */});
-  }, [adminProfile?.username, adminProfile?.email, firebaseReady, db, auth?.currentUser]);
-
   // ── Filtered list for search ───────────────────────────────────────────────
   const filtered = accounts.filter((a) =>
     a.name.toLowerCase().includes(search.toLowerCase())  ||
@@ -160,7 +151,7 @@ export default function UserAccountsPanel({
   // ── Reset add form ─────────────────────────────────────────────────────────
   const resetForm = () => {
     setName(""); setEmail(""); setRole("Staff"); setStatus("active");
-    setPassword(""); setShowPassword(false); setAddErr("");
+    setPassword(""); setShowPassword(false); setAddErr(""); setNameTouched(false);
   };
 
   // ── Add user ───────────────────────────────────────────────────────────────
@@ -296,13 +287,20 @@ export default function UserAccountsPanel({
           <div className="space-y-4">
             <div>
               <label className="text-xs font-medium text-foreground block mb-1.5">Full Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setNameTouched(true); }}
                 className="w-full px-3 py-2 rounded-md bg-muted border border-border text-foreground text-sm outline-none focus:border-primary transition-colors"
                 placeholder="e.g. Juan Admin" />
             </div>
             <div>
               <label className="text-xs font-medium text-foreground block mb-1.5">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              <input type="email" value={email} onChange={(e) => {
+                const val = e.target.value;
+                setEmail(val);
+                if (!nameTouched) {
+                  const localPart = val.split("@")[0];
+                  setName(localPart || "");
+                }
+              }}
                 className="w-full px-3 py-2 rounded-md bg-muted border border-border text-foreground text-sm outline-none focus:border-primary transition-colors"
                 placeholder="e.g. juan@jobfinder.ph" />
             </div>

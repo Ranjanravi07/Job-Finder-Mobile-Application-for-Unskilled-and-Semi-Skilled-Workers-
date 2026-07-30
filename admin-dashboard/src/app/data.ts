@@ -53,6 +53,16 @@ export interface Job {
   status: "open" | "closed" | "paused";
 }
 
+export interface Placement {
+  id: string;
+  worker: string;
+  employer: string;
+  role: string;
+  location: string;
+  date: string;
+  salary: string;
+}
+
 // ─── Job Seekers ───────────────────────────────────────────────────────────────
 export const seekers: Seeker[] = [
   { id: "W-1042", name: "Ramon dela Cruz",   skill: "Construction",   location: "Manila",       rating: 4.8, status: "pending", phone: "+63 912 345 6789", govIdNumber: "PSN-2024-00142", govIdImage: "", profilePhoto: "" },
@@ -85,6 +95,36 @@ export const applications: Application[] = [
   { id: "APP-1037", worker: "Lourdes Magno",      skill: "Domestic Help",  employer: "Cruz Family",         location: "Marikina",     status: "pending",  date: "Dec 26, 2024" },
   { id: "APP-1036", worker: "Arturo Villanueva",  skill: "Construction",   employer: "MetroBuild Inc.",     location: "Taguig",       status: "hired",    date: "Dec 25, 2024" },
 ];
+
+export function derivePlacements(apps: Application[]): Placement[] {
+  const roleMap: Record<string, string> = {
+    "Construction": "Construction Helper",
+    "Domestic Help": "Domestic Helper",
+    "Factory Work": "Factory Sorter",
+    "Security Guard": "Security Guard",
+    "Delivery Rider": "Delivery Rider",
+  };
+  const salaryMap: Record<string, string> = {
+    "Construction": "₱450/day",
+    "Domestic Help": "₱8,000/mo",
+    "Factory Work": "₱420/day",
+    "Security Guard": "₱15,000/mo",
+    "Delivery Rider": "₱500/day",
+  };
+  return apps
+    .filter((a) => a.status === "hired")
+    .map((a) => ({
+      id: `PL-${a.id.replace("APP-", "")}`,
+      worker: a.worker,
+      employer: a.employer,
+      role: roleMap[a.skill] || a.skill,
+      location: a.location,
+      date: a.date,
+      salary: salaryMap[a.skill] || "—",
+    }));
+}
+
+export const placements: Placement[] = derivePlacements(applications);
 
 // ─── Job Listings ──────────────────────────────────────────────────────────────
 export const jobs: Job[] = [

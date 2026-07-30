@@ -1,14 +1,7 @@
 import { CheckCircle, MapPin, Clock } from "lucide-react";
+import type { Placement } from "../../data";
 
-const placements = [
-  { id: "PL-501", worker: "Ramon dela Cruz", employer: "SunBuild Corp.", role: "Construction Helper", location: "Manila", date: "Dec 28, 2024", salary: "₱450/day" },
-  { id: "PL-500", worker: "Eduardo Bautista", employer: "FiliTex Mills", role: "Factory Sorter", location: "Caloocan", date: "Dec 27, 2024", salary: "₱420/day" },
-  { id: "PL-499", worker: "Benjamin Lim", employer: "QuickShip PH", role: "Delivery Rider", location: "Pasig", date: "Dec 26, 2024", salary: "₱500/day" },
-  { id: "PL-498", worker: "Arturo Villanueva", employer: "MetroBuild Inc.", role: "Construction Helper", location: "Taguig", date: "Dec 25, 2024", salary: "₱550/day" },
-  { id: "PL-497", worker: "Maria Santos", employer: "Reyes Household", role: "Domestic Helper", location: "Quezon City", date: "Dec 24, 2024", salary: "₱8,000/mo" },
-];
-
-export default function PlacementsPanel({ search }: { search: string }) {
+export default function PlacementsPanel({ search, placements }: { search: string; placements: Placement[] }) {
   const filtered = placements.filter((p) =>
     p.worker.toLowerCase().includes(search.toLowerCase()) ||
     p.employer.toLowerCase().includes(search.toLowerCase()) ||

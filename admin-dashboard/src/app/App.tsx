@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { auth, db } from "../firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChevronDown,
+  ChevronUp,
   Building2,
   Activity,
   Menu,
@@ -104,24 +105,20 @@ import {
   registrationData,
   placementData,
   categoryData,
-  applications as appData,
+  applications as appDataInitial,
   seekers as seekerData,
   employers as employerData,
   jobs as jobData,
+  placements as placementsInitial,
+  derivePlacements,
   type Seeker,
   type Employer,
   type Job,
+  type Application,
+  type Placement,
 } from "./data";
 
-const recentApplications = appData;
-
-const activityItems = [
-  { text: "New employer SunBuild Corp. registered", time: "5 min ago", type: "employer" },
-  { text: "Ramon dela Cruz was successfully hired", time: "18 min ago", type: "placement" },
-  { text: "12 new worker profiles approved", time: "1 hr ago", type: "worker" },
-  { text: "Job post 'Factory Sorter' flagged for review", time: "2 hr ago", type: "flag" },
-  { text: "Batch verification completed — 34 IDs", time: "3 hr ago", type: "system" },
-];
+const recentApplications = appDataInitial;
 
 const statusStyle: Record<string, string> = {
   hired: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
@@ -164,8 +161,28 @@ export default function App() {
   const [currentUid, setCurrentUid] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(defaultFilters);
   const [authLoading, setAuthLoading] = useState(true);
-  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' }>>([]);
+  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' }>>([
+    { id: "init-1", message: "Welcome to Job Finder Admin", time: new Date(), type: "worker" },
+    { id: "init-2", message: "New employer SunBuild Corp. registered", time: new Date(Date.now() - 300000), type: "employer" },
+    { id: "init-3", message: "12 new worker profiles approved", time: new Date(Date.now() - 3600000), type: "worker" },
+  ]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const seenIds = useRef<Set<string>>(new Set(["init-1", "init-2", "init-3"]));
+
+  const scrollNotifications = (direction: "up" | "down") => {
+    if (!notificationsRef.current) return;
+    const scrollAmount = 120;
+    notificationsRef.current.scrollBy({
+      top: direction === "down" ? scrollAmount : -scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+    seenIds.current.clear();
+  };
 
   // ─── Firebase auth state listener ─────────────────────────────────────────────
   useEffect(() => {
@@ -234,23 +251,47 @@ export default function App() {
   const [seekerList,   setSeekerList]   = useState<Seeker[]>(seekerData);
   const [employerList, setEmployerList] = useState<Employer[]>(employerData);
   const [jobList,      setJobList]      = useState<Job[]>(jobData);
+  const [appData,      setAppData]      = useState<Application[]>(appDataInitial);
+  const [placements,   setPlacements]   = useState<Placement[]>(placementsInitial);
+
+  // Derive placements from hired applications
+  useEffect(() => {
+    setPlacements(derivePlacements(appData));
+  }, [appData]);
 
   // Derived counts — recomputed on every render when lists change
   const totalWorkers    = seekerList.length;
   const totalEmployers  = employerList.length;
   const openJobs        = jobList.filter((j) => j.status === "open").length;
-  const totalPlacements = appData.filter((a) => a.status === "hired").length;
+  const totalPlacements = placements.length;
+
+  // ─── Live activity log derived from notifications ──────────────────────────
+  const [activityLog, setActivityLog] = useState<Array<{ text: string; time: string; type: string }>>([]);
+  useEffect(() => {
+    const now = Date.now();
+    setActivityLog(
+      notifications.slice(0, 10).map((n) => {
+        const diff = now - n.time.getTime();
+        const mins = Math.floor(diff / 60000);
+        const hrs = Math.floor(diff / 3600000);
+        const timeStr = mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : hrs < 24 ? `${hrs} hr ago` : `${Math.floor(hrs / 24)} days ago`;
+        return { text: n.message, time: timeStr, type: n.type };
+      })
+    );
+  }, [notifications]);
 
   // ─── Notification logic based on activity ─────────────────────────────────────
   useEffect(() => {
     const newNotifications: Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' }> = [];
-    
+
     // Check for new workers (last 5)
     const recentWorkers = seekerList.slice(-5);
-    recentWorkers.forEach((worker, index) => {
-      if (worker.id && !notifications.find(n => n.id === `worker-${worker.id}`)) {
+    recentWorkers.forEach((worker) => {
+      const id = `worker-${worker.id}`;
+      if (worker.id && !seenIds.current.has(id)) {
+        seenIds.current.add(id);
         newNotifications.push({
-          id: `worker-${worker.id}`,
+          id,
           message: `New worker registered: ${worker.name}`,
           time: new Date(),
           type: 'worker'
@@ -260,11 +301,13 @@ export default function App() {
 
     // Check for new employers (last 3)
     const recentEmployers = employerList.slice(-3);
-    recentEmployers.forEach((employer, index) => {
-      if (employer.id && !notifications.find(n => n.id === `employer-${employer.id}`)) {
+    recentEmployers.forEach((employer) => {
+      const id = `employer-${employer.id}`;
+      if (employer.id && !seenIds.current.has(id)) {
+        seenIds.current.add(id);
         newNotifications.push({
-          id: `employer-${employer.id}`,
-          message: `New employer joined: ${employer.company}`,
+          id,
+          message: `New employer joined: ${employer.name}`,
           time: new Date(),
           type: 'employer'
         });
@@ -273,10 +316,12 @@ export default function App() {
 
     // Check for new jobs (last 3)
     const recentJobs = jobList.slice(-3);
-    recentJobs.forEach((job, index) => {
-      if (job.id && !notifications.find(n => n.id === `job-${job.id}`)) {
+    recentJobs.forEach((job) => {
+      const id = `job-${job.id}`;
+      if (job.id && !seenIds.current.has(id)) {
+        seenIds.current.add(id);
         newNotifications.push({
-          id: `job-${job.id}`,
+          id,
           message: `New job posted: ${job.title}`,
           time: new Date(),
           type: 'job'
@@ -286,11 +331,13 @@ export default function App() {
 
     // Check for new placements (last 2)
     const recentPlacements = appData.filter((a) => a.status === "hired").slice(-2);
-    recentPlacements.forEach((placement, index) => {
-      if (placement.id && !notifications.find(n => n.id === `placement-${placement.id}`)) {
+    recentPlacements.forEach((placement) => {
+      const id = `placement-${placement.id}`;
+      if (placement.id && !seenIds.current.has(id)) {
+        seenIds.current.add(id);
         newNotifications.push({
-          id: `placement-${placement.id}`,
-          message: `New placement: ${placement.seekerName} hired`,
+          id,
+          message: `New placement: ${(placement as any).worker || "Someone"} hired`,
           time: new Date(),
           type: 'placement'
         });
@@ -597,10 +644,84 @@ export default function App() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <button className="relative w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Bell className="w-4 h-4" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                )}
+              </button>
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Notifications</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{notifications.length} unread</p>
+                      </div>
+                      {notifications.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => scrollNotifications("up")}
+                            className="w-6 h-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            title="Scroll up"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => scrollNotifications("down")}
+                            className="w-6 h-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            title="Scroll down"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div ref={notificationsRef} className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-xs text-muted-foreground">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifications.map((n) => {
+                          const dotColor =
+                            n.type === "worker" ? "bg-sky-400" :
+                            n.type === "employer" ? "bg-violet-400" :
+                            n.type === "placement" ? "bg-emerald-400" :
+                            "bg-amber-400";
+                          return (
+                            <div key={n.id} className="flex gap-3 px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border last:border-0">
+                              <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${dotColor}`} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-foreground leading-relaxed">{n.message}</p>
+                                <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "'DM Mono', monospace" }}>
+                                  {n.time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                    {notifications.length > 0 && (
+                      <div className="px-4 py-2 border-t border-border">
+                        <button
+                          onClick={clearNotifications}
+                          className="w-full text-xs text-center text-muted-foreground hover:text-foreground py-1.5 rounded-md hover:bg-muted transition-colors"
+                        >
+                          Clear all notifications
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors select-none">
@@ -887,9 +1008,12 @@ export default function App() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {activityItems.map((item, i) => (
+                  {activityLog.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">No recent activity</p>
+                  ) : (
+                    activityLog.map((item, i) => (
                     <div key={i} className="flex gap-3 items-start">
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${activityDot[item.type]}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${activityDot[item.type] || "bg-slate-400"}`} />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-foreground leading-relaxed">{item.text}</p>
                         <p
@@ -901,7 +1025,8 @@ export default function App() {
                         </p>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  )}
                 </div>
               </div>
             </div>
@@ -911,8 +1036,8 @@ export default function App() {
           {activeNav === "seekers" && <JobSeekersPanel search={globalSearch} filters={activeFilters} seekers={seekerList} setSeekers={setSeekerList} />}
           {activeNav === "employers" && <EmployersPanel search={globalSearch} filters={activeFilters} employers={employerList} setEmployers={setEmployerList} />}
           {activeNav === "jobs" && <JobListingsPanel search={globalSearch} filters={activeFilters} jobs={jobList} setJobs={setJobList} />}
-          {activeNav === "applications" && <ApplicationsPanel search={globalSearch} filters={activeFilters} />}
-          {activeNav === "placements" && <PlacementsPanel search={globalSearch} />}
+          {activeNav === "applications" && <ApplicationsPanel search={globalSearch} filters={activeFilters} appData={appData} setAppData={setAppData} />}
+          {activeNav === "placements" && <PlacementsPanel search={globalSearch} placements={placements} />}
           {activeNav === "accounts" && <UserAccountsPanel search={globalSearch} adminProfile={adminProfile} onProfileChange={handleProfileSave} />}
           {activeNav === "reports" && <ReportsPanel search={globalSearch} totalWorkers={totalWorkers} totalEmployers={totalEmployers} totalPlacements={totalPlacements} openJobs={openJobs} seekerList={seekerList} employerList={employerList} jobList={jobList} appData={appData} />}
           {activeNav === "settings" && <SettingsPanel search={globalSearch} username={adminProfile.username} email={adminProfile.email} onSave={handleProfileSave} />}
