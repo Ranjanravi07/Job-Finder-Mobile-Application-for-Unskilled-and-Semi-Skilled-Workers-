@@ -129,8 +129,20 @@ export default function MobileSimulator() {
   // Separate front/back file names for citizenship uploads
   const [workerSetupGovIdFrontFile, setWorkerSetupGovIdFrontFile] = useState<string>('');
   const [workerSetupGovIdBackFile, setWorkerSetupGovIdBackFile] = useState<string>('');
+  // Separate file uploads for different ID types
+  const [workerSetupNidFile, setWorkerSetupNidFile] = useState<string>('');
+  const [workerSetupLicenseFile, setWorkerSetupLicenseFile] = useState<string>('');
+  const [workerSetupPanFile, setWorkerSetupPanFile] = useState<string>('');
   const [empSetupGovIdFrontFile, setEmpSetupGovIdFrontFile] = useState<string>('');
   const [empSetupGovIdBackFile, setEmpSetupGovIdBackFile] = useState<string>('');
+  // Separate file uploads for employer different ID types
+  const [empSetupNidFile, setEmpSetupNidFile] = useState<string>('');
+  const [empSetupLicenseFile, setEmpSetupLicenseFile] = useState<string>('');
+  const [empSetupPanFile, setEmpSetupPanFile] = useState<string>('');
+
+  // Refs for profile photo file inputs
+  const workerSetupPhotoInputRef = useRef<HTMLInputElement>(null);
+  const empSetupPhotoInputRef = useRef<HTMLInputElement>(null);
 
   // Employer Profile Edit states
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
@@ -868,11 +880,6 @@ export default function MobileSimulator() {
           <div className="flex-1 flex flex-col p-5 bg-slate-50">
             <div className="space-y-3">
               <h1 className="text-xl font-black text-slate-900">{lang === 'ne' ? 'सजिलो प्रोफाइल निर्माण' : 'Simple Profile Setup'}</h1>
-              <p className="text-xs text-slate-500">
-                {lang === 'ne' 
-                  ? 'अक्षर चिन्न गाह्रो छ भने माइक्रोफोन थिचेर बोल्नुहोस्। एआईले आफै फारम भरिदिनेछ!' 
-                  : 'Struggle with typing? Tap the microphone to speak your profile! Gemini AI will auto-fill everything.'}
-              </p>
             </div>
 
             {/* Profile Photo Selector / Upload for Worker */}
@@ -881,15 +888,26 @@ export default function MobileSimulator() {
                 {lang === 'ne' ? 'प्रोफाइल फोटो (कामदार)' : 'Profile Photo (Worker)'}
               </label>
               <div className="relative">
-                <img
-                  src={workerSetupPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80'}
-                  alt="Profile preview"
-                  referrerPolicy="no-referrer"
-                  className="w-16 h-16 rounded-full border-2 border-indigo-500 object-cover bg-slate-100 shadow-sm"
-                />
-                <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full border border-white shadow-sm">
-                  <Plus className="h-3.5 w-3.5" />
-                </div>
+                {workerSetupPhoto ? (
+                  <>
+                    <img
+                      src={workerSetupPhoto}
+                      alt="Profile preview"
+                      referrerPolicy="no-referrer"
+                      className="w-16 h-16 rounded-full border-2 border-indigo-500 object-cover bg-slate-100 shadow-sm"
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full border border-white shadow-sm" onClick={() => workerSetupPhotoInputRef.current?.click()}>
+                      <Plus className="h-3.5 w-3.5" />
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-100 cursor-pointer"
+                    onClick={() => workerSetupPhotoInputRef.current?.click()}
+                  >
+                    <User className="h-8 w-8 text-slate-400" />
+                  </div>
+                )}
               </div>
               <div className="space-y-1 w-full">
                 <p className="text-[9px] text-slate-400 font-bold">{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस् (एक मात्र)' : 'Upload a single profile photo'}</p>
@@ -900,6 +918,7 @@ export default function MobileSimulator() {
                       type="file"
                       accept="image/*"
                       className="hidden"
+                      ref={workerSetupPhotoInputRef}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) setWorkerSetupPhoto(URL.createObjectURL(file));
@@ -910,143 +929,9 @@ export default function MobileSimulator() {
               </div>
             </div>
 
-            {/* Government ID Upload for Worker */}
-            <div className="bg-slate-100/80 p-3.5 rounded-2xl border border-slate-200 space-y-2.5 mt-3">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-extrabold text-indigo-950 uppercase tracking-wider block">🛡️ {lang === 'ne' ? 'सरकारी परिचय-पत्र' : 'Government ID'}</label>
-                <span className="text-[8px] bg-indigo-600/10 text-indigo-700 px-2 py-0.5 rounded font-black">REQUIRED</span>
-              </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={workerSetupGovIdType}
-                  onChange={(e) => setWorkerSetupGovIdType(e.target.value)}
-                  className="bg-white px-2.5 py-2 rounded-xl border border-slate-200 text-[11px] font-bold focus:outline-none focus:border-indigo-600"
-                >
-                  <option value="citizenship">{lang === 'ne' ? 'नागरिकता प्रमाण-पत्र' : 'Citizenship Card'}</option>
-                  <option value="nid">{lang === 'ne' ? 'राष्ट्रिय परिचयपत्र (NID)' : 'National ID (NID)'}</option>
-                  <option value="license">{lang === 'ne' ? 'सवारी चालक अनुमति' : 'Driving License'}</option>
-                  <option value="pan">{lang === 'ne' ? 'प्यान/भ्याट (PAN Card)' : 'PAN / VAT Card'}</option>
-                </select>
 
-                <input
-                  type="text"
-                  value={workerSetupGovIdNum}
-                  onChange={(e) => setWorkerSetupGovIdNum(e.target.value)}
-                  placeholder={lang === 'ne' ? 'आईडी नम्बर' : 'ID Number (e.g., 55-01-78)'}
-                  className="bg-white px-3 py-2 rounded-xl border border-slate-200 text-[11px] font-bold focus:outline-none focus:border-indigo-600"
-                />
-              </div>
 
-              <div className="space-y-3">
-                {workerSetupGovIdType === 'citizenship' ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
-                      <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
-                      <label htmlFor="worker-govid-front" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
-                        <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload front'}</span>
-                      </label>
-                      <input
-                        id="worker-govid-front"
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="sr-only"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const url = URL.createObjectURL(file);
-                            setWorkerSetupGovIdFrontFile(url);
-                            setWorkerSetupGovIdFiles(prev => {
-                              const back = workerSetupGovIdBackFile ? [workerSetupGovIdBackFile] : [];
-                              return [url, ...back].filter(Boolean);
-                            });
-                          }
-                        }}
-                      />
-                      {workerSetupGovIdFrontFile && (
-                        <img src={workerSetupGovIdFrontFile} alt="id front" className="mt-2 w-20 h-12 object-cover rounded-md border" />
-                      )}
-                    </div>
-
-                    <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
-                      <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
-                      <label htmlFor="worker-govid-back" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
-                        <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload back'}</span>
-                      </label>
-                      <input
-                        id="worker-govid-back"
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="sr-only"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const url = URL.createObjectURL(file);
-                            setWorkerSetupGovIdBackFile(url);
-                            setWorkerSetupGovIdFiles(prev => {
-                              const front = workerSetupGovIdFrontFile ? [workerSetupGovIdFrontFile] : [];
-                              return [...front, url].filter(Boolean);
-                            });
-                          }
-                        }}
-                      />
-                      {workerSetupGovIdBackFile && (
-                        <img src={workerSetupGovIdBackFile} alt="id back" className="mt-2 w-20 h-12 object-cover rounded-md border" />
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const url = URL.createObjectURL(file);
-                          setWorkerSetupGovIdFiles([url]);
-                        }
-                      }}
-                    />
-                    <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
-                    {workerSetupGovIdFiles && workerSetupGovIdFiles.length > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <Check className="h-3 w-3 text-emerald-500" />
-                        <img src={workerSetupGovIdFiles[0]} alt="uploaded id" className="w-20 h-12 object-cover rounded-md border" />
-                      </div>
-                    ) : (
-                      <div className="space-y-0.5">
-                        <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'परिचय-पत्रको फोटो अपलोड गर्नुहोस्' : 'Upload ID photo'}</p>
-                        <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Smart AI Voice Box */}
-            <div className="mt-4 p-4 rounded-2xl bg-slate-900 text-white relative shadow-md overflow-hidden">
-              <div className="absolute top-0 right-0 p-1 bg-gradient-to-l from-emerald-500 to-sky-500 h-1.5 w-full" />
-              <div className="flex items-start justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                    <Sparkles className="h-3.5 w-3.5 fill-emerald-400" />
-                    <span>Gemini Voice Onboarding</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400">
-                    {lang === 'ne' ? 'नेपाली वा अंग्रेजीमा बोल्नुहोस्' : 'Speak in English or Nepali'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setVoiceInputOpen(true)}
-                  className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-400 transition-colors"
-                >
-                  <Mic className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
 
             {/* Standard Profile Creation Form */}
             <form onSubmit={(e) => {
@@ -1056,8 +941,12 @@ export default function MobileSimulator() {
               const expInput = (document.getElementById('p_exp') as HTMLInputElement)?.value || 'Fresher';
               const locInput = (document.getElementById('p_loc') as HTMLInputElement)?.value || 'Balkumari, Lalitpur';
 
-              if (workerSetupGovIdType === 'citizenship' && workerSetupGovIdFiles.length < 2) {
+              if (workerSetupGovIdType === 'citizenship' && (!workerSetupGovIdFrontFile || !workerSetupGovIdBackFile)) {
                 alert(lang === 'ne' ? 'कृपया नागरिकताको अगाडि र पछाडिको फोटो अपलोड गर्नुहोस्।' : 'Please upload both front and back images of the Citizenship card.');
+                return;
+              }
+              if (workerSetupGovIdType !== 'citizenship' && workerSetupGovIdType !== 'nid' && workerSetupGovIdType !== 'license' && workerSetupGovIdType !== 'pan') {
+                alert(lang === 'ne' ? 'कृपया आईडी फोटो अपलोड गर्नुहोस्।' : 'Please upload ID photo.');
                 return;
               }
 
@@ -1132,6 +1021,177 @@ export default function MobileSimulator() {
                 </div>
               </div>
 
+              {/* Government ID Upload for Worker */}
+              <div className="bg-slate-100/80 p-3.5 rounded-2xl border border-slate-200 space-y-2.5 mt-3">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-extrabold text-indigo-950 uppercase tracking-wider block">🛡️ {lang === 'ne' ? 'सरकारी परिचय-पत्र' : 'Government ID'}</label>
+                  <span className="text-[8px] bg-indigo-600/10 text-indigo-700 px-2 py-0.5 rounded font-black">REQUIRED</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={workerSetupGovIdType}
+                    onChange={(e) => setWorkerSetupGovIdType(e.target.value)}
+                    className="bg-white px-2.5 py-2 rounded-xl border border-slate-200 text-[11px] font-bold focus:outline-none focus:border-indigo-600"
+                  >
+                    <option value="citizenship">{lang === 'ne' ? 'नागरिकता प्रमाण-पत्र' : 'Citizenship Card'}</option>
+                    <option value="nid">{lang === 'ne' ? 'राष्ट्रिय परिचयपत्र (NID)' : 'National ID (NID)'}</option>
+                    <option value="license">{lang === 'ne' ? 'सवारी चालक अनुमति' : 'Driving License'}</option>
+                    <option value="pan">{lang === 'ne' ? 'प्यान/भ्याट (PAN Card)' : 'PAN / VAT Card'}</option>
+                  </select>
+
+                  <input
+                    type="text"
+                    value={workerSetupGovIdNum}
+                    onChange={(e) => setWorkerSetupGovIdNum(e.target.value)}
+                    placeholder={lang === 'ne' ? 'आईडी नम्बर' : 'ID Number (e.g., 55-01-78)'}
+                    className="bg-white px-3 py-2 rounded-xl border border-slate-200 text-[11px] font-bold focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  {workerSetupGovIdType === 'citizenship' ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                        {workerSetupGovIdFrontFile ? (
+                          <img src={workerSetupGovIdFrontFile} alt="id front" className="w-20 h-12 object-cover rounded-md border" />
+                        ) : (
+                          <>
+                            <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
+                            <label htmlFor="worker-govid-front" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                              <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload front'}</span>
+                            </label>
+                            <input
+                              id="worker-govid-front"
+                              type="file"
+                              accept="image/*,application/pdf"
+                              className="sr-only"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const url = URL.createObjectURL(file);
+                                  setWorkerSetupGovIdFrontFile(url);
+                                }
+                              }}
+                            />
+                          </>
+                        )}
+                      </div>
+
+                      <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                        {workerSetupGovIdBackFile ? (
+                          <img src={workerSetupGovIdBackFile} alt="id back" className="w-20 h-12 object-cover rounded-md border" />
+                        ) : (
+                          <>
+                            <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
+                            <label htmlFor="worker-govid-back" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                              <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload back'}</span>
+                            </label>
+                            <input
+                              id="worker-govid-back"
+                              type="file"
+                              accept="image/*,application/pdf"
+                              className="sr-only"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const url = URL.createObjectURL(file);
+                                  setWorkerSetupGovIdBackFile(url);
+                                }
+                              }}
+                            />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {workerSetupGovIdType === 'nid' && (
+                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                          {workerSetupNidFile ? (
+                            <img src={workerSetupNidFile} alt="uploaded nid" className="w-20 h-12 object-cover rounded-md border" />
+                          ) : (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const url = URL.createObjectURL(file);
+                                    setWorkerSetupNidFile(url);
+                                  }
+                                }}
+                              />
+                              <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'NID फोटो अपलोड गर्नुहोस्' : 'Upload NID photo'}</p>
+                                <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {workerSetupGovIdType === 'license' && (
+                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                          {workerSetupLicenseFile ? (
+                            <img src={workerSetupLicenseFile} alt="uploaded license" className="w-20 h-12 object-cover rounded-md border" />
+                          ) : (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const url = URL.createObjectURL(file);
+                                    setWorkerSetupLicenseFile(url);
+                                  }
+                                }}
+                              />
+                              <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'ड्राइभिङ लाइसेन्स फोटो अपलोड गर्नुहोस्' : 'Upload License photo'}</p>
+                                <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {workerSetupGovIdType === 'pan' && (
+                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                          {workerSetupPanFile ? (
+                            <img src={workerSetupPanFile} alt="uploaded pan" className="w-20 h-12 object-cover rounded-md border" />
+                          ) : (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const url = URL.createObjectURL(file);
+                                    setWorkerSetupPanFile(url);
+                                  }
+                                }}
+                              />
+                              <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'PAN/VAT फोटो अपलोड गर्नुहोस्' : 'Upload PAN/VAT photo'}</p>
+                                <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
               {/* Short bio removed from worker creation form */}
 
               {/* Submit */}
@@ -1180,8 +1240,20 @@ export default function MobileSimulator() {
                         alert(lang === 'ne' ? 'कृपया सरकारी परिचय-पत्र नम्बर हाल्नुहोस्।' : 'Please enter your Government ID number.');
                         return;
                       }
-                      if (empSetupGovIdType === 'citizenship' && empSetupGovIdFiles.length < 2) {
+                      if (empSetupGovIdType === 'citizenship' && (!empSetupGovIdFrontFile || !empSetupGovIdBackFile)) {
                         alert(lang === 'ne' ? 'कृपया नागरिकताको अगाडि र पछाडिको फोटो अपलोड गर्नुहोस्।' : 'Please upload both front and back images of the Citizenship card.');
+                        return;
+                      }
+                      if (empSetupGovIdType === 'nid' && !empSetupNidFile) {
+                        alert(lang === 'ne' ? 'कृपया NID फोटो अपलोड गर्नुहोस्।' : 'Please upload NID photo.');
+                        return;
+                      }
+                      if (empSetupGovIdType === 'license' && !empSetupLicenseFile) {
+                        alert(lang === 'ne' ? 'कृपया ड्राइभिङ लाइसेन्स फोटो अपलोड गर्नुहोस्।' : 'Please upload Driving License photo.');
+                        return;
+                      }
+                      if (empSetupGovIdType === 'pan' && !empSetupPanFile) {
+                        alert(lang === 'ne' ? 'कृपया PAN/VAT फोटो अपलोड गर्नुहोस्।' : 'Please upload PAN/VAT photo.');
                         return;
                       }
                   handleCreateEmployerProfile({
@@ -1206,15 +1278,26 @@ export default function MobileSimulator() {
                   </label>
                   
                   <div className="relative">
-                    <img
-                      src={empSetupPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80'}
-                      alt="Profile preview"
-                      referrerPolicy="no-referrer"
-                      className="w-16 h-16 rounded-full border-2 border-indigo-500 object-cover bg-slate-100 shadow-sm"
-                    />
-                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full border border-white shadow-sm">
-                      <Plus className="h-3.5 w-3.5" />
-                    </div>
+                    {empSetupPhoto ? (
+                      <>
+                        <img
+                          src={empSetupPhoto}
+                          alt="Profile preview"
+                          referrerPolicy="no-referrer"
+                          className="w-16 h-16 rounded-full border-2 border-indigo-500 object-cover bg-slate-100 shadow-sm"
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full border border-white shadow-sm" onClick={() => empSetupPhotoInputRef.current?.click()}>
+                          <Plus className="h-3.5 w-3.5" />
+                        </div>
+                      </>
+                    ) : (
+                      <div
+                        className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-100 cursor-pointer"
+                        onClick={() => empSetupPhotoInputRef.current?.click()}
+                      >
+                        <User className="h-8 w-8 text-slate-400" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Preset quick avatars or file uploader */}
@@ -1227,6 +1310,7 @@ export default function MobileSimulator() {
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          ref={empSetupPhotoInputRef}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -1355,86 +1439,141 @@ export default function MobileSimulator() {
                       {empSetupGovIdType === 'citizenship' ? (
                         <div className="grid grid-cols-2 gap-2">
                           <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
-                            <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
-                            <label htmlFor="emp-govid-front" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
-                              <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload front'}</span>
-                            </label>
-                            <input
-                              id="emp-govid-front"
-                              type="file"
-                              accept="image/*,application/pdf"
-                              className="sr-only"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const url = URL.createObjectURL(file);
-                                  setEmpSetupGovIdFrontFile(url);
-                                  setEmpSetupGovIdFiles(prev => {
-                                    const back = empSetupGovIdBackFile ? [empSetupGovIdBackFile] : [];
-                                    return [url, ...back].filter(Boolean);
-                                  });
-                                }
-                              }}
-                            />
-                            {empSetupGovIdFrontFile && (
-                              <img src={empSetupGovIdFrontFile} alt="emp id front" className="mt-2 w-20 h-12 object-cover rounded-md border" />
+                            {empSetupGovIdFrontFile ? (
+                              <img src={empSetupGovIdFrontFile} alt="emp id front" className="w-20 h-12 object-cover rounded-md border" />
+                            ) : (
+                              <>
+                                <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
+                                <label htmlFor="emp-govid-front" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                                  <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload front'}</span>
+                                </label>
+                                <input
+                                  id="emp-govid-front"
+                                  type="file"
+                                  accept="image/*,application/pdf"
+                                  className="sr-only"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const url = URL.createObjectURL(file);
+                                      setEmpSetupGovIdFrontFile(url);
+                                    }
+                                  }}
+                                />
+                              </>
                             )}
                           </div>
 
                           <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
-                            <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
-                            <label htmlFor="emp-govid-back" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
-                              <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload back'}</span>
-                            </label>
-                            <input
-                              id="emp-govid-back"
-                              type="file"
-                              accept="image/*,application/pdf"
-                              className="sr-only"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const url = URL.createObjectURL(file);
-                                  setEmpSetupGovIdBackFile(url);
-                                  setEmpSetupGovIdFiles(prev => {
-                                    const front = empSetupGovIdFrontFile ? [empSetupGovIdFrontFile] : [];
-                                    return [...front, url].filter(Boolean);
-                                  });
-                                }
-                              }}
-                            />
-                            {empSetupGovIdBackFile && (
-                              <img src={empSetupGovIdBackFile} alt="emp id back" className="mt-2 w-20 h-12 object-cover rounded-md border" />
+                            {empSetupGovIdBackFile ? (
+                              <img src={empSetupGovIdBackFile} alt="emp id back" className="w-20 h-12 object-cover rounded-md border" />
+                            ) : (
+                              <>
+                                <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
+                                <label htmlFor="emp-govid-back" className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer hover:bg-slate-100 text-[11px] font-bold">
+                                  <span>{lang === 'ne' ? 'फाइल छान्नुहोस्' : 'Upload back'}</span>
+                                </label>
+                                <input
+                                  id="emp-govid-back"
+                                  type="file"
+                                  accept="image/*,application/pdf"
+                                  className="sr-only"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const url = URL.createObjectURL(file);
+                                      setEmpSetupGovIdBackFile(url);
+                                    }
+                                  }}
+                                />
+                              </>
                             )}
                           </div>
                         </div>
                       ) : (
-                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
-                          <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            className="absolute inset-0 opacity-0 cursor-pointer"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const url = URL.createObjectURL(file);
-                                setEmpSetupGovIdFiles([url]);
-                              }
-                            }}
-                          />
-                          <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
-                          {empSetupGovIdFiles && empSetupGovIdFiles.length > 0 ? (
-                            <div className="flex items-center gap-2">
-                              <Check className="h-3 w-3 text-emerald-500" />
-                              <img src={empSetupGovIdFiles[0]} alt="uploaded id" className="w-20 h-12 object-cover rounded-md border" />
-                            </div>
-                          ) : (
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'परिचय-पत्रको फोटो अपलोड गर्नुहोस्' : 'Upload ID photo'}</p>
-                              <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                        <>
+                          {empSetupGovIdType === 'nid' && (
+                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                              {empSetupNidFile ? (
+                                <img src={empSetupNidFile} alt="uploaded nid" className="w-20 h-12 object-cover rounded-md border" />
+                              ) : (
+                                <>
+                                  <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        setEmpSetupNidFile(url);
+                                      }
+                                    }}
+                                  />
+                                  <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                                  <div className="space-y-0.5">
+                                    <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'NID फोटो अपलोड गर्नुहोस्' : 'Upload NID photo'}</p>
+                                    <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           )}
-                        </div>
+                          {empSetupGovIdType === 'license' && (
+                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                              {empSetupLicenseFile ? (
+                                <img src={empSetupLicenseFile} alt="uploaded license" className="w-20 h-12 object-cover rounded-md border" />
+                              ) : (
+                                <>
+                                  <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        setEmpSetupLicenseFile(url);
+                                      }
+                                    }}
+                                  />
+                                  <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                                  <div className="space-y-0.5">
+                                    <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'ड्राइभिङ लाइसेन्स फोटो अपलोड गर्नुहोस्' : 'Upload License photo'}</p>
+                                    <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                          {empSetupGovIdType === 'pan' && (
+                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                              {empSetupPanFile ? (
+                                <img src={empSetupPanFile} alt="uploaded pan" className="w-20 h-12 object-cover rounded-md border" />
+                              ) : (
+                                <>
+                                  <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        setEmpSetupPanFile(url);
+                                      }
+                                    }}
+                                  />
+                                  <ClipboardList className="h-5 w-5 text-slate-400 mb-1" />
+                                  <div className="space-y-0.5">
+                                    <p className="text-[10px] text-slate-700 font-bold">{lang === 'ne' ? 'PAN/VAT फोटो अपलोड गर्नुहोस्' : 'Upload PAN/VAT photo'}</p>
+                                    <p className="text-[8px] text-slate-400 font-bold">PNG, JPG, PDF up to 4MB</p>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
