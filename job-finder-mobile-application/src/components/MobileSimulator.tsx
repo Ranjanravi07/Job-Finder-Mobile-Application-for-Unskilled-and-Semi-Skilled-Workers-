@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Job, WorkerProfile, EmployerProfile, JobApplication, Language, UserRole } from '../types';
 import { SKILL_CATEGORIES, NEPAL_LOCATIONS, INITIAL_JOBS, INITIAL_WORKERS, INITIAL_APPLICATIONS, getLocalData, setLocalData } from '../data';
+import profileService from '../services/profileService';
 
 // Custom sound/speech helper
 const speakAloud = (text: string, lang: Language) => {
@@ -28,7 +29,7 @@ export default function MobileSimulator() {
   // Navigation & User session states
   const [lang, setLang] = useState<Language>(() => getLocalData('lang', 'en'));
   const [screen, setScreen] = useState<string>(() => getLocalData('sim_screen', 'language_selection'));
-  const [phone, setPhone] = useState<string>('');
+  const [phone, setPhone] = useState<string>(() => getLocalData('sim_phone', ''));
   const [otpSent, setOtpSent] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
   const [simulatorOtp, setSimulatorOtp] = useState<string>('');
@@ -271,6 +272,10 @@ export default function MobileSimulator() {
     setLocalData('sim_user_id', userId);
   }, [userId]);
 
+  useEffect(() => {
+    setLocalData('sim_phone', phone);
+  }, [phone]);
+
   // Voice recognition simulation presets to test Gemini Parsing API
   const PRESET_DICTATIONS = [
     {
@@ -418,14 +423,11 @@ export default function MobileSimulator() {
     setSpeechText('');
   };
 
-  const handleUpdateWorkerProfile = (updatedData: Partial<WorkerProfile>) => {
+  const handleUpdateWorkerProfile = (updatedData: Partial<WorkerProfile>, profileId?: string) => {
     setWorkers(prev => prev.map(w => {
-      const currentActivePhone = phone || '9845551122';
-      if (w.phone === currentActivePhone || w.id === userId) {
-        return {
-          ...w,
-          ...updatedData
-        };
+      const targetId = profileId || (workers.find(x => x.phone === phone) || workers[0])?.id;
+      if (w.id === targetId) {
+        return { ...w, ...updatedData };
       }
       return w;
     }));
@@ -451,18 +453,11 @@ export default function MobileSimulator() {
     setScreen('employer_home');
   };
 
-  const handleUpdateEmployerProfile = (updatedData: Partial<EmployerProfile>) => {
+  const handleUpdateEmployerProfile = (updatedData: Partial<EmployerProfile>, profileId?: string) => {
     setEmployers(prev => prev.map(emp => {
-      // Find by matching phone (or fallback/id)
-      const currentActivePhone = phone || '9851044321';
-      const targetPhone = emp.phone;
-      if (targetPhone === currentActivePhone || emp.id === 'emp-1' || emp.phone === phone) {
-        return {
-          ...emp,
-          ...updatedData,
-          // maintain isVerified if it was verified, or force verified
-          isVerified: true
-        };
+      const targetId = profileId || (employers.find(e => e.phone === phone) || employers[0])?.id;
+      if (emp.id === targetId) {
+        return { ...emp, ...updatedData, isVerified: true };
       }
       return emp;
     }));
@@ -882,24 +877,44 @@ export default function MobileSimulator() {
               <h1 className="text-xl font-black text-slate-900">{lang === 'ne' ? 'सजिलो प्रोफाइल निर्माण' : 'Simple Profile Setup'}</h1>
             </div>
 
-            {/* Profile Photo Selector / Upload for Worker */}
+            {/* Profile Photo Selector / Upload for Worker - with CRUD */}
             <div className="bg-white p-3.5 rounded-2xl border border-slate-150 shadow-sm flex flex-col items-center text-center space-y-2 mt-3">
               <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                 {lang === 'ne' ? 'प्रोफाइल फोटो (कामदार)' : 'Profile Photo (Worker)'}
               </label>
-              <div className="relative">
+              <div className="relative group">
                 {workerSetupPhoto ? (
-                  <>
+                  <div className="relative">
                     <img
                       src={workerSetupPhoto}
                       alt="Profile preview"
                       referrerPolicy="no-referrer"
                       className="w-16 h-16 rounded-full border-2 border-indigo-500 object-cover bg-slate-100 shadow-sm"
                     />
-                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full border border-white shadow-sm" onClick={() => workerSetupPhotoInputRef.current?.click()}>
-                      <Plus className="h-3.5 w-3.5" />
+                    <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                      {/* Replace */}
+                      <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                        🔄
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={workerSetupPhotoInputRef}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) setWorkerSetupPhoto(URL.createObjectURL(file));
+                          }}
+                        />
+                      </label>
+                      {/* Delete */}
+                      <button
+                        type="button"
+                        title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                        onClick={() => setWorkerSetupPhoto('')}
+                        className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                      >✕</button>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div
                     className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-100 cursor-pointer"
@@ -909,24 +924,26 @@ export default function MobileSimulator() {
                   </div>
                 )}
               </div>
-              <div className="space-y-1 w-full">
-                <p className="text-[9px] text-slate-400 font-bold">{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस् (एक मात्र)' : 'Upload a single profile photo'}</p>
-                <div className="pt-1 flex justify-center">
-                  <label className="inline-block px-3 py-1 bg-slate-50 border border-slate-200 text-[10px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
-                    <span>{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस्' : 'Upload photo'}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      ref={workerSetupPhotoInputRef}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setWorkerSetupPhoto(URL.createObjectURL(file));
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
+                {!workerSetupPhoto && (
+                  <div className="space-y-1 w-full">
+                    <p className="text-[9px] text-slate-400 font-bold">{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस् (एक मात्र)' : 'Upload a single profile photo'}</p>
+                    <div className="pt-1 flex justify-center">
+                      <label className="inline-block px-3 py-1 bg-slate-50 border border-slate-200 text-[10px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                        <span>{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस्' : 'Upload photo'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={workerSetupPhotoInputRef}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) setWorkerSetupPhoto(URL.createObjectURL(file));
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
             </div>
 
 
@@ -941,12 +958,46 @@ export default function MobileSimulator() {
               const expInput = (document.getElementById('p_exp') as HTMLInputElement)?.value || 'Fresher';
               const locInput = (document.getElementById('p_loc') as HTMLInputElement)?.value || 'Balkumari, Lalitpur';
 
+              // Required field validation
+              if (!nameInput || !nameInput.trim()) {
+                alert(lang === 'ne' ? 'कृपया आफ्नो पूरा नाम प्रविष्ट गर्नुहोस्।' : 'Please enter your full name.');
+                return;
+              }
+              if (!skillInput || !skillInput.trim()) {
+                alert(lang === 'ne' ? 'कृपया मुख्य सिप प्रविष्ट गर्नुहोस्।' : 'Please enter your primary skill.');
+                return;
+              }
+              if (!expInput || !expInput.trim()) {
+                alert(lang === 'ne' ? 'कृपया आफ्नो अनुभव प्रविष्ट गर्नुहोस्।' : 'Please enter your experience.');
+                return;
+              }
+              if (!locInput || !locInput.trim()) {
+                alert(lang === 'ne' ? 'कृपया आफ्नो स्थान प्रविष्ट गर्नुहोस्।' : 'Please enter your location.');
+                return;
+              }
+              if (!workerSetupPhoto) {
+                alert(lang === 'ne' ? 'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।' : 'Please upload a profile photo.');
+                return;
+              }
+              if (!workerSetupGovIdNum || !workerSetupGovIdNum.trim()) {
+                alert(lang === 'ne' ? 'कृपया सरकारी परिचय-पत्र नम्बर प्रविष्ट गर्नुहोस्।' : 'Please enter your Government ID number.');
+                return;
+              }
+
               if (workerSetupGovIdType === 'citizenship' && (!workerSetupGovIdFrontFile || !workerSetupGovIdBackFile)) {
                 alert(lang === 'ne' ? 'कृपया नागरिकताको अगाडि र पछाडिको फोटो अपलोड गर्नुहोस्।' : 'Please upload both front and back images of the Citizenship card.');
                 return;
               }
-              if (workerSetupGovIdType !== 'citizenship' && workerSetupGovIdType !== 'nid' && workerSetupGovIdType !== 'license' && workerSetupGovIdType !== 'pan') {
-                alert(lang === 'ne' ? 'कृपया आईडी फोटो अपलोड गर्नुहोस्।' : 'Please upload ID photo.');
+              if (workerSetupGovIdType === 'nid' && !workerSetupNidFile) {
+                alert(lang === 'ne' ? 'कृपया NID फोटो अपलोड गर्नुहोस्।' : 'Please upload NID photo.');
+                return;
+              }
+              if (workerSetupGovIdType === 'license' && !workerSetupLicenseFile) {
+                alert(lang === 'ne' ? 'कृपया ड्राइभिङ लाइसेन्स फोटो अपलोड गर्नुहोस्।' : 'Please upload Driving License photo.');
+                return;
+              }
+              if (workerSetupGovIdType === 'pan' && !workerSetupPanFile) {
+                alert(lang === 'ne' ? 'कृपया PAN/VAT फोटो अपलोड गर्नुहोस्।' : 'Please upload PAN/VAT photo.');
                 return;
               }
 
@@ -1052,9 +1103,34 @@ export default function MobileSimulator() {
                 <div className="space-y-3">
                   {workerSetupGovIdType === 'citizenship' ? (
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                      <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors relative group">
                         {workerSetupGovIdFrontFile ? (
-                          <img src={workerSetupGovIdFrontFile} alt="id front" className="w-20 h-12 object-cover rounded-md border" />
+                          <div className="relative">
+                            <img src={workerSetupGovIdFrontFile} alt="id front" className="w-20 h-12 object-cover rounded-md border" />
+                            <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                              <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                🔄
+                                <input
+                                  type="file"
+                                  accept="image/*,application/pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const url = URL.createObjectURL(file);
+                                      setWorkerSetupGovIdFrontFile(url);
+                                    }
+                                  }}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                onClick={() => setWorkerSetupGovIdFrontFile('')}
+                                className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                              >✕</button>
+                            </div>
+                          </div>
                         ) : (
                           <>
                             <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
@@ -1078,9 +1154,34 @@ export default function MobileSimulator() {
                         )}
                       </div>
 
-                      <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                      <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors relative group">
                         {workerSetupGovIdBackFile ? (
-                          <img src={workerSetupGovIdBackFile} alt="id back" className="w-20 h-12 object-cover rounded-md border" />
+                          <div className="relative">
+                            <img src={workerSetupGovIdBackFile} alt="id back" className="w-20 h-12 object-cover rounded-md border" />
+                            <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                              <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                🔄
+                                <input
+                                  type="file"
+                                  accept="image/*,application/pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const url = URL.createObjectURL(file);
+                                      setWorkerSetupGovIdBackFile(url);
+                                    }
+                                  }}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                onClick={() => setWorkerSetupGovIdBackFile('')}
+                                className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                              >✕</button>
+                            </div>
+                          </div>
                         ) : (
                           <>
                             <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
@@ -1107,9 +1208,34 @@ export default function MobileSimulator() {
                   ) : (
                     <>
                       {workerSetupGovIdType === 'nid' && (
-                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative group">
                           {workerSetupNidFile ? (
-                            <img src={workerSetupNidFile} alt="uploaded nid" className="w-20 h-12 object-cover rounded-md border" />
+                            <div className="relative">
+                              <img src={workerSetupNidFile} alt="uploaded nid" className="w-20 h-12 object-cover rounded-md border" />
+                              <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                  🔄
+                                  <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        setWorkerSetupNidFile(url);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                  onClick={() => setWorkerSetupNidFile('')}
+                                  className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                >✕</button>
+                              </div>
+                            </div>
                           ) : (
                             <>
                               <input
@@ -1134,9 +1260,34 @@ export default function MobileSimulator() {
                         </div>
                       )}
                       {workerSetupGovIdType === 'license' && (
-                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative group">
                           {workerSetupLicenseFile ? (
-                            <img src={workerSetupLicenseFile} alt="uploaded license" className="w-20 h-12 object-cover rounded-md border" />
+                            <div className="relative">
+                              <img src={workerSetupLicenseFile} alt="uploaded license" className="w-20 h-12 object-cover rounded-md border" />
+                              <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                  🔄
+                                  <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        setWorkerSetupLicenseFile(url);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                  onClick={() => setWorkerSetupLicenseFile('')}
+                                  className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                >✕</button>
+                              </div>
+                            </div>
                           ) : (
                             <>
                               <input
@@ -1161,9 +1312,34 @@ export default function MobileSimulator() {
                         </div>
                       )}
                       {workerSetupGovIdType === 'pan' && (
-                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                        <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative group">
                           {workerSetupPanFile ? (
-                            <img src={workerSetupPanFile} alt="uploaded pan" className="w-20 h-12 object-cover rounded-md border" />
+                            <div className="relative">
+                              <img src={workerSetupPanFile} alt="uploaded pan" className="w-20 h-12 object-cover rounded-md border" />
+                              <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                  🔄
+                                  <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        setWorkerSetupPanFile(url);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                  onClick={() => setWorkerSetupPanFile('')}
+                                  className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                >✕</button>
+                              </div>
+                            </div>
                           ) : (
                             <>
                               <input
@@ -1236,6 +1412,22 @@ export default function MobileSimulator() {
                         alert(lang === 'ne' ? 'कृपया आफ्नो नाम लेख्नुहोस्।' : 'Please enter your full name.');
                         return;
                       }
+                      if (!empSetupCompany.trim()) {
+                        alert(lang === 'ne' ? 'कृपया आफ्नो कम्पनी/व्यवसायको नाम लेख्नुहोस्।' : 'Please enter your company or business name.');
+                        return;
+                      }
+                      if (!empSetupRole.trim()) {
+                        alert(lang === 'ne' ? 'कृपया आफ्नो भूमिका/टिटुलो लेख्नुहोस्।' : 'Please enter your role or title.');
+                        return;
+                      }
+                      if (!empSetupLocation.trim()) {
+                        alert(lang === 'ne' ? 'कृपया आफ्नो स्थान लेख्नुहोस्।' : 'Please enter your location.');
+                        return;
+                      }
+                      if (!empSetupPhoto) {
+                        alert(lang === 'ne' ? 'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।' : 'Please upload a profile photo.');
+                        return;
+                      }
                       if (!empSetupGovIdNum.trim()) {
                         alert(lang === 'ne' ? 'कृपया सरकारी परिचय-पत्र नम्बर हाल्नुहोस्।' : 'Please enter your Government ID number.');
                         return;
@@ -1271,25 +1463,47 @@ export default function MobileSimulator() {
                 }}
                 className="space-y-3.5 pt-1"
               >
-                {/* Profile Photo Selector / Upload */}
+                {/* Profile Photo Selector / Upload - with CRUD */}
                 <div className="bg-white p-3.5 rounded-2xl border border-slate-150 shadow-sm flex flex-col items-center text-center space-y-2">
                   <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                     {lang === 'ne' ? 'प्रोफाइल फोटो' : 'Profile Photo'}
                   </label>
                   
-                  <div className="relative">
+                  <div className="relative group">
                     {empSetupPhoto ? (
-                      <>
+                      <div className="relative">
                         <img
                           src={empSetupPhoto}
                           alt="Profile preview"
                           referrerPolicy="no-referrer"
                           className="w-16 h-16 rounded-full border-2 border-indigo-500 object-cover bg-slate-100 shadow-sm"
                         />
-                        <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full border border-white shadow-sm" onClick={() => empSetupPhotoInputRef.current?.click()}>
-                          <Plus className="h-3.5 w-3.5" />
+                        <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                          {/* Replace */}
+                          <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                            🔄
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              ref={empSetupPhotoInputRef}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setEmpSetupPhoto(URL.createObjectURL(file));
+                                }
+                              }}
+                            />
+                          </label>
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                            onClick={() => setEmpSetupPhoto('')}
+                            className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                          >✕</button>
                         </div>
-                      </>
+                      </div>
                     ) : (
                       <div
                         className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-100 cursor-pointer"
@@ -1301,26 +1515,28 @@ export default function MobileSimulator() {
                   </div>
 
                   {/* Preset quick avatars or file uploader */}
-                  <div className="space-y-1 w-full">
-                    <p className="text-[9px] text-slate-400 font-bold">{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस् (एक मात्र)' : 'Upload a single profile photo'}</p>
-                    <div className="pt-1 flex justify-center">
-                      <label className="inline-block px-3 py-1 bg-slate-50 border border-slate-200 text-[10px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
-                        <span>{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस्' : 'Upload photo'}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          ref={empSetupPhotoInputRef}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setEmpSetupPhoto(URL.createObjectURL(file));
-                            }
-                          }}
-                        />
-                      </label>
+                  {!empSetupPhoto && (
+                    <div className="space-y-1 w-full">
+                      <p className="text-[9px] text-slate-400 font-bold">{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस् (एक मात्र)' : 'Upload a single profile photo'}</p>
+                      <div className="pt-1 flex justify-center">
+                        <label className="inline-block px-3 py-1 bg-slate-50 border border-slate-200 text-[10px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                          <span>{lang === 'ne' ? 'फोटो अपलोड गर्नुहोस्' : 'Upload photo'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            ref={empSetupPhotoInputRef}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setEmpSetupPhoto(URL.createObjectURL(file));
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Form fields */}
@@ -1438,9 +1654,34 @@ export default function MobileSimulator() {
                     <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
                       {empSetupGovIdType === 'citizenship' ? (
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                          <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors relative group">
                             {empSetupGovIdFrontFile ? (
-                              <img src={empSetupGovIdFrontFile} alt="emp id front" className="w-20 h-12 object-cover rounded-md border" />
+                              <div className="relative">
+                                <img src={empSetupGovIdFrontFile} alt="emp id front" className="w-20 h-12 object-cover rounded-md border" />
+                                <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                  <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                    🔄
+                                    <input
+                                      type="file"
+                                      accept="image/*,application/pdf"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const url = URL.createObjectURL(file);
+                                          setEmpSetupGovIdFrontFile(url);
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                    onClick={() => setEmpSetupGovIdFrontFile('')}
+                                    className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                  >✕</button>
+                                </div>
+                              </div>
                             ) : (
                               <>
                                 <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - अगाडि' : 'Citizenship - Front'}</p>
@@ -1464,9 +1705,34 @@ export default function MobileSimulator() {
                             )}
                           </div>
 
-                          <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors">
+                          <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center hover:border-indigo-500 transition-colors relative group">
                             {empSetupGovIdBackFile ? (
-                              <img src={empSetupGovIdBackFile} alt="emp id back" className="w-20 h-12 object-cover rounded-md border" />
+                              <div className="relative">
+                                <img src={empSetupGovIdBackFile} alt="emp id back" className="w-20 h-12 object-cover rounded-md border" />
+                                <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                  <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                    🔄
+                                    <input
+                                      type="file"
+                                      accept="image/*,application/pdf"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const url = URL.createObjectURL(file);
+                                          setEmpSetupGovIdBackFile(url);
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                    onClick={() => setEmpSetupGovIdBackFile('')}
+                                    className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                  >✕</button>
+                                </div>
+                              </div>
                             ) : (
                               <>
                                 <p className="text-[10px] font-bold text-slate-700">{lang === 'ne' ? 'नागरिकता - पछाडि' : 'Citizenship - Back'}</p>
@@ -1493,9 +1759,34 @@ export default function MobileSimulator() {
                       ) : (
                         <>
                           {empSetupGovIdType === 'nid' && (
-                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative group">
                               {empSetupNidFile ? (
-                                <img src={empSetupNidFile} alt="uploaded nid" className="w-20 h-12 object-cover rounded-md border" />
+                                <div className="relative">
+                                  <img src={empSetupNidFile} alt="uploaded nid" className="w-20 h-12 object-cover rounded-md border" />
+                                  <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                    <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                      🔄
+                                      <input
+                                        type="file"
+                                        accept="image/*,application/pdf"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            const url = URL.createObjectURL(file);
+                                            setEmpSetupNidFile(url);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                      onClick={() => setEmpSetupNidFile('')}
+                                      className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                    >✕</button>
+                                  </div>
+                                </div>
                               ) : (
                                 <>
                                   <input
@@ -1520,9 +1811,34 @@ export default function MobileSimulator() {
                             </div>
                           )}
                           {empSetupGovIdType === 'license' && (
-                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative group">
                               {empSetupLicenseFile ? (
-                                <img src={empSetupLicenseFile} alt="uploaded license" className="w-20 h-12 object-cover rounded-md border" />
+                                <div className="relative">
+                                  <img src={empSetupLicenseFile} alt="uploaded license" className="w-20 h-12 object-cover rounded-md border" />
+                                  <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                    <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                      🔄
+                                      <input
+                                        type="file"
+                                        accept="image/*,application/pdf"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            const url = URL.createObjectURL(file);
+                                            setEmpSetupLicenseFile(url);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                      onClick={() => setEmpSetupLicenseFile('')}
+                                      className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                    >✕</button>
+                                  </div>
+                                </div>
                               ) : (
                                 <>
                                   <input
@@ -1547,9 +1863,34 @@ export default function MobileSimulator() {
                             </div>
                           )}
                           {empSetupGovIdType === 'pan' && (
-                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative">
+                            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-indigo-500 transition-colors relative group">
                               {empSetupPanFile ? (
-                                <img src={empSetupPanFile} alt="uploaded pan" className="w-20 h-12 object-cover rounded-md border" />
+                                <div className="relative">
+                                  <img src={empSetupPanFile} alt="uploaded pan" className="w-20 h-12 object-cover rounded-md border" />
+                                  <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                    <label className="cursor-pointer p-1 bg-white rounded-full shadow text-[9px]" title={lang === 'ne' ? 'बदल्नुहोस्' : 'Replace'}>
+                                      🔄
+                                      <input
+                                        type="file"
+                                        accept="image/*,application/pdf"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            const url = URL.createObjectURL(file);
+                                            setEmpSetupPanFile(url);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
+                                      onClick={() => setEmpSetupPanFile('')}
+                                      className="p-1 bg-red-500 text-white rounded-full shadow text-[9px]"
+                                    >✕</button>
+                                  </div>
+                                </div>
                               ) : (
                                 <>
                                   <input
@@ -1973,14 +2314,8 @@ export default function MobileSimulator() {
 
                   {/* Dynamic Active Profile Card */}
                   {(() => {
-                    const activeWorker = workers.find(w => w.phone === phone) || workers[0] || {
-                      name: 'Ram Bahadur',
-                      phone: phone || '9845551122',
-                      mainSkill: 'laborer',
-                      experience: '2 Years',
-                      expectedWage: 1200,
-                      location: 'Balkumari, Lalitpur'
-                    };
+                    const activeWorker = workers.find(w => w.phone === phone) || workers[0];
+                    if (!activeWorker) return null;
 
                     if (isEditingProfile) {
                       return (
@@ -2003,37 +2338,25 @@ export default function MobileSimulator() {
                             </div>
                           </div>
 
-                          {/* Profile Photo selector */}
+                          {/* Profile Photo — Display Only */}
                           <div className="space-y-2 flex flex-col items-center">
                             <label className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">
                               {lang === 'ne' ? 'प्रोफाइल फोटो' : 'Profile Photo'}
                             </label>
-                            {editWorkerPhoto ? (
-                              <img
-                                src={editWorkerPhoto}
-                                alt="Profile Preview"
-                                referrerPolicy="no-referrer"
-                                className="w-14 h-14 rounded-full border-2 border-emerald-500 object-cover bg-slate-50 shadow-sm"
-                              />
-                            ) : (
-                              <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-lg font-black">
-                                {editWorkerName ? editWorkerName.charAt(0).toUpperCase() : '?'}
-                              </div>
-                            )}
-                            <label className="px-2 py-1 bg-slate-50 border border-slate-200 text-[9px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100">
-                              <span>{lang === 'ne' ? 'फोटो परिवर्तन गर्नुहोस्' : 'Upload photo'}</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    setEditWorkerPhoto(URL.createObjectURL(file));
-                                  }
-                                }}
-                              />
-                            </label>
+                            <div className="relative">
+                              {editWorkerPhoto ? (
+                                <img
+                                  src={editWorkerPhoto}
+                                  alt="Profile Preview"
+                                  referrerPolicy="no-referrer"
+                                  className="w-14 h-14 rounded-full border-2 border-emerald-500 object-cover bg-slate-50 shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-lg font-black">
+                                  {editWorkerName ? editWorkerName.charAt(0).toUpperCase() : '?'}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <div className="space-y-3 pt-1">
@@ -2118,9 +2441,7 @@ export default function MobileSimulator() {
                               />
                             </div>
 
-                            {/* Short bio removed from worker edit form */}
 
-                            {/* Actions */}
                             <div className="flex gap-2 pt-2 border-t border-slate-100">
                               <button
                                 type="button"
@@ -2146,7 +2467,7 @@ export default function MobileSimulator() {
                                     experience: editWorkerExperience,
                                     govId: editWorkerGovId,
                                     profilePhoto: editWorkerPhoto || activeWorker.profilePhoto
-                                  });
+                                  }, activeWorker.id);
                                 }}
                                 className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs"
                               >
@@ -2163,18 +2484,20 @@ export default function MobileSimulator() {
                         {/* Profile Info Summary Card */}
                         <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm space-y-4">
                           <div className="flex items-center gap-3">
-                            {activeWorker.profilePhoto ? (
-                              <img
-                                src={activeWorker.profilePhoto}
-                                alt={activeWorker.name}
-                                referrerPolicy="no-referrer"
-                                className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500 shadow-sm shrink-0"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-lg shadow-sm shrink-0 uppercase">
-                                {activeWorker.name.charAt(0)}
-                              </div>
-                            )}
+                            <div className="relative shrink-0">
+                              {activeWorker.profilePhoto ? (
+                                <img
+                                  src={activeWorker.profilePhoto}
+                                  alt={activeWorker.name}
+                                  referrerPolicy="no-referrer"
+                                  className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500 shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-lg shadow-sm uppercase">
+                                  {activeWorker.name.charAt(0)}
+                                </div>
+                              )}
+                            </div>
                             <div className="space-y-0.5 min-w-0 flex-1">
                               <div className="flex items-center gap-1 flex-wrap">
                                 <h4 className="text-sm font-black text-slate-950 truncate">{activeWorker.name}</h4>
@@ -2201,25 +2524,33 @@ export default function MobileSimulator() {
                             <div className="flex justify-between items-center text-xs">
                               <span className="font-bold text-slate-400">{lang === 'ne' ? 'सरकारी परिचय-पत्र' : 'Govt Verification ID'}</span>
                               {activeWorker.govId ? (
-                                <div className="flex items-center gap-3">
-                                  <div className="font-extrabold text-slate-800 flex items-center gap-1">🛡️ {activeWorker.govId}</div>
-                                  {activeWorker.govIdFiles && activeWorker.govIdFiles.length > 0 && (
-                                    <div className="flex items-center gap-2">
-                                      {activeWorker.govIdFiles.map((f, idx) => (
-                                        <img key={idx} src={f} alt={`govid-${idx}`} className="w-12 h-8 object-cover rounded-sm border" />
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
+                                <span className="font-extrabold text-slate-800 flex items-center gap-1">🛡️ {activeWorker.govId}</span>
                               ) : (
                                 <span className="font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 text-[10px]">
                                   {lang === 'ne' ? 'सत्यापन आवश्यक' : 'Not Provided'}
                                 </span>
                               )}
                             </div>
-                            {/* Expected wage removed from profile display */}
-                            {/* Short bio hidden from profile summary */}
+                            
+                            {/* Government ID Documents Display */}
+                            {(activeWorker.govIdFiles && activeWorker.govIdFiles.length > 0) && (
+                              <div className="pt-2">
+                                <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+                                  🛡️ {lang === 'ne' ? 'परिचय-पत्र कागजातहरू' : 'ID Document Files'}
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {activeWorker.govIdFiles.map((f, idx) => (
+                                    <div key={idx} className="relative">
+                                      <img src={f} alt={`id-doc-${idx}`} className="w-full h-16 object-cover rounded-xl border border-slate-200 shadow-sm" />
+                                      <span className="absolute bottom-1 left-1 text-[8px] font-bold text-white bg-black/50 px-1 rounded">#{idx + 1}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
+
+
 
                           <button
                             onClick={() => {
@@ -2804,16 +3135,8 @@ export default function MobileSimulator() {
 
                   {/* Dynamic Active Profile Card */}
                   {(() => {
-                    const activeEmp = employers.find(e => e.phone === phone) || {
-                      name: 'Ajay Gupta',
-                      role: 'Contractor',
-                      companyName: 'Gupta Construction & Co.',
-                      phone: phone || '9851044321',
-                      location: 'Balkumari, Lalitpur',
-                      govId: 'CIT-98510-NP',
-                      profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
-                      isVerified: true
-                    };
+                    const activeEmp = employers.find(e => e.phone === phone) || employers[0];
+                    if (!activeEmp) return null;
 
                     if (isEditingProfile) {
                       return (
@@ -2836,31 +3159,25 @@ export default function MobileSimulator() {
                             </div>
                           </div>
 
-                          {/* Profile Photo selector */}
+                          {/* Profile Photo — Display Only */}
                           <div className="space-y-2 flex flex-col items-center">
                             <label className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">
                               {lang === 'ne' ? 'प्रोफाइल फोटो' : 'Profile Photo'}
                             </label>
-                            <img
-                              src={editEmpPhoto || activeEmp.profilePhoto}
-                              alt="Profile Preview"
-                              referrerPolicy="no-referrer"
-                              className="w-14 h-14 rounded-full border-2 border-[#1A73E8] object-cover bg-slate-50 shadow-sm"
-                            />
-                            <label className="px-2 py-1 bg-slate-50 border border-slate-200 text-[9px] text-slate-600 font-bold rounded-lg cursor-pointer hover:bg-slate-100">
-                              <span>{lang === 'ne' ? 'फोटो परिवर्तन गर्नुहोस्' : 'Upload photo'}</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    setEditEmpPhoto(URL.createObjectURL(file));
-                                  }
-                                }}
-                              />
-                            </label>
+                            <div className="relative">
+                              {(editEmpPhoto || activeEmp.profilePhoto) ? (
+                                <img
+                                  src={editEmpPhoto || activeEmp.profilePhoto}
+                                  alt="Profile Preview"
+                                  referrerPolicy="no-referrer"
+                                  className="w-14 h-14 rounded-full border-2 border-[#1A73E8] object-cover bg-slate-50 shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-lg font-black">
+                                  {editEmpName ? editEmpName.charAt(0).toUpperCase() : '?'}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <div className="space-y-3 pt-1">
@@ -2944,6 +3261,8 @@ export default function MobileSimulator() {
                               />
                             </div>
 
+
+
                             {/* Actions */}
                             <div className="flex gap-2 pt-2 border-t border-slate-100">
                               <button
@@ -2968,7 +3287,7 @@ export default function MobileSimulator() {
                                     companyName: editEmpCompany || 'Individual',
                                     govId: editEmpGovId,
                                     profilePhoto: editEmpPhoto || activeEmp.profilePhoto
-                                  });
+                                  }, activeEmp.id);
                                 }}
                                 className="flex-1 py-2.5 rounded-xl bg-[#005bb5] hover:bg-[#004b95] text-white font-extrabold text-xs"
                               >
@@ -2985,12 +3304,20 @@ export default function MobileSimulator() {
                         {/* Profile Info Summary Card */}
                         <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm space-y-4">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={activeEmp.profilePhoto}
-                              alt={activeEmp.name}
-                              referrerPolicy="no-referrer"
-                              className="w-12 h-12 rounded-full border border-slate-200 object-cover shadow-sm shrink-0"
-                            />
+                            <div className="relative shrink-0">
+                              {activeEmp.profilePhoto ? (
+                                <img
+                                  src={activeEmp.profilePhoto}
+                                  alt={activeEmp.name}
+                                  referrerPolicy="no-referrer"
+                                  className="w-12 h-12 rounded-full border border-slate-200 object-cover shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-black text-lg shadow-sm uppercase">
+                                  {activeEmp.name.charAt(0)}
+                                </div>
+                              )}
+                            </div>
                             <div className="space-y-0.5 min-w-0 flex-1">
                               <div className="flex items-center gap-1 flex-wrap">
                                 <h4 className="text-sm font-black text-slate-950 truncate">{activeEmp.name}</h4>
@@ -3018,18 +3345,13 @@ export default function MobileSimulator() {
                             </div>
                             <div className="flex justify-between items-center text-xs">
                               <span className="font-bold text-slate-400">{lang === 'ne' ? 'सरकारी परिचय-पत्र' : 'Government Verification ID'}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="font-extrabold text-[#1A73E8] bg-[#1A73E8]/5 px-2 py-0.5 rounded border border-[#1A73E8]/10 text-[10px]">{activeEmp.govId || 'N/A'}</span>
-                                {activeEmp.govIdFiles && activeEmp.govIdFiles.length > 0 && (
-                                  <div className="flex items-center gap-2">
-                                    {activeEmp.govIdFiles.map((f, idx) => (
-                                      <img key={idx} src={f} alt={`emp-govid-${idx}`} className="w-12 h-8 object-cover rounded-sm border" />
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
+                              <span className="font-extrabold text-[#1A73E8] bg-[#1A73E8]/5 px-2 py-0.5 rounded border border-[#1A73E8]/10 text-[10px]">
+                                {activeEmp.govId || 'N/A'}
+                              </span>
                             </div>
                           </div>
+
+
 
                           <button
                             onClick={() => {
