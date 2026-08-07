@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 import '../services/app_store.dart';
 import '../theme/app_colors.dart';
@@ -32,7 +34,13 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< Updated upstream
     final lang = AppStore.instance.lang;
+=======
+    final lang = ModalRoute.of(context)!.settings.arguments as String? ?? 'en';
+    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
+    final hasProfile = profileProvider.hasProfile;
+>>>>>>> Stashed changes
 
     return Scaffold(
       backgroundColor: AppColors.slate50,
@@ -64,7 +72,22 @@ class RoleSelectionScreen extends StatelessWidget {
 
               // Job Seeker Card (Worker)
               GestureDetector(
+<<<<<<< Updated upstream
                 onTap: () => _selectWorker(context),
+=======
+                onTap: () {
+                  // Check if user has a profile, if not redirect to profile setup
+                  if (!hasProfile) {
+                    Navigator.pushNamed(
+                      context,
+                      '/profile-setup',
+                      arguments: 'worker',
+                    );
+                  } else {
+                    Navigator.pushReplacementNamed(context, '/worker-home', arguments: lang);
+                  }
+                },
+>>>>>>> Stashed changes
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -119,7 +142,22 @@ class RoleSelectionScreen extends StatelessWidget {
 
               // Employer Card
               GestureDetector(
+<<<<<<< Updated upstream
                 onTap: () => _selectEmployer(context),
+=======
+                onTap: () {
+                  // Check if user has a profile, if not redirect to profile setup
+                  if (!hasProfile) {
+                    Navigator.pushNamed(
+                      context,
+                      '/profile-setup',
+                      arguments: 'employer',
+                    );
+                  } else {
+                    Navigator.pushReplacementNamed(context, '/employer-home', arguments: lang);
+                  }
+                },
+>>>>>>> Stashed changes
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(

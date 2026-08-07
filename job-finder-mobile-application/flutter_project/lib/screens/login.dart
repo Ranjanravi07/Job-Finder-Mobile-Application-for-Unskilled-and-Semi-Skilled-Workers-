@@ -52,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+<<<<<<< Updated upstream
   void _verifyOtp() {
     store.verifyOtp(
       _otpController.text,
@@ -73,6 +74,20 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
     );
+=======
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Simulate verification delay
+    Future.delayed(const Duration(milliseconds: 800), () {
+      setState(() {
+        _isLoading = false;
+      });
+      // Navigate to role selection after successful login
+      Navigator.pushReplacementNamed(context, '/role-selection', arguments: lang);
+    });
+>>>>>>> Stashed changes
   }
 
   @override

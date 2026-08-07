@@ -117,14 +117,14 @@ export default function MobileSimulator() {
   const [empSetupRole, setEmpSetupRole] = useState<string>('Contractor');
   const [empSetupCompany, setEmpSetupCompany] = useState<string>('');
   const [empSetupLocation, setEmpSetupLocation] = useState<string>('Balkumari, Lalitpur');
-  const [empSetupGovIdType, setEmpSetupGovIdType] = useState<string>('citizenship');
+  const [empSetupGovIdType, setEmpSetupGovIdType] = useState<string>('');
   const [empSetupGovIdNum, setEmpSetupGovIdNum] = useState<string>('');
   const [empSetupGovIdFiles, setEmpSetupGovIdFiles] = useState<string[]>([]);
   const [empSetupPhoto, setEmpSetupPhoto] = useState<string>('');
 
   // Worker Profile Setup (photo + gov id)
   const [workerSetupPhoto, setWorkerSetupPhoto] = useState<string>('');
-  const [workerSetupGovIdType, setWorkerSetupGovIdType] = useState<string>('citizenship');
+  const [workerSetupGovIdType, setWorkerSetupGovIdType] = useState<string>('');
   const [workerSetupGovIdNum, setWorkerSetupGovIdNum] = useState<string>('');
   const [workerSetupGovIdFiles, setWorkerSetupGovIdFiles] = useState<string[]>([]);
   // Separate front/back file names for citizenship uploads

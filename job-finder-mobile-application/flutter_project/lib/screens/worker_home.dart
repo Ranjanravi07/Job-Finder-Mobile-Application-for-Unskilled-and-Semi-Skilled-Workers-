@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+<<<<<<< Updated upstream
+=======
+import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
+import '../widgets/profile_summary_card.dart';
+>>>>>>> Stashed changes
 
 import '../data/mock_data.dart';
 import '../models/job.dart';
@@ -54,6 +62,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< Updated upstream
       backgroundColor: AppColors.slate50,
       body: ListenableBuilder(
         listenable: store,
@@ -72,6 +81,143 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             ],
           );
         },
+=======
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              lang == 'ne' ? 'जागिर खोज्नुहोस्' : 'Find Jobs',
+              style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Text(
+              'Balkumari, Lalitpur, Nepal',
+              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            ),
+          ],
+        ),
+        actions: [
+          // Profile button
+          IconButton(
+            icon: ProfileAvatar(
+              profile: Provider.of<ProfileProvider>(context, listen: false).profile,
+              size: 32,
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile-view', arguments: lang);
+            },
+            tooltip: lang == 'ne' ? 'प्रोफाइल' : 'Profile',
+          ),
+          const SizedBox(width: 8),
+          // Role switch button
+          TextButton.icon(
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/role-selection', arguments: lang);
+            },
+            icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white),
+            label: Text(
+              lang == 'ne' ? 'भूमिका बदल्नुहोस्' : 'Switch Role',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Search and View Toggle Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: const Color(0xFF0F172A),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      onChanged: (val) {
+                        setState(() {
+                          _searchQuery = val;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: lang == 'ne' ? 'काम वा स्थान खोज्नुहोस्...' : 'Search jobs, locations...',
+                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Map/List toggle button
+                IconButton.filled(
+                  onPressed: () {
+                    setState(() {
+                      _isMapView = !_isMapView;
+                    });
+                  },
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: Icon(_isMapView ? Icons.list_rounded : Icons.map_rounded),
+                ),
+              ],
+            ),
+          ),
+
+          // Skill Categories Slider
+          Container(
+            height: 54,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            color: Colors.white,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemBuilder: (context, index) {
+                final cat = _categories[index];
+                final isSelected = _selectedCategory == cat['id'];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ChoiceChip(
+                    label: Text(
+                      lang == 'ne' ? cat['nameNe']! : cat['nameEn']!,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : const Color(0xFF475569),
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF0F172A),
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = cat['id']!;
+                      });
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Job list or Map Mock view
+          Expanded(
+            child: _isMapView
+                ? _buildMapViewMock(lang)
+                : _buildJobList(filteredJobs, lang),
+          ),
+        ],
+>>>>>>> Stashed changes
       ),
     );
   }

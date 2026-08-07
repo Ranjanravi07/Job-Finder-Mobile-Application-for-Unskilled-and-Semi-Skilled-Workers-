@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+<<<<<<< Updated upstream
+=======
+import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
+import '../widgets/profile_summary_card.dart';
+>>>>>>> Stashed changes
 
 import '../data/mock_data.dart';
 import '../models/chat_message.dart';
@@ -752,6 +760,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
               ),
             ],
           ),
+<<<<<<< Updated upstream
         );
       },
     );
@@ -831,6 +840,30 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.slate100),
+=======
+          actions: [
+            // Profile button
+            IconButton(
+              icon: ProfileAvatar(
+                profile: Provider.of<ProfileProvider>(context, listen: false).profile,
+                size: 32,
+              ),
+              onPressed: () {
+                Navigator.pushNamed(context, '/profile-view', arguments: lang);
+              },
+              tooltip: lang == 'ne' ? 'प्रोफाइल' : 'Profile',
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/role-selection', arguments: lang);
+              },
+              icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white),
+              label: Text(
+                lang == 'ne' ? 'भूमिका बदल्नुहोस्' : 'Switch Role',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+>>>>>>> Stashed changes
             ),
             child: ListTile(
               leading: CircleAvatar(
