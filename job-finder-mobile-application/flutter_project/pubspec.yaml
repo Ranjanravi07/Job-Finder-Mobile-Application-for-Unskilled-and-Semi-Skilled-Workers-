@@ -1,5 +1,5 @@
 name: job_finder_app
-description: "Job Finder Mobile Application for Unskilled and Semi-Skilled Workers in Nepal. Made with Flutter and Firebase."
+description: "Job Finder Mobile Application for Unskilled and Semi-Skilled Workers in Nepal. Made with Flutter."
 version: 1.0.0+1
 
 environment:
@@ -11,16 +11,15 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # Firebase Dependencies
-  firebase_core: ^2.15.0
-  firebase_auth: ^4.7.0
-  cloud_firestore: ^4.8.0
-
   # Helper packages
-  google_fonts: ^5.1.0
+  google_fonts: ^8.2.1
   url_launcher: ^6.1.11 # For phone calls and WhatsApp opening
-  lucide_icons: ^0.300.0 # Match the React UI icons!
-  intl: ^0.18.1
+  intl: ^0.20.2
+
+  # Local persistence, voice input and image picking
+  shared_preferences: ^2.2.2
+  flutter_tts: ^4.2.5
+  image_picker: ^1.0.5
 
 dev_dependencies:
   flutter_test:
@@ -29,6 +28,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    # Add any assets if required
-    - assets/
