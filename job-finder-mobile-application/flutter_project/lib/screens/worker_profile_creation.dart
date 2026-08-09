@@ -5,6 +5,8 @@ import '../services/app_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gov_id_section.dart';
 import '../widgets/profile_photo_picker.dart';
+import 'package:flutter/services.dart';
+import '../services/speech_service.dart';
 import '../widgets/voice_parse_dialog.dart';
 
 /// Mirrors the React `WORKER PROFILE CREATION` screen.
@@ -17,8 +19,25 @@ class WorkerProfileCreationScreen extends StatefulWidget {
 
 class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _skillController = TextEditingController(text: 'laborer');
   final TextEditingController _expController = TextEditingController(text: 'Fresher');
+  String _selectedCategory = '';
+  bool _isSubmitting = false;
+
+  final List<Map<String, String>> _jobCategories = [
+    {'id': 'laborer', 'en': 'Laborer', 'ne': 'मजदुर', 'icon': '👷'},
+    {'id': 'electrician', 'en': 'Electrician', 'ne': 'इलेक्ट्रिसियन', 'icon': '⚡'},
+    {'id': 'plumber', 'en': 'Plumber', 'ne': 'प्लम्बर', 'icon': '🔧'},
+    {'id': 'driver', 'en': 'Driver', 'ne': 'ड्राइभर', 'icon': '🚗'},
+    {'id': 'painter', 'en': 'Painter', 'ne': 'पेन्टर', 'icon': '🎨'},
+    {'id': 'carpenter', 'en': 'Carpenter', 'ne': 'सिकर्मी', 'icon': '🪚'},
+    {'id': 'mason', 'en': 'Mason', 'ne': 'डकर्मी', 'icon': '🧱'},
+    {'id': 'cleaner', 'en': 'Cleaner', 'ne': 'सफाई गर्ने', 'icon': '🧹'},
+    {'id': 'farmer', 'en': 'Farmer', 'ne': 'किसान', 'icon': '🌾'},
+    {'id': 'cook', 'en': 'Cook', 'ne': 'भान्छे', 'icon': '🍳'},
+    {'id': 'welder', 'en': 'Welder', 'ne': 'वेल्डर', 'icon': '🔩'},
+    {'id': 'tailor', 'en': 'Tailor', 'ne': 'सुचिकार', 'icon': '🧵'},
+    {'id': 'others', 'en': 'Others', 'ne': 'अन्य', 'icon': '➕'},
+  ];
   final TextEditingController _locController = TextEditingController(text: 'Balkumari, Lalitpur');
 
   String _photoPath = '';
@@ -38,7 +57,7 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
       builder: (_) => VoiceParseDialog(
         onConfirm: (profile) {
           if (profile['name'] != null) _nameController.text = '${profile['name']}';
-          if (profile['mainSkill'] != null) _skillController.text = '${profile['mainSkill']}';
+          if (profile['mainSkill'] != null) _selectedCategory = '${profile['mainSkill']}';
           if (profile['experience'] != null) _expController.text = '${profile['experience']}';
           if (profile['location'] != null) _locController.text = '${profile['location']}';
           setState(() {});
@@ -47,12 +66,12 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     String? error;
     if (_nameController.text.trim().isEmpty) {
       error = _t('Please enter your full name.', 'कृपया आफ्नो पूरा नाम प्रविष्ट गर्नुहोस्।');
-    } else if (_skillController.text.trim().isEmpty) {
-      error = _t('Please enter your primary skill.', 'कृपया मुख्य सिप प्रविष्ट गर्नुहोस्।');
+    } else if (_selectedCategory.isEmpty) {
+      error = _t('Please select your job category.', 'कृपया आफ्नो कामको वर्ग छान्नुहोस्।');
     } else if (_expController.text.trim().isEmpty) {
       error = _t('Please enter your experience.', 'कृपया आफ्नो अनुभव प्रविष्ट गर्नुहोस्।');
     } else if (_locController.text.trim().isEmpty) {
@@ -60,7 +79,13 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
     } else if (_photoPath.isEmpty) {
       error = _t('Please upload a profile photo.', 'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।');
     } else if (_govIdNum.trim().isEmpty) {
-      error = _t('Please enter your Government ID number.', 'कृपया सरकारी परिचय-पत्र नम्बर प्रविष्ट गर्नुहोस्।');
+      error = _t(
+          'Please enter your Government ID number.',
+          'कृपया सरकारी परिचय-पत्र नम्बर प्रविष्ट गर्नुहोस्।');
+    } else if (!_validateGovId(_govIdType, _govIdNum.trim())) {
+      error = _t(
+          'Invalid Government ID format for the selected type.',
+          'चयन गरिएको प्रकारको लागि अमान्य सरकारी परिचय-पत्र ढाँचा।');
     } else if (_govIdType == 'citizenship' &&
         (_files['front'] == null || _files['back'] == null ||
             (_files['front'] ?? '').isEmpty || (_files['back'] ?? '').isEmpty)) {
@@ -78,22 +103,28 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
       return;
     }
 
+    setState(() => _isSubmitting = true);
+    
     store.createWorkerProfile(
       name: _nameController.text.trim(),
-      mainSkill: _skillController.text.trim(),
+      mainSkill: _selectedCategory,
       experience: _expController.text.trim(),
       location: _locController.text.trim(),
       profilePhoto: _photoPath,
-      govId: '${_govIdType.toUpperCase()} - $_govIdNum',
+      govIdType: _govIdType,
+      govIdNum: _govIdNum.trim(),
       govIdFiles: _files.values.toList(),
     );
-    Navigator.pushReplacementNamed(context, '/worker-home');
+    
+    if (mounted) {
+      setState(() => _isSubmitting = false);
+      Navigator.pushReplacementNamed(context, '/worker-home');
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _skillController.dispose();
     _expController.dispose();
     _locController.dispose();
     super.dispose();
@@ -102,11 +133,11 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
   Widget _label(String en, String ne) {
     return Text(
       _t(en, ne),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w900,
         letterSpacing: 1,
-        color: AppColors.slate500,
+        color: AppColors.slate800,
       ),
     );
   }
@@ -114,18 +145,18 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
   InputDecoration _inputDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(fontSize: 11, color: AppColors.slate400),
+      hintStyle: TextStyle(fontSize: 11, color: AppColors.slate600),
       filled: true,
       fillColor: Colors.white,
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.slate200),
+        borderSide: BorderSide(color: AppColors.slate200),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.slate900),
+        borderSide: BorderSide(color: AppColors.slate900),
       ),
     );
   }
@@ -149,19 +180,19 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
           IconButton(
             onPressed: _openVoiceWizard,
             tooltip: _t('Voice Onboarding', 'आवाज दर्ता'),
-            icon: const Icon(Icons.mic_rounded, color: AppColors.emerald600),
+            icon: Icon(Icons.mic_rounded, color: AppColors.emerald600),
           ),
         ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Profile photo
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -176,40 +207,116 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               _label('Full Name', 'कामदारको पूरा नाम'),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               TextField(
                 controller: _nameController,
+                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(hint: 'Ram Bahadur'),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
 
-              _label('Primary Skill', 'मुख्य सिप'),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _skillController,
-                decoration: _inputDecoration(
-                    hint: _t('Type primary skill / role', 'मुख्य सिप लेख्नुहोस्')),
+              SizedBox(height: 8),
+              
+              // SECTION 1: JOB CATEGORY
+              Text(
+                _t('What work do you do?', 'तपाईं के काम गर्नुहुन्छ?'),
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.slate900,
+                ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.9,
+                ),
+                itemCount: _jobCategories.length,
+                itemBuilder: (context, index) {
+                  final cat = _jobCategories[index];
+                  final isSelected = _selectedCategory == cat['id'];
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      SpeechService.instance.speak(_t(cat['en']!, cat['ne']!), store.lang);
+                      setState(() {
+                        _selectedCategory = cat['id']!;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.slate900 : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? AppColors.slate900 : AppColors.slate200,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(cat['icon']!, style: TextStyle(fontSize: 28)),
+                          SizedBox(height: 8),
+                          Text(
+                            cat['en']!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.white : AppColors.slate700,
+                            ),
+                          ),
+                          Text(
+                            cat['ne']!,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected ? Colors.white70 : AppColors.slate700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 24),
+
+              // SECTION 2: WORK PREFERENCES
+              Text(
+                _t('Where and how do you want to work?', 'कहाँ र कसरी काम गर्न चाहनुहुन्छ?'),
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.slate900,
+                ),
+              ),
+              SizedBox(height: 12),
+
+              _label('Preferred Location', 'प्राथमिकता स्थान'),
+              SizedBox(height: 6),
+              TextField(
+                controller: _locController,
+                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
+                decoration: _inputDecoration(hint: 'Type your preferred location (e.g. Lalitpur)'),
+              ),
+              SizedBox(height: 14),
 
               _label('Experience', 'अनुभव'),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               TextField(
                 controller: _expController,
+                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(
                     hint: _t('Type years or description (e.g. 2 Years)',
                         'वर्ष/अनुभव लेख्नुहोस्')),
-              ),
-              const SizedBox(height: 14),
-
-              _label('Your Location', 'ठेगाना'),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _locController,
-                decoration: _inputDecoration(hint: 'Type your location'),
               ),
               const SizedBox(height: 20),
 
@@ -227,29 +334,35 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
 
               // Submit
               ElevatedButton(
-                onPressed: _submit,
+                onPressed: _isSubmitting ? null : () async => await _submit(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.slate900,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.verified_rounded, color: AppColors.emerald400, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      _t('Verify & Save Profile', 'सुरक्षित गर्नुहोस्'),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
+                child: _isSubmitting
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.verified_rounded, color: AppColors.emerald400, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            _t('Verify & Save Profile', 'सुरक्षित गर्नुहोस्'),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                          ),
+                        ],
+                      ),
               ),
-              const SizedBox(height: 16),
-              const Center(
+              SizedBox(height: 16),
+              Center(
                 child: Text(
                   'ROJGAR VERIFIED RECRUITMENT • GOVT OF NEPAL COMPLIANCE',
                   textAlign: TextAlign.center,
@@ -265,5 +378,35 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
         ),
       ),
     );
+  }
+
+  String _typeSingleLabelNe(String type) {
+    switch (type) {
+      case 'nid':
+        return 'NID फोटो अपलोड गर्नुहोस्';
+      case 'license':
+        return 'ड्राइभिङ लाइसेन्स फोटो अपलोड गर्नुहोस्';
+      case 'pan':
+        return 'PAN/VAT फोटो अपलोड गर्नुहोस्';
+      default:
+        return 'फाइल अपलोड गर्नुहोस्';
+    }
+  }
+
+  bool _validateGovId(String type, String num) {
+    switch (type) {
+      case 'citizenship':
+        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
+      case 'nid':
+        return RegExp(r'^\d{10}$').hasMatch(num);
+      case 'license':
+        return RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num);
+      case 'pan':
+        return RegExp(r'^\d{9}$').hasMatch(num);
+      case 'registration':
+        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
+      default:
+        return num.isNotEmpty;
+    }
   }
 }

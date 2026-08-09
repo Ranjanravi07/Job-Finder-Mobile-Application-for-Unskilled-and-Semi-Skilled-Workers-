@@ -5,10 +5,11 @@ class EmployerProfile {
   final String companyName;
   final String phone;
   final String location;
-  final bool isVerified;
+  final String verificationStatus;
   final String type; // 'business' | 'individual'
   final String role;
-  final String govId;
+  final String govIdType;
+  final String govIdNum;
   final List<String> govIdFiles;
   final String profilePhoto;
 
@@ -18,10 +19,11 @@ class EmployerProfile {
     required this.companyName,
     required this.phone,
     required this.location,
-    this.isVerified = true,
+    this.verificationStatus = 'pending',
     this.type = 'individual',
     this.role = 'Contractor',
-    this.govId = '',
+    this.govIdType = 'citizenship',
+    this.govIdNum = '',
     this.govIdFiles = const [],
     this.profilePhoto = '',
   });
@@ -32,10 +34,11 @@ class EmployerProfile {
     String? companyName,
     String? phone,
     String? location,
-    bool? isVerified,
+    String? verificationStatus,
     String? type,
     String? role,
-    String? govId,
+    String? govIdType,
+    String? govIdNum,
     List<String>? govIdFiles,
     String? profilePhoto,
   }) {
@@ -45,10 +48,11 @@ class EmployerProfile {
       companyName: companyName ?? this.companyName,
       phone: phone ?? this.phone,
       location: location ?? this.location,
-      isVerified: isVerified ?? this.isVerified,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
       type: type ?? this.type,
       role: role ?? this.role,
-      govId: govId ?? this.govId,
+      govIdType: govIdType ?? this.govIdType,
+      govIdNum: govIdNum ?? this.govIdNum,
       govIdFiles: govIdFiles ?? this.govIdFiles,
       profilePhoto: profilePhoto ?? this.profilePhoto,
     );
@@ -60,10 +64,11 @@ class EmployerProfile {
         'companyName': companyName,
         'phone': phone,
         'location': location,
-        'isVerified': isVerified,
+        'verificationStatus': verificationStatus,
         'type': type,
         'role': role,
-        'govId': govId,
+        'govIdType': govIdType,
+        'govIdNum': govIdNum,
         'govIdFiles': govIdFiles,
         'profilePhoto': profilePhoto,
       };
@@ -74,11 +79,25 @@ class EmployerProfile {
         companyName: map['companyName'] as String? ?? '',
         phone: map['phone'] as String? ?? '',
         location: map['location'] as String? ?? '',
-        isVerified: map['isVerified'] as bool? ?? true,
+        verificationStatus: _parseVerificationStatus(map),
         type: map['type'] as String? ?? 'individual',
         role: map['role'] as String? ?? 'Contractor',
-        govId: map['govId'] as String? ?? '',
+        govIdType: map['govIdType'] as String? ?? 'citizenship',
+        govIdNum: map['govIdNum'] as String? ?? '',
         govIdFiles: (map['govIdFiles'] as List?)?.cast<String>() ?? [],
         profilePhoto: map['profilePhoto'] as String? ?? '',
       );
+
+  static String _parseVerificationStatus(Map<String, dynamic> map) {
+    if (map.containsKey('verificationStatus')) {
+      return map['verificationStatus'] as String? ?? 'pending';
+    } else if (map.containsKey('governmentId') && map['governmentId'] is Map) {
+      final gov = map['governmentId'] as Map;
+      return gov['verificationStatus'] as String? ?? 'pending';
+    } else if (map.containsKey('isVerified')) {
+      // Legacy fallback
+      return (map['isVerified'] == true) ? 'verified' : 'pending';
+    }
+    return 'pending';
+  }
 }

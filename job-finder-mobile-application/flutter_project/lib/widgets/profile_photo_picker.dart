@@ -15,7 +15,6 @@ class ProfilePhotoPicker extends StatelessWidget {
     required this.photoPath,
     required this.onChanged,
     this.size = 64,
-    this.borderColor = AppColors.indigo600,
     this.labelEn = 'Profile Photo',
     this.labelNe = 'प्रोफाइल फोटो',
   }) : super(key: key);
@@ -23,7 +22,6 @@ class ProfilePhotoPicker extends StatelessWidget {
   final String photoPath;
   final ValueChanged<String> onChanged;
   final double size;
-  final Color borderColor;
   final String labelEn;
   final String labelNe;
 
@@ -44,7 +42,7 @@ class ProfilePhotoPicker extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
@@ -65,7 +63,7 @@ class ProfilePhotoPicker extends StatelessWidget {
                     width: size,
                     height: size,
                     color: AppColors.slate100,
-                    child: const Icon(Icons.person, color: AppColors.slate400),
+                    child: Icon(Icons.person, color: AppColors.slate400),
                   ),
                 ),
               ),
@@ -78,25 +76,25 @@ class ProfilePhotoPicker extends StatelessWidget {
                     GestureDetector(
                       onTap: _pick,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
                           boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                         ),
-                        child: const Icon(Icons.refresh, size: 14, color: AppColors.slate700),
+                        child: Icon(Icons.refresh, size: 14, color: AppColors.slate700),
                       ),
                     ),
                     const SizedBox(width: 2),
                     GestureDetector(
                       onTap: () => onChanged(''),
                       child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
                           color: AppColors.red500,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                        child: Icon(Icons.close, size: 14, color: Colors.white),
                       ),
                     ),
                   ],
@@ -122,11 +120,11 @@ class ProfilePhotoPicker extends StatelessWidget {
               child: Icon(Icons.person_add_alt_rounded, color: AppColors.slate400, size: size * 0.5),
             ),
           ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         if (!hasPhoto)
           Text(
             _isNe ? 'फोटो अपलोड गर्नुहोस्' : 'Upload a single profile photo',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w700,
               color: AppColors.slate400,

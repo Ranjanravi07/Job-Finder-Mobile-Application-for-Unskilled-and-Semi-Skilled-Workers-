@@ -20,28 +20,28 @@ class LanguageSelectionScreen extends StatelessWidget {
       backgroundColor: AppColors.slate50,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(),
+              Spacer(),
               // App Logo / Symbol
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: AppColors.slate900.withValues(alpha: 0.05),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.work_outline_rounded,
                     size: 80,
                     color: AppColors.slate900,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               // App Title in English and Nepali
               Text(
                 'Job Finder',
@@ -52,7 +52,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                   color: AppColors.slate900,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 'जागिर खोज्ने मोबाइल एप',
                 textAlign: TextAlign.center,
@@ -62,7 +62,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                   color: AppColors.slate500,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 'For Unskilled & Semi-Skilled Workers',
                 textAlign: TextAlign.center,
@@ -71,9 +71,9 @@ class LanguageSelectionScreen extends StatelessWidget {
                   color: AppColors.slate400,
                 ),
               ),
-              const Spacer(),
+              Spacer(),
               // Instruction
-              const Text(
+              Text(
                 'Please Select Language\nकृपया भाषा छान्नुहोस्',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -118,8 +118,8 @@ class LanguageSelectionScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.slate900,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  side: const BorderSide(color: AppColors.slate200, width: 2),
+                  padding: EdgeInsets.symmetric(vertical: 18),
+                  side: BorderSide(color: AppColors.slate200, width: 2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -128,8 +128,8 @@ class LanguageSelectionScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('🇳🇵', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 12),
+                    Text('🇳🇵', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 12),
                     Text(
                       'नेपाली (Nepali)',
                       style: GoogleFonts.hind(
@@ -140,8 +140,8 @@ class LanguageSelectionScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const Spacer(),
-              const Center(
+              Spacer(),
+              Center(
                 child: Text(
                   'Nepal College of Information Technology',
                   style: TextStyle(fontSize: 12, color: AppColors.slate300),

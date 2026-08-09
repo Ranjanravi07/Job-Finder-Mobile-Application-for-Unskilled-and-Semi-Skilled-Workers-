@@ -78,10 +78,10 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: AppColors.slate900,
-      insetPadding: const EdgeInsets.all(20),
+      insetPadding: EdgeInsets.all(20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,9 +89,9 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.auto_awesome_rounded, color: AppColors.emerald500, size: 18),
-                  const SizedBox(width: 8),
-                  const Expanded(
+                  Icon(Icons.auto_awesome_rounded, color: AppColors.emerald500, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
                     child: Text(
                       'Gemini Voice Onboarding',
                       style: TextStyle(
@@ -103,29 +103,29 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text(
+                    child: Text(
                       'Close',
                       style: TextStyle(color: AppColors.slate400, fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 _isNe
                     ? 'सिमुलेटरमा आवाज रेकर्ड गर्न तलका कुनै पनि उदाहरण थिच्नुहोस् वा आफ्नै वाक्य टाइप गर्नुहोस्। एआईले तपाइको विवरण पत्ता लगाउनेछ!'
                     : 'Tap any preset speech dictation below to simulate speaking, or type your own description. '
                         'The AI will extract name, skill, location, and daily wages!',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.slate300,
                   fontSize: 12,
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 _isNe ? 'उदाहरणहरू' : 'Preset Speaking Examples',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.slate500,
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
@@ -144,9 +144,9 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
+                        color: Color(0xFF0F172A),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.slate800),
                       ),
@@ -155,7 +155,7 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                         children: [
                           Text(
                             _isNe ? p.labelNe : p.labelEn,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.emerald400,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -166,7 +166,7 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                             '"${_isNe ? p.textNe : p.textEn}"',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.slate400,
                               fontSize: 10,
                               fontStyle: FontStyle.italic,
@@ -178,21 +178,21 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               TextField(
                 controller: _speechController,
                 maxLines: 3,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: TextStyle(color: Colors.white, fontSize: 12),
                 decoration: InputDecoration(
                   hintText: _isNe
                       ? 'मेरो नाम श्याम हो। म सिकर्मी हुँ...'
                       : 'Speak/type your work interest...',
-                  hintStyle: const TextStyle(color: AppColors.slate500),
+                  hintStyle: TextStyle(color: AppColors.slate500),
                   filled: true,
-                  fillColor: const Color(0xFF0F172A),
+                  fillColor: Color(0xFF0F172A),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.slate800),
+                    borderSide: BorderSide(color: AppColors.slate800),
                   ),
                 ),
               ),
@@ -203,27 +203,27 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.emerald500,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Parse with Gemini AI',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
               if (_parsing) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  padding: EdgeInsets.symmetric(vertical: 20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.slate800),
                   ),
                   child: Column(
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         height: 24,
                         width: 24,
                         child: CircularProgressIndicator(
@@ -231,10 +231,10 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                           strokeWidth: 2,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       Text(
                         _isNe ? 'एआईले आवाज विश्लेषण गर्दैछ...' : 'AI is parsing speech...',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.slate300,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -245,18 +245,18 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                 ),
               ],
               if (_parsed != null && !_parsing) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.emerald500.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
                           Icon(Icons.check_circle_rounded, color: AppColors.emerald400, size: 16),
                           SizedBox(width: 6),
@@ -286,7 +286,7 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                                   _parsed = null;
                                 });
                               },
-                              child: const Text(
+                              child: Text(
                                 'Discard',
                                 style: TextStyle(
                                   color: AppColors.slate400,
@@ -344,14 +344,14 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: EdgeInsets.only(bottom: 6),
       child: Text.rich(
         TextSpan(
           children: [
-            TextSpan(text: '$icon ', style: const TextStyle(color: AppColors.slate300)),
+            TextSpan(text: '$icon ', style: TextStyle(color: AppColors.slate300)),
             TextSpan(
               text: '$label ',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.slate300,
                 fontWeight: FontWeight.w700,
                 fontSize: 11,
@@ -359,7 +359,7 @@ class _DetailRow extends StatelessWidget {
             ),
             TextSpan(
               text: value,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.slate300,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

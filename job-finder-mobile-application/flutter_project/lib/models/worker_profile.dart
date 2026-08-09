@@ -10,7 +10,9 @@ class WorkerProfile {
   final String location;
   final String availability; // e.g. "Immediate", "Part-time"
   final String bio;
-  final String govId;
+  final String govIdType;
+  final String govIdNum;
+  final String verificationStatus;
   final List<String> govIdFiles;
   final String profilePhoto;
 
@@ -25,7 +27,9 @@ class WorkerProfile {
     required this.location,
     required this.availability,
     this.bio = '',
-    this.govId = '',
+    this.govIdType = 'citizenship',
+    this.govIdNum = '',
+    this.verificationStatus = 'pending',
     this.govIdFiles = const [],
     this.profilePhoto = '',
   });
@@ -41,7 +45,9 @@ class WorkerProfile {
     String? location,
     String? availability,
     String? bio,
-    String? govId,
+    String? govIdType,
+    String? govIdNum,
+    String? verificationStatus,
     List<String>? govIdFiles,
     String? profilePhoto,
   }) {
@@ -56,7 +62,9 @@ class WorkerProfile {
       location: location ?? this.location,
       availability: availability ?? this.availability,
       bio: bio ?? this.bio,
-      govId: govId ?? this.govId,
+      govIdType: govIdType ?? this.govIdType,
+      govIdNum: govIdNum ?? this.govIdNum,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
       govIdFiles: govIdFiles ?? this.govIdFiles,
       profilePhoto: profilePhoto ?? this.profilePhoto,
     );
@@ -73,7 +81,9 @@ class WorkerProfile {
         'location': location,
         'availability': availability,
         'bio': bio,
-        'govId': govId,
+        'govIdType': govIdType,
+        'govIdNum': govIdNum,
+        'verificationStatus': verificationStatus,
         'govIdFiles': govIdFiles,
         'profilePhoto': profilePhoto,
       };
@@ -89,8 +99,20 @@ class WorkerProfile {
         location: map['location'] as String? ?? '',
         availability: map['availability'] as String? ?? 'Immediate',
         bio: map['bio'] as String? ?? '',
-        govId: map['govId'] as String? ?? '',
+        govIdType: map['govIdType'] as String? ?? 'citizenship',
+        govIdNum: map['govIdNum'] as String? ?? '',
+        verificationStatus: _parseVerificationStatus(map),
         govIdFiles: (map['govIdFiles'] as List?)?.cast<String>() ?? [],
         profilePhoto: map['profilePhoto'] as String? ?? '',
       );
+
+  static String _parseVerificationStatus(Map<String, dynamic> map) {
+    if (map.containsKey('verificationStatus')) {
+      return map['verificationStatus'] as String? ?? 'pending';
+    } else if (map.containsKey('governmentId') && map['governmentId'] is Map) {
+      final gov = map['governmentId'] as Map;
+      return gov['verificationStatus'] as String? ?? 'pending';
+    }
+    return 'pending';
+  }
 }

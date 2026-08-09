@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pinput/pinput.dart';
+import 'dart:async';
 
 import '../services/app_store.dart';
 import '../theme/app_colors.dart';
@@ -16,34 +18,53 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
-  final bool _isLoading = false;
+  bool _isLoading = false;
+  String _otpMethod = 'sms';
+  
+  Timer? _timer;
+  int _countdown = 0;
 
   AppStore get store => AppStore.instance;
 
   @override
   void dispose() {
+    _timer?.cancel();
     _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
   }
 
+  void _startTimer() {
+    setState(() => _countdown = 60);
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown > 0) {
+        setState(() => _countdown--);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
   void _sendOtp() {
+    setState(() => _isLoading = true);
     final lang = store.lang;
     store.sendOtp(
       (error) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error), backgroundColor: AppColors.red500),
         );
       },
       (message) {
         setState(() {
+          _isLoading = false;
           _otpSent = true;
         });
+        _startTimer();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              lang == 'ne' ? 'ओटिपी कोड पठाइएको छ: $message' : 'OTP Code sent: $message',
-            ),
+            content: Text(message),
             backgroundColor: AppColors.emerald500,
             duration: const Duration(seconds: 6),
           ),
@@ -52,16 +73,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-<<<<<<< Updated upstream
   void _verifyOtp() {
+    setState(() => _isLoading = true);
     store.verifyOtp(
       _otpController.text,
       (error) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error), backgroundColor: AppColors.red500),
         );
       },
       (existingWorker, existingEmployer) {
+        setState(() => _isLoading = false);
         if (existingWorker) {
           store.setRole('worker');
           Navigator.pushReplacementNamed(context, '/worker-home');
@@ -74,20 +97,6 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
     );
-=======
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Simulate verification delay
-    Future.delayed(const Duration(milliseconds: 800), () {
-      setState(() {
-        _isLoading = false;
-      });
-      // Navigate to role selection after successful login
-      Navigator.pushReplacementNamed(context, '/role-selection', arguments: lang);
-    });
->>>>>>> Stashed changes
   }
 
   @override
@@ -100,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.slate900),
+          icon: Icon(Icons.arrow_back_rounded, color: AppColors.slate900),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -123,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 lang == 'ne'
                     ? 'सुरक्षित प्रवेशको लागि आफ्नो मोबाइल नम्बर राख्नुहोस्। पासवर्ड चाहिँदैन।'
                     : 'Enter your 10-digit mobile number. No password required.',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppColors.slate500,
                   height: 1.4,
@@ -139,17 +148,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: AppColors.slate700,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
                         color: AppColors.slate100,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.slate200, width: 1.5),
                       ),
-                      child: const Text(
+                      child: Text(
                         '+977',
                         style: TextStyle(
                           fontSize: 16,
@@ -168,24 +177,84 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           counterText: '',
                           hintText: '98XXXXXXXX',
-                          hintStyle: const TextStyle(color: AppColors.slate400),
+                          hintStyle: TextStyle(color: AppColors.slate400),
                           fillColor: Colors.white,
                           filled: true,
-                          contentPadding: const EdgeInsets.all(16),
+                          contentPadding: EdgeInsets.all(16),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.slate200, width: 1.5),
+                            borderSide: BorderSide(color: AppColors.slate200, width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.slate900, width: 2),
+                            borderSide: BorderSide(color: AppColors.slate900, width: 2),
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _otpMethod = 'sms'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _otpMethod == 'sms' ? Colors.white : AppColors.slate100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _otpMethod == 'sms' ? AppColors.slate900 : AppColors.slate200,
+                              width: _otpMethod == 'sms' ? 2 : 1,
+                            ),
+                            boxShadow: _otpMethod == 'sms' 
+                              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                              : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'SMS',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _otpMethod == 'sms' ? AppColors.slate900 : AppColors.slate500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _otpMethod = 'whatsapp'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _otpMethod == 'whatsapp' ? Colors.white : AppColors.slate100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _otpMethod == 'whatsapp' ? AppColors.emerald500 : AppColors.slate200,
+                              width: _otpMethod == 'whatsapp' ? 2 : 1,
+                            ),
+                            boxShadow: _otpMethod == 'whatsapp' 
+                              ? [BoxShadow(color: AppColors.emerald500.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))]
+                              : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'WhatsApp',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _otpMethod == 'whatsapp' ? AppColors.emerald600 : AppColors.slate500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
@@ -215,38 +284,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: AppColors.slate700,
                   ),
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  textAlign: TextAlign.center,
-                  onChanged: (v) {
-                    if (v.length == 6) _verifyOtp();
-                  },
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 10,
-                  ),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    hintText: '******',
-                    hintStyle: const TextStyle(color: AppColors.slate400, letterSpacing: 0),
-                    fillColor: Colors.white,
-                    filled: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.slate200, width: 1.5),
+                const SizedBox(height: 16),
+                Center(
+                  child: Pinput(
+                    controller: _otpController,
+                    length: 6,
+                    onCompleted: (v) => _verifyOtp(),
+                    defaultPinTheme: PinTheme(
+                      width: 50,
+                      height: 56,
+                      textStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.slate200, width: 1.5),
+                      ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.emerald500, width: 2),
+                    focusedPinTheme: PinTheme(
+                      width: 50,
+                      height: 56,
+                      textStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.emerald500, width: 2),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _verifyOtp,
                   style: ElevatedButton.styleFrom(
@@ -268,6 +334,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                         ),
                 ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      lang == 'ne' ? 'कोड आएन? ' : 'Didn\'t receive the code? ',
+                      style: TextStyle(color: AppColors.slate500),
+                    ),
+                    TextButton(
+                      onPressed: _countdown == 0 ? _sendOtp : null,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        _countdown > 0 
+                          ? (lang == 'ne' ? '$_countdown सेकेन्डमा पुनः पठाउनुहोस्' : 'Resend OTP in ${_countdown}s')
+                          : (lang == 'ne' ? 'पुनः पठाउनुहोस्' : 'Resend OTP'),
+                        style: TextStyle(
+                          color: _countdown == 0 ? AppColors.emerald500 : AppColors.slate400,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {
@@ -278,7 +371,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: Text(
                     lang == 'ne' ? 'नम्बर परिवर्तन गर्नुहोस्' : 'Change Phone Number',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.slate900,
                       fontWeight: FontWeight.w600,
                     ),

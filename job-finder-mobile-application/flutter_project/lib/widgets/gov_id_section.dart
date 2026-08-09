@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../services/app_store.dart';
 import '../services/image_pick_service.dart';
@@ -62,7 +63,7 @@ class _GovIdSectionState extends State<GovIdSection> {
     return GestureDetector(
       onTap: hasFile ? null : () => _pick(key),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -81,26 +82,26 @@ class _GovIdSectionState extends State<GovIdSection> {
                       width: 80,
                       height: 48,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox(
+                      errorBuilder: (_, __, ___) => SizedBox(
                         width: 80,
                         height: 48,
                         child: Icon(Icons.insert_drive_file, color: AppColors.slate400),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.refresh, size: 14, color: AppColors.slate700),
+                        icon: Icon(Icons.refresh, size: 14, color: AppColors.slate700),
                         tooltip: _label('Replace', 'बदल्नुहोस्'),
                         onPressed: () => _pick(key),
                       ),
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.close, size: 14, color: Colors.white),
+                        icon: Icon(Icons.close, size: 14, color: Colors.white),
                         style: IconButton.styleFrom(backgroundColor: AppColors.red500),
                         tooltip: _label('Delete', 'मेटाउनुहोस्'),
                         onPressed: () => widget.onFileRemoved(key),
@@ -111,20 +112,20 @@ class _GovIdSectionState extends State<GovIdSection> {
               )
             : Column(
                 children: [
-                  const Icon(Icons.upload_file_rounded, color: AppColors.slate400),
-                  const SizedBox(height: 6),
+                  Icon(Icons.upload_file_rounded, color: AppColors.slate400),
+                  SizedBox(height: 6),
                   Text(
                     _label(labelEn, labelNe),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: AppColors.slate700,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.slate50,
                       border: Border.all(color: AppColors.slate200),
@@ -132,7 +133,7 @@ class _GovIdSectionState extends State<GovIdSection> {
                     ),
                     child: Text(
                       _label('Upload', 'फाइल छान्नुहोस्'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: AppColors.slate600,
@@ -148,7 +149,7 @@ class _GovIdSectionState extends State<GovIdSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.slate100.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
@@ -159,12 +160,12 @@ class _GovIdSectionState extends State<GovIdSection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.shield_rounded, size: 16, color: AppColors.indigo600),
-              const SizedBox(width: 6),
+              Icon(Icons.shield_rounded, size: 16, color: AppColors.indigo600),
+              SizedBox(width: 6),
               Expanded(
                 child: Text(
                   _label(widget.titleEn, widget.titleNe),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
@@ -173,14 +174,14 @@ class _GovIdSectionState extends State<GovIdSection> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.indigo600.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   _label('REQUIRED', 'अनिवार्य'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 8,
                     fontWeight: FontWeight.w900,
                     color: AppColors.indigo600,
@@ -189,7 +190,7 @@ class _GovIdSectionState extends State<GovIdSection> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -201,35 +202,40 @@ class _GovIdSectionState extends State<GovIdSection> {
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.slate200),
+                      borderSide: BorderSide(color: AppColors.slate200),
                     ),
                   ),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontSize: 11, 
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.slate900,
+                  ),
                   items: _typeOptions(),
                   onChanged: (v) {
                     if (v != null) widget.onTypeChanged(v);
                   },
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: TextField(
                   controller: TextEditingController(text: widget.govIdNum),
                   onChanged: widget.onNumChanged,
+                  keyboardType: TextInputType.text,
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: _label('ID Number', 'आईडी नम्बर'),
-                    hintStyle: const TextStyle(fontSize: 11),
+                    hintText: _idNumberHint(widget.govIdType),
+                    hintStyle: TextStyle(fontSize: 11, color: AppColors.slate600),
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.slate200),
+                      borderSide: BorderSide(color: AppColors.slate200),
                     ),
                   ),
                 ),
@@ -270,7 +276,11 @@ class _GovIdSectionState extends State<GovIdSection> {
   DropdownMenuItem<String> _opt(String id, String en, String ne) {
     return DropdownMenuItem<String>(
       value: id,
-      child: Text(_label(en, ne), overflow: TextOverflow.ellipsis),
+      child: Text(
+        _label(en, ne), 
+        style: TextStyle(color: AppColors.slate900, fontSize: 13, fontWeight: FontWeight.w600),
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -301,6 +311,23 @@ class _GovIdSectionState extends State<GovIdSection> {
         return 'दर्ता फोटो अपलोड गर्नुहोस्';
       default:
         return 'फाइल अपलोड गर्नुहोस्';
+    }
+  }
+
+  String _idNumberHint(String type) {
+    switch (type) {
+      case 'citizenship':
+        return _label('Citizenship ID Number', 'नागरिकता नम्बर');
+      case 'nid':
+        return _label('NID Number', 'NID नम्बर');
+      case 'license':
+        return _label('Driving License Number', 'लाइसेन्स नम्बर');
+      case 'pan':
+        return _label('PAN Number', 'प्यान नम्बर');
+      case 'registration':
+        return _label('Registration Number', 'दर्ता नम्बर');
+      default:
+        return _label('ID Number', 'आईडी नम्बर');
     }
   }
 }

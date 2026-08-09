@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Admins have full access
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      // Users can read/write their own basic profile, admins can read/write all
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /workers/{userId} {
+      // Worker can read their own profile
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      
+      // Worker can create/update their profile, but cannot modify verificationStatus
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.verificationStatus == 'pending';
+                    
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus']) || request.resource.data.verificationStatus == resource.data.verificationStatus);
+                    
+      allow update: if isAdmin();
+    }
+
+    match /employers/{userId} {
+      // Employer can read their own profile
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      
+      // Employer can create/update their profile, but cannot modify verificationStatus
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.verificationStatus == 'pending';
+                    
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus']) || request.resource.data.verificationStatus == resource.data.verificationStatus);
+                    
+      allow update: if isAdmin();
+    }
+
+    match /otpVerifications/{phoneId} {
+      // ONLY Cloud Functions can read/write OTP data. Clients are completely blocked.
+      allow read, write: if false;
+    }
+  }
+}

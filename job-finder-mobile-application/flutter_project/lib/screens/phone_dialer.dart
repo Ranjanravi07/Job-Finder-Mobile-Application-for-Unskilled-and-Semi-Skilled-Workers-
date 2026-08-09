@@ -23,12 +23,12 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF020617).withValues(alpha: 0.95),
+      backgroundColor: Color(0xFF020617).withValues(alpha: 0.95),
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Spacer(),
+            Spacer(),
             // Avatar + status
             Column(
               children: [
@@ -40,24 +40,24 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.slate700, width: 4),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.call_rounded,
                     size: 40,
                     color: AppColors.emerald400,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   widget.name,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
+                SizedBox(height: 6),
+                Text(
                   'CALLING...',
                   style: TextStyle(
                     color: AppColors.emerald400,
@@ -69,7 +69,7 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                 const SizedBox(height: 6),
                 Text(
                   '+977 ${widget.phone}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.slate400,
                     fontSize: 14,
                     fontFamily: 'monospace',
@@ -77,13 +77,13 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                 ),
               ],
             ),
-            const Spacer(),
+            Spacer(),
             // Hang up
             Padding(
-              padding: const EdgeInsets.only(bottom: 40),
+              padding: EdgeInsets.only(bottom: 40),
               child: Column(
                 children: [
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
                       'This triggers a native telephone call widget (tel:) on physical iOS and Android smartphones.',
@@ -104,7 +104,7 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                     child: Container(
                       width: 64,
                       height: 64,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.red500,
                         shape: BoxShape.circle,
                       ),

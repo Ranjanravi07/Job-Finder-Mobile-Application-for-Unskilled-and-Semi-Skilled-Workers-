@@ -13,34 +13,18 @@ class RoleSelectionScreen extends StatelessWidget {
   void _selectWorker(BuildContext context) {
     final store = AppStore.instance;
     store.setRole('worker');
-    final existingWorker = store.workers.any((w) => w.phone == store.phone);
-    if (existingWorker) {
-      Navigator.pushReplacementNamed(context, '/worker-home');
-    } else {
-      Navigator.pushNamed(context, '/worker-profile-creation');
-    }
+    Navigator.pushNamed(context, '/worker-profile-creation');
   }
 
   void _selectEmployer(BuildContext context) {
     final store = AppStore.instance;
     store.setRole('employer');
-    final existingEmployer = store.employers.any((e) => e.phone == store.phone);
-    if (existingEmployer) {
-      Navigator.pushReplacementNamed(context, '/employer-home');
-    } else {
-      Navigator.pushNamed(context, '/employer-profile-creation');
-    }
+    Navigator.pushNamed(context, '/employer-profile-creation');
   }
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< Updated upstream
     final lang = AppStore.instance.lang;
-=======
-    final lang = ModalRoute.of(context)!.settings.arguments as String? ?? 'en';
-    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
-    final hasProfile = profileProvider.hasProfile;
->>>>>>> Stashed changes
 
     return Scaffold(
       backgroundColor: AppColors.slate50,
@@ -66,30 +50,15 @@ class RoleSelectionScreen extends StatelessWidget {
                     ? 'आफ्नो आवश्यकता अनुसार भूमिका चयन गर्नुहोस्।'
                     : 'Select the portal that fits your needs.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15, color: AppColors.slate500),
+                style: TextStyle(fontSize: 15, color: AppColors.slate500),
               ),
               const Expanded(child: SizedBox()),
 
               // Job Seeker Card (Worker)
               GestureDetector(
-<<<<<<< Updated upstream
                 onTap: () => _selectWorker(context),
-=======
-                onTap: () {
-                  // Check if user has a profile, if not redirect to profile setup
-                  if (!hasProfile) {
-                    Navigator.pushNamed(
-                      context,
-                      '/profile-setup',
-                      arguments: 'worker',
-                    );
-                  } else {
-                    Navigator.pushReplacementNamed(context, '/worker-home', arguments: lang);
-                  }
-                },
->>>>>>> Stashed changes
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -98,19 +67,19 @@ class RoleSelectionScreen extends StatelessWidget {
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        offset: Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: AppColors.emerald500.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.person_rounded,
                           size: 50,
                           color: AppColors.emerald600,
@@ -131,7 +100,7 @@ class RoleSelectionScreen extends StatelessWidget {
                             ? 'डकर्मी, पेन्टर, इलेक्ट्रीशियन, लेबर आदि कामहरू पाउनुहोस्।'
                             : 'Find immediate daily wage or construction works near Lalitpur.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                        style: TextStyle(fontSize: 13, color: AppColors.slate500),
                       ),
                     ],
                   ),
@@ -142,24 +111,9 @@ class RoleSelectionScreen extends StatelessWidget {
 
               // Employer Card
               GestureDetector(
-<<<<<<< Updated upstream
                 onTap: () => _selectEmployer(context),
-=======
-                onTap: () {
-                  // Check if user has a profile, if not redirect to profile setup
-                  if (!hasProfile) {
-                    Navigator.pushNamed(
-                      context,
-                      '/profile-setup',
-                      arguments: 'employer',
-                    );
-                  } else {
-                    Navigator.pushReplacementNamed(context, '/employer-home', arguments: lang);
-                  }
-                },
->>>>>>> Stashed changes
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -168,19 +122,19 @@ class RoleSelectionScreen extends StatelessWidget {
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        offset: Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: AppColors.slate900.withValues(alpha: 0.08),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.business_center_rounded,
                           size: 50,
                           color: AppColors.slate900,
@@ -201,7 +155,7 @@ class RoleSelectionScreen extends StatelessWidget {
                             ? 'आफ्नो निर्माण वा अन्य कामका लागि कामदारहरू भर्ती गर्नुहोस्।'
                             : 'Post job requirements and connect with skilled laborers.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                        style: TextStyle(fontSize: 13, color: AppColors.slate500),
                       ),
                     ],
                   ),

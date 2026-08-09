@@ -1,12 +1,4 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-=======
-import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:provider/provider.dart';
-import '../providers/profile_provider.dart';
-import '../widgets/profile_summary_card.dart';
->>>>>>> Stashed changes
 
 import '../data/mock_data.dart';
 import '../models/job.dart';
@@ -62,7 +54,6 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< Updated upstream
       backgroundColor: AppColors.slate50,
       body: ListenableBuilder(
         listenable: store,
@@ -81,143 +72,6 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             ],
           );
         },
-=======
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              lang == 'ne' ? 'जागिर खोज्नुहोस्' : 'Find Jobs',
-              style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-            const Text(
-              'Balkumari, Lalitpur, Nepal',
-              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-            ),
-          ],
-        ),
-        actions: [
-          // Profile button
-          IconButton(
-            icon: ProfileAvatar(
-              profile: Provider.of<ProfileProvider>(context, listen: false).profile,
-              size: 32,
-            ),
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile-view', arguments: lang);
-            },
-            tooltip: lang == 'ne' ? 'प्रोफाइल' : 'Profile',
-          ),
-          const SizedBox(width: 8),
-          // Role switch button
-          TextButton.icon(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/role-selection', arguments: lang);
-            },
-            icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white),
-            label: Text(
-              lang == 'ne' ? 'भूमिका बदल्नुहोस्' : 'Switch Role',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Search and View Toggle Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: const Color(0xFF0F172A),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextField(
-                      onChanged: (val) {
-                        setState(() {
-                          _searchQuery = val;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: lang == 'ne' ? 'काम वा स्थान खोज्नुहोस्...' : 'Search jobs, locations...',
-                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Map/List toggle button
-                IconButton.filled(
-                  onPressed: () {
-                    setState(() {
-                      _isMapView = !_isMapView;
-                    });
-                  },
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: Icon(_isMapView ? Icons.list_rounded : Icons.map_rounded),
-                ),
-              ],
-            ),
-          ),
-
-          // Skill Categories Slider
-          Container(
-            height: 54,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            color: Colors.white,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemBuilder: (context, index) {
-                final cat = _categories[index];
-                final isSelected = _selectedCategory == cat['id'];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text(
-                      lang == 'ne' ? cat['nameNe']! : cat['nameEn']!,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : const Color(0xFF475569),
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: const Color(0xFF0F172A),
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedCategory = cat['id']!;
-                      });
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Job list or Map Mock view
-          Expanded(
-            child: _isMapView
-                ? _buildMapViewMock(lang)
-                : _buildJobList(filteredJobs, lang),
-          ),
-        ],
->>>>>>> Stashed changes
       ),
     );
   }
@@ -232,7 +86,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
     return Container(
       height: 64,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: AppColors.slate100)),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
@@ -247,9 +101,9 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFE8F0FE) : Colors.transparent,
+                      color: isActive ? Color(0xFFE8F0FE) : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
@@ -258,7 +112,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       color: isActive ? AppColors.brandBlue : AppColors.slate400,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     tab.label,
                     style: TextStyle(
@@ -285,7 +139,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       children: [
         // Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           color: AppColors.slate900,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -295,12 +149,12 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.business_center_rounded,
+                      Icon(Icons.business_center_rounded,
                           color: AppColors.emerald400, size: 16),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Text(
                         _t('Find Jobs', 'काम खोज्नुहोस्'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.emerald400,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -308,59 +162,44 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
+                  SizedBox(height: 2),
+                  Text(
                     'Lalitpur / Kathmandu',
                     style: TextStyle(color: AppColors.slate300, fontSize: 10),
                   ),
                 ],
               ),
-              // Employer mode switch
-              TextButton(
-                onPressed: () {
-                  store.setRole('employer');
-                  Navigator.pushReplacementNamed(context, '/employer-home');
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white10,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                ),
-                child: Text(
-                  _t('Employer Mode', 'रोजगारदाता मोड'),
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-                ),
-              ),
+
             ],
           ),
         ),
 
         // Search + view toggle
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           color: AppColors.slate900.withValues(alpha: 0.95),
           child: Row(
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search_rounded, size: 18, color: AppColors.slate400),
-                      const SizedBox(width: 6),
+                      Icon(Icons.search_rounded, size: 18, color: AppColors.slate400),
+                      SizedBox(width: 6),
                       Expanded(
                         child: TextField(
                           decoration: InputDecoration(
                             hintText: _t('Search jobs...', 'काम खोज्नुहोस्...'),
-                            hintStyle: const TextStyle(fontSize: 12, color: AppColors.slate400),
+                            hintStyle: TextStyle(fontSize: 12, color: AppColors.slate400),
                             border: InputBorder.none,
                             isDense: true,
                           ),
-                          style: const TextStyle(fontSize: 12, color: AppColors.slate800),
+                          style: TextStyle(fontSize: 12, color: AppColors.slate800),
                           onChanged: (v) => store.setSearchQuery(v),
                         ),
                       ),
@@ -413,7 +252,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       child: GestureDetector(
         onTap: () => store.setSelectedCategory(id),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: active ? AppColors.slate900 : AppColors.slate100,
             borderRadius: BorderRadius.circular(20),
@@ -436,7 +275,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   Widget _buildMapView() {
     final jobs = store.jobs;
     return Container(
-      margin: const EdgeInsets.all(12),
+      margin: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.slate200,
         borderRadius: BorderRadius.circular(16),
@@ -454,7 +293,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             left: 12,
             top: 12,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(8),
@@ -462,7 +301,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               ),
               child: Text(
                 '📍 ${_t('Nearby Jobs on Map', 'नक्सामा नजिकैका कामहरू')}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: AppColors.slate500,
@@ -470,8 +309,8 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               ),
             ),
           ),
-          if (jobs.isNotEmpty) _mapPin(const Alignment(0.3, -0.25), jobs[0]),
-          if (jobs.length > 1) _mapPin(const Alignment(-0.3, 0.25), jobs[1]),
+          if (jobs.isNotEmpty) _mapPin(Alignment(0.3, -0.25), jobs[0]),
+          if (jobs.length > 1) _mapPin(Alignment(-0.3, 0.25), jobs[1]),
           Positioned(
             left: 0,
             right: 0,
@@ -479,7 +318,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             child: Text(
               _t('Tap on the map pins to view job details', 'नक्साको पिनमा थिचेर जागिरको विवरण हेर्नुहोस्'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontStyle: FontStyle.italic,
                 color: AppColors.slate500,
@@ -497,17 +336,17 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       child: GestureDetector(
         onTap: () => _showJobDetails(job),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.slate900,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.emerald500, width: 2),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.location_on_rounded, color: AppColors.emerald400, size: 12),
+              Icon(Icons.location_on_rounded, color: AppColors.emerald400, size: 12),
               Text(
                 'Rs. ${job.wage}',
                 style: const TextStyle(
@@ -530,11 +369,11 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, size: 32, color: AppColors.slate300),
-            const SizedBox(height: 8),
+            Icon(Icons.error_outline_rounded, size: 32, color: AppColors.slate300),
+            SizedBox(height: 8),
             Text(
               _t('No jobs matches your filters.', 'कुनै पनि काम भेटिएन।'),
-              style: const TextStyle(fontSize: 12, color: AppColors.slate400),
+              style: TextStyle(fontSize: 12, color: AppColors.slate400),
             ),
           ],
         ),
@@ -553,13 +392,13 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
     final status = myApp.isNotEmpty ? myApp.first.status : null;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.slate100),
-        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 6)],
+        boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 6)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,20 +412,20 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   children: [
                     Text(
                       job.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
                         color: AppColors.slate900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_rounded, size: 12, color: AppColors.slate400),
-                        const SizedBox(width: 4),
+                        Icon(Icons.location_on_rounded, size: 12, color: AppColors.slate400),
+                        SizedBox(width: 4),
                         Text(
                           job.location,
-                          style: const TextStyle(fontSize: 10, color: AppColors.slate500),
+                          style: TextStyle(fontSize: 10, color: AppColors.slate500),
                         ),
                       ],
                     ),
@@ -594,7 +433,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.emerald500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -602,7 +441,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 ),
                 child: Text(
                   'Rs. ${job.wage}/d',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: AppColors.emerald500,
@@ -611,12 +450,12 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             job.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               color: AppColors.slate500,
               height: 1.4,
@@ -689,7 +528,27 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                         ),
                       )
                     : ElevatedButton(
-                        onPressed: () => store.applyForJob(job.id),
+                        onPressed: () {
+                          if (store.activeWorker?.verificationStatus == 'pending') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Your profile is waiting for admin verification.'),
+                                backgroundColor: AppColors.red500,
+                              ),
+                            );
+                            return;
+                          }
+                          if (store.activeWorker?.verificationStatus == 'inactive') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Your account is blocked/inactive.'),
+                                backgroundColor: AppColors.red500,
+                              ),
+                            );
+                            return;
+                          }
+                          store.applyForJob(job.id);
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.emerald500,
                           foregroundColor: Colors.white,
@@ -721,7 +580,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         .toList();
 
     if (myApps.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No submitted applications yet. Use one-tap apply!',
           style: TextStyle(fontSize: 12, color: AppColors.slate400),
@@ -737,8 +596,8 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         final job = store.jobs.where((j) => j.id == app.jobId).toList();
         final jobInfo = job.isNotEmpty ? job.first : null;
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
+          margin: EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -756,21 +615,21 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       children: [
                         Text(
                           jobInfo?.title ?? 'Unknown Job',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w900,
                             color: AppColors.slate900,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Text.rich(
                           TextSpan(
                             text: _t('Employer: ', 'रोजगारदाता: '),
-                            style: const TextStyle(fontSize: 10, color: AppColors.slate500),
+                            style: TextStyle(fontSize: 10, color: AppColors.slate500),
                             children: [
                               TextSpan(
                                 text: jobInfo?.employerName ?? 'N/A',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.slate700,
                                 ),
@@ -784,9 +643,9 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   _statusBadge(app.status),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppColors.slate50,
                   borderRadius: BorderRadius.circular(10),
@@ -815,10 +674,10 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       jobInfo?.employerName ?? 'Contractor',
                       jobInfo?.employerPhone ?? '9851044321',
                     ),
-                    icon: const Icon(Icons.call_rounded, size: 14),
+                    icon: Icon(Icons.call_rounded, size: 14),
                     label: Text(
                       _t('Call Employer Now', 'रोजगारदातालाई कल गर्नुहोस्'),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.emerald500,
@@ -871,11 +730,11 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   Widget _buildChatInbox() {
     const channels = ['Ravi Ranjan Sah', 'Ajay Kumar Sah'];
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       children: [
         Text(
           _t('Your Chat Inbox', 'मेरो च्याटहरू'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w900,
             color: AppColors.slate900,
@@ -886,7 +745,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
           final msgs = store.chatMessages[user] ?? [];
           final lastMsg = msgs.isNotEmpty ? msgs.last : null;
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -897,7 +756,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 backgroundColor: AppColors.indigo600.withValues(alpha: 0.1),
                 child: Text(
                   user.characters.first,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.indigo600,
                     fontWeight: FontWeight.w900,
                   ),
@@ -908,7 +767,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 children: [
                   Text(
                     user,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                       color: AppColors.slate900,
@@ -916,7 +775,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   ),
                   Text(
                     lastMsg?.time ?? 'Now',
-                    style: const TextStyle(fontSize: 9, color: AppColors.slate400),
+                    style: TextStyle(fontSize: 9, color: AppColors.slate400),
                   ),
                 ],
               ),
@@ -924,7 +783,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 lastMsg?.text ?? 'No messages yet.',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 10, color: AppColors.slate500),
+                style: TextStyle(fontSize: 10, color: AppColors.slate500),
               ),
               onTap: () => store.setActiveChatChannel(user),
             ),
@@ -940,18 +799,18 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       children: [
         // Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           color: AppColors.slate900,
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.slate300, size: 20),
+                icon: Icon(Icons.arrow_back_rounded, color: AppColors.slate300, size: 20),
                 onPressed: () => store.setActiveChatChannel(null),
               ),
               Expanded(
                 child: Text(
                   channel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
@@ -961,7 +820,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.emerald500,
                   shape: BoxShape.circle,
                 ),
@@ -992,7 +851,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
           height: 40,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             children: [
               _presetChip(_t('I am ready for the work.', 'म काम गर्न तयार छु।')),
               _presetChip(_t('Where is the exact location?', 'स्थान कहाँ हो?')),
@@ -1002,7 +861,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         ),
         // Input
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(10),
           color: Colors.white,
           child: Row(
             children: [
@@ -1011,15 +870,15 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   controller: _chatController,
                   decoration: InputDecoration(
                     hintText: _t('Type message...', 'सन्देश लेख्नुहोस्...'),
-                    hintStyle: const TextStyle(fontSize: 12, color: AppColors.slate400),
+                    hintStyle: TextStyle(fontSize: 12, color: AppColors.slate400),
                     filled: true,
                     fillColor: AppColors.slate50,
                     isDense: true,
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
-                      borderSide: const BorderSide(color: AppColors.slate200),
+                      borderSide: BorderSide(color: AppColors.slate200),
                     ),
                   ),
                   onChanged: (v) => store.setNewMsgText(v),
@@ -1058,7 +917,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       child: GestureDetector(
         onTap: () => _chatController.text = label,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.slate100,
             borderRadius: BorderRadius.circular(20),
@@ -1066,7 +925,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
           ),
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: AppColors.slate700,
@@ -1086,16 +945,16 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            padding: const EdgeInsets.all(12),
+            margin: EdgeInsets.only(bottom: 2),
+            padding: EdgeInsets.all(12),
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.75,
             ),
             decoration: BoxDecoration(
               color: isUser ? AppColors.indigo600 : Colors.white,
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(16),
-                topRight: const Radius.circular(16),
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
                 bottomLeft: Radius.circular(isUser ? 16 : 4),
                 bottomRight: Radius.circular(isUser ? 4 : 16),
               ),
@@ -1112,10 +971,10 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               msg.time,
-              style: const TextStyle(fontSize: 9, color: AppColors.slate400),
+              style: TextStyle(fontSize: 9, color: AppColors.slate400),
             ),
           ),
         ],
@@ -1133,7 +992,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       children: [
         // Brand header
         Row(
@@ -1144,7 +1003,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.emerald600,
                     shape: BoxShape.circle,
                   ),
@@ -1161,7 +1020,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                           child: Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
                             ),
@@ -1171,8 +1030,8 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Column(
+                SizedBox(width: 12),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -1192,7 +1051,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               ],
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.emerald500.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
@@ -1202,13 +1061,13 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.emerald500,
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
+                  SizedBox(width: 4),
+                  Text(
                     'ONLINE',
                     style: TextStyle(
                       fontSize: 10,
@@ -1221,23 +1080,23 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         if (_editingProfile)
           _buildWorkerEditForm(active)
         else
           _buildWorkerProfileCard(active),
 
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Settings header
         Row(
           children: [
-            const Icon(Icons.settings_rounded, size: 14, color: AppColors.slate500),
-            const SizedBox(width: 6),
+            Icon(Icons.settings_rounded, size: 14, color: AppColors.slate500),
+            SizedBox(width: 6),
             Text(
               _t('Profile & System Settings', 'प्रणाली सेटिंग्स र प्राथमिकताहरू'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
                 color: AppColors.slate900,
@@ -1245,12 +1104,12 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
 
         // Settings card
         _buildSettingsCard(),
 
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Logout
         OutlinedButton(
@@ -1258,7 +1117,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.red500,
             backgroundColor: AppColors.red50,
-            side: const BorderSide(color: AppColors.red200),
+            side: BorderSide(color: AppColors.red200),
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -1281,7 +1140,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
   Widget _buildWorkerProfileCard(WorkerProfile active) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1304,7 +1163,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 )
               else
                 _avatar(active.name, 48, AppColors.emerald500),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1315,21 +1174,21 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                           child: Text(
                             active.name,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
                               color: AppColors.slate900,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.emerald500.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
+                          child: Text(
                             'VERIFIED',
                             style: TextStyle(
                               fontSize: 8,
@@ -1343,7 +1202,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '${active.mainSkill.toUpperCase()} • ${active.experience} Exp',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
@@ -1355,15 +1214,15 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.slate100),
+          SizedBox(height: 12),
+          Divider(height: 1, color: AppColors.slate100),
           const SizedBox(height: 12),
           _row(_t('Phone Number', 'मोबाइल नम्बर'), '+977 ${active.phone}'),
           _row(_t('Location', 'स्थान'), active.location),
           _row(
             _t('Govt Verification ID', 'सरकारी परिचय-पत्र'),
-            active.govId.isNotEmpty ? '🛡️ ${active.govId}' : _t('Not Provided', 'सत्यापन आवश्यक'),
-            valueColor: active.govId.isNotEmpty ? AppColors.slate800 : AppColors.emerald700,
+            active.govIdNum.isNotEmpty ? '🛡️ ${active.govIdType.toUpperCase()} - ${active.govIdNum}' : _t('Not Provided', 'सत्यापन आवश्यक'),
+            valueColor: active.govIdNum.isNotEmpty ? AppColors.slate800 : AppColors.emerald700,
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
@@ -1371,15 +1230,15 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               _editDraft = active;
               setState(() => _editingProfile = true);
             },
-            icon: const Text('✏️', style: TextStyle(fontSize: 12)),
+            icon: Text('✏️', style: TextStyle(fontSize: 12)),
             label: Text(
               _t('Edit Profile Information', 'प्रोफाइल विवरण परिमार्जन गर्नुहोस्'),
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.emerald600,
               backgroundColor: AppColors.slate50,
-              side: const BorderSide(color: AppColors.slate200),
+              side: BorderSide(color: AppColors.slate200),
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -1409,13 +1268,13 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
   Widget _row(String label, String value, {Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.slate400),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.slate400),
           ),
           Flexible(
             child: Text(
@@ -1438,10 +1297,11 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
     final locC = TextEditingController(text: _editDraft.location);
     final skillC = TextEditingController(text: _editDraft.mainSkill);
     final expC = TextEditingController(text: _editDraft.experience);
-    final govC = TextEditingController(text: _editDraft.govId);
+    final govTypeC = TextEditingController(text: _editDraft.govIdType);
+    final govNumC = TextEditingController(text: _editDraft.govIdNum);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1456,13 +1316,13 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
                 onPressed: () => setState(() => _editingProfile = false),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     _t('Edit Profile Info', 'प्रोफाइल सम्पादन'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                       color: AppColors.slate900,
@@ -1470,7 +1330,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   ),
                   Text(
                     _t('Update your worker details', 'विवरण परिमार्जन गर्नुहोस्'),
-                    style: const TextStyle(fontSize: 9, color: AppColors.slate400),
+                    style: TextStyle(fontSize: 9, color: AppColors.slate400),
                   ),
                 ],
               ),
@@ -1483,7 +1343,9 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             children: [
               Expanded(child: _editField(_t('Phone Number', 'सम्पर्क नम्बर'), phoneC)),
               const SizedBox(width: 8),
-              Expanded(child: _editField(_t('Government ID', 'सरकारी परिचय-पत्र'), govC)),
+              Expanded(child: _editField(_t('Gov ID Type', 'ID प्रकार'), govTypeC)),
+              const SizedBox(width: 8),
+              Expanded(child: _editField(_t('Gov ID Number', 'ID नम्बर'), govNumC)),
             ],
           ),
           const SizedBox(height: 10),
@@ -1520,7 +1382,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   onPressed: () {
                     if (nameC.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text('Name is required'),
                           backgroundColor: AppColors.red500,
                         ),
@@ -1533,7 +1395,8 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       'location': locC.text.trim(),
                       'mainSkill': skillC.text.trim(),
                       'experience': expC.text.trim(),
-                      'govId': govC.text.trim(),
+                      'govIdType': govTypeC.text.trim(),
+                      'govIdNum': govNumC.text.trim(),
                       'profilePhoto': active.profilePhoto,
                     }, active.id);
                     setState(() => _editingProfile = false);
@@ -1562,25 +1425,25 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       children: [
         Text(
           label.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
             color: AppColors.slate400,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         TextField(
           controller: controller,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.slate200),
+              borderSide: BorderSide(color: AppColors.slate200),
             ),
           ),
         ),
@@ -1590,7 +1453,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
   Widget _buildSettingsCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1604,21 +1467,21 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             subtitle: _t('Light, Dark, or System theme', 'लाइट, डार्क वा सिस्टम थिम'),
             child: _segmentedTheme(),
           ),
-          const Divider(height: 20, color: AppColors.slate50),
+          Divider(height: 20, color: AppColors.slate50),
           // Language
           _settingRow(
             title: _t('Application Language', 'एपको भाषा'),
             subtitle: _t('Change app interface language', 'एपको लागि भाषा चयन'),
             child: _segmentedLang(),
           ),
-          const Divider(height: 20, color: AppColors.slate50),
+          Divider(height: 20, color: AppColors.slate50),
           // Voice feedback
           _settingRow(
             title: _t('Voice Assistance Synthesizer', 'ध्वनि/आवाज सहायता'),
             subtitle: _t('Speak-aloud voice prompts', 'बोलेर कामदार खोज्ने सहायता'),
             child: _switch(store.voiceFeedbackEnabled, store.setVoiceFeedbackEnabled),
           ),
-          const Divider(height: 20, color: AppColors.slate50),
+          Divider(height: 20, color: AppColors.slate50),
           // Sound alerts
           _settingRow(
             title: _t('Worker Match Audio Alerts', 'नयाँ कामदार मिलान सङ्केत'),
@@ -1643,7 +1506,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         return GestureDetector(
           onTap: () => store.setThemePref(o.id),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: active ? AppColors.brandBlue : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
@@ -1671,7 +1534,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         return GestureDetector(
           onTap: () => store.setLang(id),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: active ? AppColors.brandBlue : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
@@ -1711,16 +1574,16 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
                   color: AppColors.slate800,
                 ),
               ),
-              const SizedBox(height: 2),
+              SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
                   color: AppColors.slate400,
@@ -1749,13 +1612,13 @@ class _Meta extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 8,
             fontWeight: FontWeight.w700,
             color: AppColors.slate400,
           ),
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: 2),
         Text(
           value,
           style: TextStyle(

@@ -21,6 +21,7 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
   final TextEditingController _locController =
       TextEditingController(text: 'Balkumari, Lalitpur');
   final TextEditingController _companyController = TextEditingController();
+  bool _isSubmitting = false;
 
   String _photoPath = '';
   String _govIdType = 'citizenship';
@@ -33,7 +34,24 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
 
   String _t(String en, String ne) => _isNe ? ne : en;
 
-  void _submit() {
+  bool _validateGovId(String type, String num) {
+    switch (type) {
+      case 'citizenship':
+        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
+      case 'nid':
+        return RegExp(r'^\d{10}$').hasMatch(num);
+      case 'license':
+        return RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num);
+      case 'pan':
+        return RegExp(r'^\d{9}$').hasMatch(num);
+      case 'registration':
+        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
+      default:
+        return num.isNotEmpty;
+    }
+  }
+
+  Future<void> _submit() async {
     String? error;
     if (_nameController.text.trim().isEmpty) {
       error = _t('Please enter your full name.', 'कृपया आफ्नो पूरा नाम प्रविष्ट गर्नुहोस्।');
@@ -47,6 +65,10 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
       error = _t(
           'Please enter your Government ID number.',
           'कृपया सरकारी परिचय-पत्र नम्बर प्रविष्ट गर्नुहोस्।');
+    } else if (!_validateGovId(_govIdType, _govIdNum.trim())) {
+      error = _t(
+          'Invalid Government ID format for the selected type.',
+          'चयन गरिएको प्रकारको लागि अमान्य सरकारी परिचय-पत्र ढाँचा।');
     } else if (_govIdType == 'citizenship' &&
         ((_files['front'] ?? '').isEmpty || (_files['back'] ?? '').isEmpty)) {
       error = _t(
@@ -63,6 +85,8 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
       return;
     }
 
+    setState(() => _isSubmitting = true);
+
     store.createEmployerProfile(
       name: _nameController.text.trim(),
       role: _roleController.text.trim(),
@@ -70,11 +94,16 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
       companyName: _companyController.text.trim().isNotEmpty
           ? _companyController.text.trim()
           : 'Individual',
-      govId: '${_govIdType.toUpperCase()} - $_govIdNum',
+      govIdType: _govIdType,
+      govIdNum: _govIdNum.trim(),
       govIdFiles: _files.values.toList(),
       profilePhoto: _photoPath,
     );
-    Navigator.pushReplacementNamed(context, '/employer-home');
+
+    if (mounted) {
+      setState(() => _isSubmitting = false);
+      Navigator.pushReplacementNamed(context, '/employer-home');
+    }
   }
 
   @override
@@ -89,11 +118,11 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
   Widget _label(String en, String ne) {
     return Text(
       _t(en, ne),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w900,
         letterSpacing: 1,
-        color: AppColors.slate500,
+        color: AppColors.slate800,
       ),
     );
   }
@@ -101,18 +130,18 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
   InputDecoration _inputDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(fontSize: 11, color: AppColors.slate400),
+      hintStyle: TextStyle(fontSize: 11, color: AppColors.slate600),
       filled: true,
       fillColor: Colors.white,
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.slate200),
+        borderSide: BorderSide(color: AppColors.slate200),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.indigo600),
+        borderSide: BorderSide(color: AppColors.indigo600),
       ),
     );
   }
@@ -135,13 +164,13 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Profile photo
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -151,21 +180,21 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
                   child: ProfilePhotoPicker(
                     photoPath: _photoPath,
                     onChanged: (v) => setState(() => _photoPath = v),
-                    borderColor: AppColors.indigo600,
                     labelEn: 'Profile Photo (Employer)',
                     labelNe: 'प्रोफाइल फोटो (रोजगारदाता)',
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               _label('Full Name', 'रोजगारदाताको पूरा नाम'),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               TextField(
                 controller: _nameController,
+                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(hint: 'Ravi Ranjan Sah'),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
 
               Row(
                 children: [
@@ -174,23 +203,25 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _label('Role / Title', 'भूमिका'),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         TextField(
                           controller: _roleController,
+                          style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
                           decoration: _inputDecoration(),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _label('Primary Location', 'स्थान'),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         TextField(
                           controller: _locController,
+                          style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
                           decoration: _inputDecoration(),
                         ),
                       ],
@@ -198,12 +229,13 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
 
               _label('Company Name (Optional)', 'कम्पनी / फर्मको नाम (ऐच्छिक)'),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               TextField(
                 controller: _companyController,
+                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(hint: 'e.g. Gupta Construction'),
               ),
               const SizedBox(height: 20),
@@ -225,29 +257,35 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
 
               // Submit
               ElevatedButton(
-                onPressed: _submit,
+                onPressed: _isSubmitting ? null : () async => await _submit(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.slate900,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.verified_rounded, color: AppColors.emerald400, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      _t('Verify ID & Start Hiring', 'सुरक्षित गर्नुहोस्'),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
+                child: _isSubmitting
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.verified_rounded, color: AppColors.emerald400, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            _t('Verify ID & Start Hiring', 'सुरक्षित गर्नुहोस्'),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                          ),
+                        ],
+                      ),
               ),
-              const SizedBox(height: 16),
-              const Center(
+              SizedBox(height: 16),
+              Center(
                 child: Text(
                   'ROJGAR VERIFIED RECRUITMENT • GOVT OF NEPAL COMPLIANCE',
                   textAlign: TextAlign.center,

@@ -6,16 +6,46 @@ import 'screens/login.dart';
 import 'screens/role_selection.dart';
 import 'screens/worker_home.dart';
 import 'screens/employer_home.dart';
+import 'screens/worker_profile_creation.dart';
+import 'screens/employer_profile_creation.dart';
+import 'theme/app_colors.dart';
+import 'dart:ui';
 
-void main() {
-  // To use real Firebase, uncomment these lines and configure Firebase in your platform folders:
-  // WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp();
+import 'package:firebase_core/firebase_core.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const JobFinderApp());
 }
 
-class JobFinderApp extends StatelessWidget {
+class JobFinderApp extends StatefulWidget {
   const JobFinderApp({Key? key}) : super(key: key);
+
+  @override
+  State<JobFinderApp> createState() => _JobFinderAppState();
+}
+
+class _JobFinderAppState extends State<JobFinderApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    AppColors.systemBrightness = PlatformDispatcher.instance.platformBrightness;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    setState(() {
+      AppColors.systemBrightness = PlatformDispatcher.instance.platformBrightness;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +54,13 @@ class JobFinderApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.slate50,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F172A), // Slate 900
-          primary: const Color(0xFF0F172A),
-          secondary: const Color(0xFF10B981), // Emerald 500
-          background: const Color(0xFFF8FAFC), // Slate 50
+          seedColor: AppColors.slate900,
+          primary: AppColors.slate900,
+          secondary: AppColors.emerald500,
+          background: AppColors.slate50,
+          brightness: AppColors.systemBrightness,
         ),
         textTheme: GoogleFonts.interTextTheme(
           Theme.of(context).textTheme,
@@ -50,6 +82,8 @@ class JobFinderApp extends StatelessWidget {
         '/role-selection': (context) => const RoleSelectionScreen(),
         '/worker-home': (context) => const WorkerHomeScreen(),
         '/employer-home': (context) => const EmployerHomeScreen(),
+        '/worker-profile-creation': (context) => const WorkerProfileCreationScreen(),
+        '/employer-profile-creation': (context) => const EmployerProfileCreationScreen(),
       },
     );
   }
