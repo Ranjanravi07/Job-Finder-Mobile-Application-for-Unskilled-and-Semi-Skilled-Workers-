@@ -13,6 +13,7 @@ import '../models/job_application.dart';
 import '../models/chat_message.dart';
 import 'storage_service.dart';
 import 'speech_service.dart';
+import 'chat_service.dart';
 
 /// Central application state.
 ///
@@ -569,13 +570,25 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateApplicantStatus(String appId, String status) {
+  Future<void> updateApplicantStatus(String appId, String status) async {
+    JobApplication? updatedApp;
     applications = applications.map((app) {
-      if (app.id == appId) return app.copyWith(status: status);
+      if (app.id == appId) {
+        updatedApp = app.copyWith(status: status);
+        return updatedApp!;
+      }
       return app;
     }).toList();
     _persistApplications();
     notifyListeners();
+
+    if (status == 'accepted' && updatedApp != null && activeEmployer != null) {
+      try {
+        await ChatService.instance.createConversation(updatedApp!, activeEmployer!);
+      } catch (e) {
+        print("Error creating conversation: $e");
+      }
+    }
   }
 
   void sendChatMessage(String channel) {

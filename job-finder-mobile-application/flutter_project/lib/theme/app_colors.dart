@@ -9,14 +9,16 @@ class AppColors {
   static Brightness systemBrightness = Brightness.light;
   static bool get isDark => systemBrightness == Brightness.dark;
 
-  // Slate hierarchy inverts cleanly for dark mode contrast.
-  static Color get slate900 => isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-  static Color get slate800 => isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B);
-  static Color get slate700 => isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155);
-  static Color get slate600 => isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
-  static Color get slate500 => isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-  static Color get slate400 => isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
-  static Color get slate300 => isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1);
+  // Slate hierarchy mapped for HIGH CONTRAST (Text uses 300-900, Backgrounds use 50-200)
+  static Color get slate900 => isDark ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
+  static Color get slate800 => isDark ? const Color(0xFFF8FAFC) : const Color(0xFF020617);
+  static Color get slate700 => isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+  static Color get slate600 => isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B);
+  static Color get slate500 => isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
+  static Color get slate400 => isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+  static Color get slate300 => isDark ? const Color(0xFF64748B) : const Color(0xFF64748B);
+  
+  // Backgrounds and borders remain untouched to preserve layout aesthetics
   static Color get slate200 => isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
   static Color get slate100 => isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
   static Color get slate50  => isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);

@@ -749,7 +749,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
       ],
     );
-    );
   }
 
   String _getIdNumberLabel(String type, String lang) {

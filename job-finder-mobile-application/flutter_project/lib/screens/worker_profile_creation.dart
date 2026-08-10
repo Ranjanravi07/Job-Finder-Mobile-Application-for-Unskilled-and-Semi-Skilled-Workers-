@@ -140,7 +140,6 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
   void dispose() {
     _nameController.dispose();
     _expController.dispose();
-    _locController.dispose();
     super.dispose();
   }
 

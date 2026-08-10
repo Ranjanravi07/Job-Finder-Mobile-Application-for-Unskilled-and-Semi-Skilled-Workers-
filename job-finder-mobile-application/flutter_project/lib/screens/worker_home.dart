@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
 import '../models/job.dart';
-import '../models/chat_message.dart';
+import '../models/conversation.dart';
+import '../services/chat_service.dart';
 import '../models/worker_profile.dart';
 import '../services/app_store.dart';
 import '../theme/app_colors.dart';
@@ -728,73 +729,86 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   }
 
   Widget _buildChatInbox() {
-    const channels = ['Ravi Ranjan Sah', 'Ajay Kumar Sah'];
-    return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        Text(
-          _t('Your Chat Inbox', 'मेरो च्याटहरू'),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: AppColors.slate900,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...channels.map((user) {
-          final msgs = store.chatMessages[user] ?? [];
-          final lastMsg = msgs.isNotEmpty ? msgs.last : null;
-          return Container(
-            margin: EdgeInsets.only(bottom: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.slate100),
-            ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.indigo600.withValues(alpha: 0.1),
-                child: Text(
-                  user.characters.first,
-                  style: TextStyle(
-                    color: AppColors.indigo600,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+    final activeWorker = store.activeWorker;
+    if (activeWorker == null) return const Center(child: Text('No worker profile found'));
+
+    return StreamBuilder<List<Conversation>>(
+      stream: ChatService.instance.getConversationsForUser(activeWorker.id, 'worker'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading chats', style: TextStyle(color: AppColors.red500)));
+        }
+        
+        final conversations = snapshot.data ?? [];
+        if (conversations.isEmpty) {
+          return Center(child: Text(_t('No active chats yet.', 'कुनै च्याट छैन।'), style: TextStyle(color: AppColors.slate500)));
+        }
+
+        return ListView(
+          padding: EdgeInsets.all(16),
+          children: [
+            Text(
+              _t('Your Chat Inbox', 'मेरो च्याटहरू'),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: AppColors.slate900,
               ),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    user,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.slate900,
+            ),
+            const SizedBox(height: 12),
+            ...conversations.map((conv) {
+              final user = conv.employerName;
+              return Container(
+                margin: EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.slate100),
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.indigo600.withValues(alpha: 0.1),
+                    child: Text(
+                      user.isNotEmpty ? user.characters.first : '?',
+                      style: TextStyle(
+                        color: AppColors.indigo600,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
-                  Text(
-                    lastMsg?.time ?? 'Now',
-                    style: TextStyle(fontSize: 9, color: AppColors.slate400),
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        user,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.slate900,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              subtitle: Text(
-                lastMsg?.text ?? 'No messages yet.',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 10, color: AppColors.slate500),
-              ),
-              onTap: () => store.setActiveChatChannel(user),
-            ),
-          );
-        }),
-      ],
+                  subtitle: Text(
+                    conv.lastMessage,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 10, color: AppColors.slate500),
+                  ),
+                  onTap: () => store.setActiveChatChannel(conv.id),
+                ),
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildChatConversation(String channel) {
-    final messages = store.chatMessages[channel] ?? [];
+  Widget _buildChatConversation(String conversationId) {
     return Column(
       children: [
         // Header
@@ -809,29 +823,11 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
               ),
               Expanded(
                 child: Text(
-                  channel,
+                  _t('Conversation', 'च्याट'),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: AppColors.emerald500,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
                   ),
                 ),
               ),
@@ -840,10 +836,19 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         ),
         // Messages
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(14),
-            itemCount: messages.length,
-            itemBuilder: (context, index) => _chatBubble(messages[index]),
+          child: StreamBuilder<List<Message>>(
+            stream: ChatService.instance.getMessages(conversationId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final messages = snapshot.data ?? [];
+              return ListView.builder(
+                padding: const EdgeInsets.all(14),
+                itemCount: messages.length,
+                itemBuilder: (context, index) => _chatBubble(messages[index]),
+              );
+            },
           ),
         ),
         // Presets
@@ -881,13 +886,12 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       borderSide: BorderSide(color: AppColors.slate200),
                     ),
                   ),
-                  onChanged: (v) => store.setNewMsgText(v),
-                  onSubmitted: (_) => _sendChat(channel),
+                  onSubmitted: (_) => _sendChat(conversationId),
                 ),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: () => _sendChat(channel),
+                onPressed: () => _sendChat(conversationId),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.indigo600,
                   foregroundColor: Colors.white,
@@ -905,9 +909,9 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
   final TextEditingController _chatController = TextEditingController();
 
-  void _sendChat(String channel) {
-    store.setNewMsgText(_chatController.text);
-    store.sendChatMessage(channel);
+  void _sendChat(String conversationId) {
+    if (_chatController.text.trim().isEmpty) return;
+    ChatService.instance.sendMessage(conversationId, store.activeWorker!.id, _chatController.text);
     _chatController.clear();
   }
 
@@ -936,8 +940,8 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
     );
   }
 
-  Widget _chatBubble(ChatMessage msg) {
-    final isUser = msg.sender == 'user';
+  Widget _chatBubble(Message msg) {
+    final isUser = msg.senderId == store.activeWorker!.id;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
@@ -973,7 +977,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              msg.time,
+              msg.timestamp != null ? "${msg.timestamp!.hour}:${msg.timestamp!.minute.toString().padLeft(2, '0')}" : 'Now',
               style: TextStyle(fontSize: 9, color: AppColors.slate400),
             ),
           ),
