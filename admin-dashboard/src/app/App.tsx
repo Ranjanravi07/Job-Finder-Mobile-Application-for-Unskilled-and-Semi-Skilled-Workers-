@@ -711,11 +711,60 @@ export default function App() {
     { icon: Settings,        label: "Settings",     id: "settings" },
   ];
 
+  // Helper to compute dynamic growth percentages vs prior period from live Firestore documents
+  const calculateGrowthPercentage = (
+    items: Array<{ createdAt?: string; date?: string; appliedAt?: string; datePosted?: string }>,
+    periodDays: number = 30
+  ) => {
+    const now = Date.now();
+    const msInDay = 24 * 60 * 60 * 1000;
+    const currentPeriodStart = now - periodDays * msInDay;
+    const previousPeriodStart = now - periodDays * 2 * msInDay;
+
+    let currentCount = 0;
+    let previousCount = 0;
+
+    items.forEach((item) => {
+      const rawDate = item.createdAt || item.date || item.appliedAt || item.datePosted;
+      if (!rawDate) return;
+      try {
+        const itemTime = new Date(rawDate).getTime();
+        if (isNaN(itemTime)) return;
+        if (itemTime >= currentPeriodStart && itemTime <= now) {
+          currentCount++;
+        } else if (itemTime >= previousPeriodStart && itemTime < currentPeriodStart) {
+          previousCount++;
+        }
+      } catch (_) {}
+    });
+
+    const subText = periodDays === 7 ? "vs last week" : periodDays === 365 ? "this year" : "vs last month";
+
+    if (previousCount === 0) {
+      if (currentCount === 0) {
+        return { change: "+0.0%", up: true, sub: subText };
+      }
+      return { change: `+${(currentCount * 100).toFixed(1)}%`, up: true, sub: subText };
+    }
+
+    const diff = currentCount - previousCount;
+    const pct = (diff / previousCount) * 100;
+    const isUp = pct >= 0;
+    const changeText = `${isUp ? "+" : ""}${pct.toFixed(1)}%`;
+
+    return { change: changeText, up: isUp, sub: subText };
+  };
+
+  const workerGrowth    = calculateGrowthPercentage(seekerList, 30);
+  const employerGrowth  = calculateGrowthPercentage(employerList, 30);
+  const placementGrowth = calculateGrowthPercentage(appData.filter((a) => a.status === "hired" || (a.status as string) === "accepted"), 365);
+  const jobGrowth       = calculateGrowthPercentage(jobList.filter((j) => j.status === "open"), 7);
+
   const kpiCards = [
-    { label: "Registered Workers",    value: totalWorkers.toLocaleString(),    change: "+12.4%", up: true,  sub: "vs last month", icon: HardHat,     color: "text-violet-400" },
-    { label: "Active Employers",      value: totalEmployers.toLocaleString(),  change: "+8.7%",  up: true,  sub: "vs last month", icon: Building2,   color: "text-sky-400" },
-    { label: "Successful Placements", value: totalPlacements.toLocaleString(), change: "+16.2%", up: true,  sub: "this year",     icon: CheckCircle, color: "text-emerald-400" },
-    { label: "Open Job Listings",     value: openJobs.toLocaleString(),        change: "-4.3%",  up: false, sub: "vs last week",  icon: Briefcase,   color: "text-amber-400" },
+    { label: "Registered Workers",    value: totalWorkers.toLocaleString(),    change: workerGrowth.change,    up: workerGrowth.up,    sub: workerGrowth.sub,    icon: HardHat,     color: "text-violet-400" },
+    { label: "Active Employers",      value: totalEmployers.toLocaleString(),  change: employerGrowth.change,  up: employerGrowth.up,  sub: employerGrowth.sub,  icon: Building2,   color: "text-sky-400" },
+    { label: "Successful Placements", value: totalPlacements.toLocaleString(), change: placementGrowth.change, up: placementGrowth.up, sub: placementGrowth.sub, icon: CheckCircle, color: "text-emerald-400" },
+    { label: "Open Job Listings",     value: openJobs.toLocaleString(),        change: jobGrowth.change,       up: jobGrowth.up,       sub: jobGrowth.sub,       icon: Briefcase,   color: "text-amber-400" },
   ];
 
   const recentWorkers = seekerList.slice(0, 4).map((s, i) => ({
@@ -806,12 +855,12 @@ export default function App() {
         }`}
       >
         <div className="h-14 flex items-center px-4 border-b border-sidebar-border gap-3">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-            <HardHat className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-border">
+            <img src="/kaamsathi_logo.jpg" alt="KaamSathi Logo" className="w-full h-full object-cover" />
           </div>
           {sidebarOpen && (
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-foreground leading-tight tracking-tight">Job Finder </p>
+              <p className="text-xs font-bold text-foreground leading-tight tracking-tight">KaamSathi</p>
               <p className="text-xs text-muted-foreground leading-tight">Admin Console</p>
             </div>
           )}

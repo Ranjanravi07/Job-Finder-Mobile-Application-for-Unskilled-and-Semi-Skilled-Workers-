@@ -88,11 +88,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <HardHat className="w-5 h-5 text-white" />
+          <div className="w-12 h-12 rounded-xl overflow-hidden border border-border shadow-md">
+            <img src="/kaamsathi_logo.jpg" alt="KaamSathi Logo" className="w-full h-full object-cover" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground tracking-tight">Job Finder Admin Panel</h2>
-          <p className="text-xs text-muted-foreground">Admin Dashboard</p>
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">KaamSathi Admin Panel</h2>
+          <p className="text-xs text-muted-foreground">Admin Console</p>
         </div>
 
         {/* Form */}
