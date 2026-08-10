@@ -220,6 +220,22 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {}
+    phone = '';
+    userId = '';
+    role = null;
+    selectedCategory = 'all';
+    selectedLocationFilter = 'all';
+    activeChatChannel = null;
+    _storage.setStringValue('sim_phone', '');
+    _storage.setStringValue('sim_user_id', '');
+    _storage.setStringValue('sim_role', '');
+    notifyListeners();
+  }
+
   void setWorkerTab(String value) {
     workerTab = value;
     if (value != 'chat') activeChatChannel = null;
@@ -483,6 +499,12 @@ class AppStore extends ChangeNotifier {
 
     // Save directly to Firestore
     await FirebaseService.instance.saveWorkerProfile(newProfile);
+    await FirebaseService.instance.createAdminNotification(
+      type: 'worker_registered',
+      title: 'New Worker Registered',
+      message: '${newProfile.name} registered as ${newProfile.mainSkill}',
+      relatedUserId: newProfile.id,
+    );
     notifyListeners();
   }
 
@@ -577,6 +599,12 @@ class AppStore extends ChangeNotifier {
 
     // Save directly to Firestore
     await FirebaseService.instance.saveEmployerProfile(newProfile);
+    await FirebaseService.instance.createAdminNotification(
+      type: 'employer_registered',
+      title: 'New Employer Registered',
+      message: '${newProfile.companyName} registered in ${newProfile.location}',
+      relatedUserId: newProfile.id,
+    );
     notifyListeners();
   }
 
@@ -620,6 +648,14 @@ class AppStore extends ChangeNotifier {
 
     // Persist application to Firestore
     await FirebaseService.instance.createJobApplication(newApp);
+    await FirebaseService.instance.createAdminNotification(
+      type: 'application_submitted',
+      title: 'New Application Submitted',
+      message: '${newApp.workerName} applied for job',
+      relatedUserId: newApp.workerId,
+      relatedJobId: newApp.jobId,
+      relatedApplicationId: newApp.id,
+    );
 
     SpeechService.instance.speak(
       lang == 'ne'
@@ -660,6 +696,13 @@ class AppStore extends ChangeNotifier {
 
     // Persist new job to Firestore
     await FirebaseService.instance.createJob(newJob);
+    await FirebaseService.instance.createAdminNotification(
+      type: 'job_posted',
+      title: 'New Job Posted',
+      message: '${newJob.title} posted by ${newJob.employerName}',
+      relatedJobId: newJob.id,
+      relatedUserId: newJob.employerId,
+    );
   }
 
   Future<void> updateApplicantStatus(String appId, String status) async {

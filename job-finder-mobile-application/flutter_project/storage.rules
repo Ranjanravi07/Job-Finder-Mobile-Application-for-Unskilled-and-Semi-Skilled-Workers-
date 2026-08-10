@@ -1,39 +1,47 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper function to check if user is admin
+
+    // Helper function to check admin privileges
     function isAdmin() {
-      // Storage rules cannot easily read Firestore directly without Cloud Functions or Custom Claims.
-      // Assuming Custom Auth Claims are set for admins: request.auth.token.role == 'admin'.
-      // If not using Custom Claims, you may need a separate mechanism.
-      return request.auth != null && request.auth.token.role == 'admin';
+      return request.auth != null && (
+        request.auth.token.role == 'admin' ||
+        request.auth.token.admin == true
+      );
     }
 
-    // Profile Images
-    match /profile_images/workers/{userId}/{allPaths=**} {
-      allow read: if true; // Profile images can be public
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /profile_images/employers/{userId}/{allPaths=**} {
-      allow read: if true; // Profile images can be public
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Public Profile Photos (Authenticated App Users)
+    match /profile_photos/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
     }
 
-    // Government IDs (Private)
-    match /government_ids/workers/{userId}/{allPaths=**} {
-      // Only the user themselves or an admin can read the ID files
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      // Only the user can upload their own ID files
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Legacy profile images path
+    match /profile_images/{role}/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
     }
-    
-    match /government_ids/employers/{userId}/{allPaths=**} {
-      // Only the user themselves or an admin can read the ID files
+
+    // Sensitive Private Government ID / KYC Documents
+    match /kyc/{userId}/{allPaths=**} {
+      // Only the user themselves or an admin can read private KYC files
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      // Only the user can upload their own ID files
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Only the user can upload their own KYC files with size and MIME validation
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 10 * 1024 * 1024
+                    && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    }
+
+    // Legacy government_ids path
+    match /government_ids/{role}/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 10 * 1024 * 1024
+                    && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
     }
   }
 }

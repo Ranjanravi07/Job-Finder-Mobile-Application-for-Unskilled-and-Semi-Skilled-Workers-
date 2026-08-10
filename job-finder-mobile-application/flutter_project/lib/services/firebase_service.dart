@@ -266,4 +266,28 @@ class FirebaseService {
         .snapshots()
         .map((snap) => snap.docs.map((doc) => doc.data()).toList());
   }
+
+  /// Creates an admin notification document in Firestore `notifications` collection
+  Future<void> createAdminNotification({
+    required String type,
+    required String title,
+    required String message,
+    String? relatedUserId,
+    String? relatedJobId,
+    String? relatedApplicationId,
+  }) async {
+    try {
+      await _firestore.collection('notifications').add({
+        'type': type,
+        'title': title,
+        'message': message,
+        'recipientRole': 'admin',
+        'relatedUserId': relatedUserId,
+        'relatedJobId': relatedJobId,
+        'relatedApplicationId': relatedApplicationId,
+        'isRead': false,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+    } catch (_) {}
+  }
 }

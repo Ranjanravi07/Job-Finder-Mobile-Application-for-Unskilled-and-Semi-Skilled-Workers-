@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { auth, db } from "../firebase";
-import { doc, setDoc, getDoc, collection, query, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, onSnapshot, writeBatch, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Login from "./components/Login";
 import {
@@ -165,15 +165,22 @@ export default function App() {
   const [loginDate, setLoginDate] = useState(() => new Date());
   const [currentUid, setCurrentUid] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(defaultFilters);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' | 'kyc' }>>([
-    { id: "init-1", message: "Welcome to Job Finder Admin", time: new Date(), type: "worker" },
-    { id: "init-2", message: "New employer SunBuild Corp. registered", time: new Date(Date.now() - 300000), type: "employer" },
-    { id: "init-3", message: "12 new worker profiles approved", time: new Date(Date.now() - 3600000), type: "worker" },
-  ]);
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: string;
+    title?: string;
+    message: string;
+    isRead: boolean;
+    createdAt?: string;
+    time: Date;
+    relatedUserId?: string;
+    relatedJobId?: string;
+    relatedApplicationId?: string;
+  }>>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const seenIds = useRef<Set<string>>(new Set(["init-1", "init-2", "init-3"]));
+
+  const unreadNotificationCount = notifications.filter((n) => !n.isRead).length;
 
   const scrollNotifications = (direction: "up" | "down") => {
     if (!notificationsRef.current) return;
@@ -184,9 +191,39 @@ export default function App() {
     });
   };
 
-  const clearNotifications = () => {
-    setNotifications([]);
-    seenIds.current.clear();
+  const markAllAsRead = async () => {
+    if (db) {
+      try {
+        const batch = writeBatch(db);
+        const unread = notifications.filter((n) => !n.isRead);
+        unread.forEach((n) => {
+          batch.update(doc(db, "notifications", n.id), { isRead: true });
+        });
+        await batch.commit();
+      } catch (err) {
+        console.error("Failed to mark all notifications as read in Firestore:", err);
+      }
+    }
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  };
+
+  const handleNotificationClick = async (n: typeof notifications[0]) => {
+    if (db && n.id) {
+      try {
+        await updateDoc(doc(db, "notifications", n.id), { isRead: true });
+      } catch (err) {
+        console.error("Failed to mark notification as read in Firestore:", err);
+      }
+    }
+
+    if (n.type.startsWith("worker")) handleNavChange("seekers");
+    else if (n.type.startsWith("employer")) handleNavChange("employers");
+    else if (n.type.startsWith("kyc")) handleNavChange("kyc");
+    else if (n.type.startsWith("job")) handleNavChange("jobs");
+    else if (n.type.startsWith("application")) handleNavChange("applications");
+    else handleNavChange("dashboard");
+
+    setShowNotifications(false);
   };
 
   // ─── Firebase auth state listener ─────────────────────────────────────────────
@@ -405,11 +442,44 @@ export default function App() {
       }
     );
 
+    // Stream Notifications
+    const notifsQuery = query(collection(db, "notifications"));
+    const unsubNotifs = onSnapshot(
+      notifsQuery,
+      (snapshot) => {
+        const liveNotifs = snapshot.docs.map((d) => {
+          const data = d.data();
+          const createdAtStr = data.createdAt || new Date().toISOString();
+          let timeVal = new Date();
+          try { timeVal = new Date(createdAtStr); } catch (_) {}
+          return {
+            id: d.id,
+            type: data.type || "worker_registered",
+            title: data.title || "Activity Notification",
+            message: data.message || "New activity detected",
+            isRead: data.isRead === true,
+            createdAt: createdAtStr,
+            time: timeVal,
+            relatedUserId: data.relatedUserId,
+            relatedJobId: data.relatedJobId,
+            relatedApplicationId: data.relatedApplicationId,
+          };
+        });
+
+        liveNotifs.sort((a, b) => b.time.getTime() - a.time.getTime());
+        setNotifications(liveNotifs);
+      },
+      (err) => {
+        console.error("Failed to stream Firestore notifications:", err);
+      }
+    );
+
     return () => {
       unsubEmployers();
       unsubWorkers();
       unsubJobs();
       unsubApps();
+      unsubNotifs();
     };
   }, [db]);
 
@@ -425,6 +495,96 @@ export default function App() {
   const totalPlacements = placements.length;
   const pendingKYC      = seekerList.filter(s => s.verificationStatus === "pending").length + 
                          employerList.filter(e => e.verificationStatus === "pending").length;
+
+  // ─── Dynamic Analytics Computations ──────────────────────────────────────────
+  // 1. Dynamic Registrations Trend (Workers & Employers)
+  const dynamicRegistrationData = useMemo(() => {
+    if (seekerList.length === 0 && employerList.length === 0) return [];
+
+    const dateMap = new Map<string, { date: string; workers: number; employers: number }>();
+
+    const formatDate = (isoStr?: string) => {
+      if (!isoStr) return "Today";
+      try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return "Today";
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      } catch (_) {
+        return "Today";
+      }
+    };
+
+    seekerList.forEach((s) => {
+      const dStr = formatDate((s as any).createdAt || (s as any).submissionDate);
+      if (!dateMap.has(dStr)) {
+        dateMap.set(dStr, { date: dStr, workers: 0, employers: 0 });
+      }
+      dateMap.get(dStr)!.workers += 1;
+    });
+
+    employerList.forEach((e) => {
+      const dStr = formatDate((e as any).createdAt || (e as any).submissionDate);
+      if (!dateMap.has(dStr)) {
+        dateMap.set(dStr, { date: dStr, workers: 0, employers: 0 });
+      }
+      dateMap.get(dStr)!.employers += 1;
+    });
+
+    const list = Array.from(dateMap.values());
+    if (list.length === 1) {
+      const single = list[0];
+      return [
+        { date: "Start", workers: 0, employers: 0 },
+        { date: "Initial", workers: Math.ceil(single.workers / 2), employers: Math.ceil(single.employers / 2) },
+        { date: single.date, workers: single.workers, employers: single.employers },
+        { date: "Current", workers: single.workers, employers: single.employers },
+      ];
+    }
+    return list;
+  }, [seekerList, employerList]);
+
+  // 2. Dynamic Placements Trend (Accepted / Hired Applications)
+  const dynamicPlacementData = useMemo(() => {
+    const acceptedApps = appData.filter(
+      (a) => a.status === "hired" || (a.status as string) === "accepted"
+    );
+    if (acceptedApps.length === 0) return [];
+
+    const dateMap = new Map<string, { date: string; placed: number }>();
+    acceptedApps.forEach((a) => {
+      const dStr = a.date || "Today";
+      if (!dateMap.has(dStr)) {
+        dateMap.set(dStr, { date: dStr, placed: 0 });
+      }
+      dateMap.get(dStr)!.placed += 1;
+    });
+
+    return Array.from(dateMap.values());
+  }, [appData]);
+
+  // 3. Dynamic Job Categories Distribution (From Firestore jobs)
+  const dynamicCategoryData = useMemo(() => {
+    if (jobList.length === 0) return [];
+
+    const catCounts = new Map<string, number>();
+    jobList.forEach((j) => {
+      const cat = j.category && j.category.trim().length > 0 ? j.category.trim() : "General";
+      catCounts.set(cat, (catCounts.get(cat) || 0) + 1);
+    });
+
+    const totalJobs = jobList.length;
+    const palette = ["#7c5cfc", "#36d1b7", "#ffb800", "#3b82f6", "#ef4444", "#ec4899", "#8b5cf6"];
+
+    return Array.from(catCounts.entries()).map(([name, count], index) => {
+      const pct = Math.round((count / totalJobs) * 100);
+      return {
+        name,
+        value: pct,
+        count,
+        color: palette[index % palette.length],
+      };
+    });
+  }, [jobList]);
 
   // ─── Live activity log derived from notifications ──────────────────────────
   const [activityLog, setActivityLog] = useState<Array<{ text: string; time: string; type: string }>>([]);
@@ -824,8 +984,10 @@ export default function App() {
                 className="relative w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <Bell className="w-4 h-4" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                {unreadNotificationCount > 0 && (
+                  <span className="absolute top-1 right-1 px-1 min-w-[16px] h-4 bg-rose-500 text-white font-mono text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {unreadNotificationCount}
+                  </span>
                 )}
               </button>
               {showNotifications && (
@@ -835,7 +997,7 @@ export default function App() {
                     <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-foreground">Notifications</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{notifications.length} unread</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{unreadNotificationCount} unread</p>
                       </div>
                       {notifications.length > 0 && (
                         <div className="flex items-center gap-1">
@@ -859,25 +1021,35 @@ export default function App() {
                     <div ref={notificationsRef} className="max-h-80 overflow-y-auto">
                       {notifications.length === 0 ? (
                         <div className="px-4 py-8 text-center text-xs text-muted-foreground">
-                          No notifications yet
+                          No new notifications
                         </div>
                       ) : (
                         notifications.map((n) => {
                           const dotColor =
-                            n.type === "worker" ? "bg-sky-400" :
-                            n.type === "employer" ? "bg-violet-400" :
-                            n.type === "placement" ? "bg-emerald-400" :
-                            n.type === "kyc" ? "bg-amber-400" :
-                            "bg-amber-400";
+                            n.type.startsWith("worker") ? "bg-sky-400" :
+                            n.type.startsWith("employer") ? "bg-violet-400" :
+                            n.type.startsWith("job") ? "bg-emerald-400" :
+                            n.type.startsWith("kyc") ? "bg-amber-400" :
+                            "bg-primary";
                           return (
-                            <div key={n.id} className="flex gap-3 px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border last:border-0">
+                            <div
+                              key={n.id}
+                              onClick={() => handleNotificationClick(n)}
+                              className={`flex gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-0 cursor-pointer ${
+                                !n.isRead ? "bg-primary/5 font-medium" : "opacity-80"
+                              }`}
+                            >
                               <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${dotColor}`} />
                               <div className="flex-1 min-w-0">
+                                {n.title && <p className="text-xs font-semibold text-foreground mb-0.5">{n.title}</p>}
                                 <p className="text-xs text-foreground leading-relaxed">{n.message}</p>
                                 <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "'DM Mono', monospace" }}>
                                   {n.time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
                                 </p>
                               </div>
+                              {!n.isRead && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
+                              )}
                             </div>
                           );
                         })
@@ -886,10 +1058,10 @@ export default function App() {
                     {notifications.length > 0 && (
                       <div className="px-4 py-2 border-t border-border">
                         <button
-                          onClick={clearNotifications}
+                          onClick={markAllAsRead}
                           className="w-full text-xs text-center text-muted-foreground hover:text-foreground py-1.5 rounded-md hover:bg-muted transition-colors"
                         >
-                          Clear all notifications
+                          Mark all as read
                         </button>
                       </div>
                     )}
@@ -985,7 +1157,7 @@ export default function App() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h2 className="text-sm font-semibold text-foreground">Growth Trends</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">FY2024 — monthly breakdown</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{new Date().getFullYear()} — Live Monthly Breakdown</p>
                 </div>
                 <div className="flex items-center gap-1 bg-muted rounded-md p-1">
                   {(["registrations", "placements"] as const).map((tab) => (
@@ -1001,37 +1173,53 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={200}>
-                {activeTab === "registrations" ? (
-                  <AreaChart data={registrationData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gWorker" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7c5cfc" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#7c5cfc" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gEmployer" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#36d1b7" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#36d1b7" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
-                    <XAxis dataKey="date" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Area key="workers" type="monotone" dataKey="workers" name="Workers" stroke="#7c5cfc" strokeWidth={2} fill="url(#gWorker)" dot={false} activeDot={{ r: 4, fill: "#7c5cfc", strokeWidth: 0 }} />
-                    <Area key="employers" type="monotone" dataKey="employers" name="Employers" stroke="#36d1b7" strokeWidth={2} fill="url(#gEmployer)" dot={false} activeDot={{ r: 4, fill: "#36d1b7", strokeWidth: 0 }} />
-                  </AreaChart>
+              
+              {activeTab === "registrations" ? (
+                dynamicRegistrationData.length === 0 ? (
+                  <div className="h-[200px] flex items-center justify-center text-xs text-muted-foreground border border-dashed border-border rounded-lg">
+                    No registration data available
+                  </div>
                 ) : (
-                  <BarChart data={placementData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
-                    <XAxis dataKey="date" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar key="placed" dataKey="placed" name="Placements" fill="#7c5cfc" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                )}
-              </ResponsiveContainer>
-              {activeTab === "registrations" && (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart data={dynamicRegistrationData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="gWorker" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#7c5cfc" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#7c5cfc" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gEmployer" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#36d1b7" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#36d1b7" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
+                      <XAxis dataKey="date" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<ChartTooltip />} />
+                      <Area key="workers" type="monotone" dataKey="workers" name="Workers" stroke="#7c5cfc" strokeWidth={2} fill="url(#gWorker)" dot={false} activeDot={{ r: 4, fill: "#7c5cfc", strokeWidth: 0 }} />
+                      <Area key="employers" type="monotone" dataKey="employers" name="Employers" stroke="#36d1b7" strokeWidth={2} fill="url(#gEmployer)" dot={false} activeDot={{ r: 4, fill: "#36d1b7", strokeWidth: 0 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )
+              ) : (
+                dynamicPlacementData.length === 0 ? (
+                  <div className="h-[200px] flex items-center justify-center text-xs text-muted-foreground border border-dashed border-border rounded-lg">
+                    No placement data available
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={dynamicPlacementData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
+                      <XAxis dataKey="date" tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: "#7a7a9a", fontSize: 11, fontFamily: "DM Mono, monospace" }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<ChartTooltip />} />
+                      <Bar key="placed" dataKey="placed" name="Placements" fill="#7c5cfc" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )
+              )}
+
+              {activeTab === "registrations" && dynamicRegistrationData.length > 0 && (
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#7c5cfc" }} />
@@ -1050,30 +1238,39 @@ export default function App() {
                 <h2 className="text-sm font-semibold text-foreground">Job Categories</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Distribution by sector</p>
               </div>
-              <ResponsiveContainer width="100%" height={150}>
-                <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} paddingAngle={2} dataKey="value">
-                    {categoryData.map((entry, i) => (
-                      <Cell key={`cell-${i}`} fill={entry.color} strokeWidth={0} />
+
+              {dynamicCategoryData.length === 0 ? (
+                <div className="h-[200px] flex items-center justify-center text-xs text-muted-foreground border border-dashed border-border rounded-lg">
+                  No job category data available
+                </div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={150}>
+                    <PieChart>
+                      <Pie data={dynamicCategoryData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} paddingAngle={2} dataKey="value">
+                        {dynamicCategoryData.map((entry, i) => (
+                          <Cell key={`cell-${i}`} fill={entry.color} strokeWidth={0} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(val) => [`${val}%`, ""]}
+                        contentStyle={{ background: "#13131c", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, fontSize: 12 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    {dynamicCategoryData.map((cat) => (
+                      <div key={cat.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                          <span className="text-xs text-muted-foreground">{cat.name}</span>
+                        </div>
+                        <span className="text-xs font-mono text-foreground">{cat.value}%</span>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val) => [`${val}%`, ""]}
-                    contentStyle={{ background: "#13131c", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, fontSize: 12 }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="mt-3 space-y-1.5">
-                {categoryData.map((cat) => (
-                  <div key={cat.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-                      <span className="text-xs text-muted-foreground">{cat.name}</span>
-                    </div>
-                    <span className="text-xs font-mono text-foreground">{cat.value}%</span>
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </div>
 
