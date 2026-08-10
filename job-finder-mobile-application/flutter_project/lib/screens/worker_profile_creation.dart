@@ -38,7 +38,21 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
     {'id': 'tailor', 'en': 'Tailor', 'ne': 'सुचिकार', 'icon': '🧵'},
     {'id': 'others', 'en': 'Others', 'ne': 'अन्य', 'icon': '➕'},
   ];
-  final TextEditingController _locController = TextEditingController(text: 'Balkumari, Lalitpur');
+  final List<Map<String, String>> _locations = [
+    {'id': 'kathmandu', 'en': 'Kathmandu', 'ne': 'काठमाडौं', 'icon': '📍'},
+    {'id': 'lalitpur', 'en': 'Lalitpur', 'ne': 'ललितपुर', 'icon': '📍'},
+    {'id': 'bhaktapur', 'en': 'Bhaktapur', 'ne': 'भक्तपुर', 'icon': '📍'},
+    {'id': 'janakpur', 'en': 'Janakpur', 'ne': 'जनकपुर', 'icon': '📍'},
+    {'id': 'pokhara', 'en': 'Pokhara', 'ne': 'पोखरा', 'icon': '📍'},
+    {'id': 'biratnagar', 'en': 'Biratnagar', 'ne': 'विराटनगर', 'icon': '📍'},
+    {'id': 'birgunj', 'en': 'Birgunj', 'ne': 'वीरगन्ज', 'icon': '📍'},
+    {'id': 'bharatpur', 'en': 'Bharatpur', 'ne': 'भरतपुर', 'icon': '📍'},
+    {'id': 'butwal', 'en': 'Butwal', 'ne': 'बुटवल', 'icon': '📍'},
+    {'id': 'nepalgunj', 'en': 'Nepalgunj', 'ne': 'नेपालगन्ज', 'icon': '📍'},
+    {'id': 'other', 'en': 'Other', 'ne': 'अन्य', 'icon': '📍'},
+    {'id': 'any', 'en': 'Any Location', 'ne': 'कुनै पनि स्थान', 'icon': '🌍'},
+  ];
+  String _selectedLocation = '';
 
   String _photoPath = '';
   String _govIdType = 'citizenship';
@@ -59,7 +73,7 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
           if (profile['name'] != null) _nameController.text = '${profile['name']}';
           if (profile['mainSkill'] != null) _selectedCategory = '${profile['mainSkill']}';
           if (profile['experience'] != null) _expController.text = '${profile['experience']}';
-          if (profile['location'] != null) _locController.text = '${profile['location']}';
+          if (profile['location'] != null) _selectedLocation = '${profile['location']}';
           setState(() {});
         },
       ),
@@ -74,8 +88,8 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
       error = _t('Please select your job category.', 'कृपया आफ्नो कामको वर्ग छान्नुहोस्।');
     } else if (_expController.text.trim().isEmpty) {
       error = _t('Please enter your experience.', 'कृपया आफ्नो अनुभव प्रविष्ट गर्नुहोस्।');
-    } else if (_locController.text.trim().isEmpty) {
-      error = _t('Please enter your location.', 'कृपया आफ्नो स्थान प्रविष्ट गर्नुहोस्।');
+    } else if (_selectedLocation.isEmpty) {
+      error = _t('Please select your preferred location.', 'कृपया आफ्नो रोजगारीको स्थान छान्नुहोस्।');
     } else if (_photoPath.isEmpty) {
       error = _t('Please upload a profile photo.', 'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।');
     } else if (_govIdNum.trim().isEmpty) {
@@ -109,7 +123,7 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
       name: _nameController.text.trim(),
       mainSkill: _selectedCategory,
       experience: _expController.text.trim(),
-      location: _locController.text.trim(),
+      location: _selectedLocation,
       profilePhoto: _photoPath,
       govIdType: _govIdType,
       govIdNum: _govIdNum.trim(),
@@ -291,7 +305,7 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
 
               // SECTION 2: WORK PREFERENCES
               Text(
-                _t('Where and how do you want to work?', 'कहाँ र कसरी काम गर्न चाहनुहुन्छ?'),
+                _t('Where do you want to work?', 'तपाईं कहाँ काम गर्न चाहनुहुन्छ?'),
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -300,12 +314,64 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
               ),
               SizedBox(height: 12),
 
-              _label('Preferred Location', 'प्राथमिकता स्थान'),
-              SizedBox(height: 6),
-              TextField(
-                controller: _locController,
-                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
-                decoration: _inputDecoration(hint: 'Type your preferred location (e.g. Lalitpur)'),
+              _label('Preferred location', 'रोजगारीको स्थान'),
+              SizedBox(height: 12),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.1,
+                ),
+                itemCount: _locations.length,
+                itemBuilder: (context, index) {
+                  final loc = _locations[index];
+                  final isSelected = _selectedLocation == loc['id'];
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      SpeechService.instance.speak(_t(loc['en']!, loc['ne']!), store.lang);
+                      setState(() {
+                        _selectedLocation = loc['id']!;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.slate900 : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? AppColors.slate900 : AppColors.slate200,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(loc['icon']!, style: TextStyle(fontSize: 22)),
+                          SizedBox(height: 6),
+                          Text(
+                            loc['en']!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.white : AppColors.slate700,
+                            ),
+                          ),
+                          Text(
+                            loc['ne']!,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected ? Colors.white70 : AppColors.slate700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
               SizedBox(height: 14),
 
@@ -403,8 +469,6 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
         return RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num);
       case 'pan':
         return RegExp(r'^\d{9}$').hasMatch(num);
-      case 'registration':
-        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
       default:
         return num.isNotEmpty;
     }

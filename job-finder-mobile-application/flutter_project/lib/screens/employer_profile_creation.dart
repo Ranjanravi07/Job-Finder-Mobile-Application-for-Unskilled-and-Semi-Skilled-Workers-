@@ -44,8 +44,6 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
         return RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num);
       case 'pan':
         return RegExp(r'^\d{9}$').hasMatch(num);
-      case 'registration':
-        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
       default:
         return num.isNotEmpty;
     }

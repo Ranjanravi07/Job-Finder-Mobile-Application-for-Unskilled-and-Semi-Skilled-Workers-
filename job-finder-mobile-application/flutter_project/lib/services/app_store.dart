@@ -209,6 +209,13 @@ class AppStore extends ChangeNotifier {
   void setRole(String? value) {
     role = value;
     _storage.setStringValue('sim_role', value ?? '');
+    
+    // Auto-apply job matching filters for workers
+    if (value == 'worker' && activeWorker != null) {
+      selectedCategory = activeWorker!.mainSkill;
+      selectedLocationFilter = activeWorker!.location;
+    }
+    
     notifyListeners();
   }
 
@@ -354,7 +361,7 @@ class AppStore extends ChangeNotifier {
   List<Job> get filteredJobs {
     return jobs.where((job) {
       if (selectedCategory != 'all' && job.category != selectedCategory) return false;
-      if (selectedLocationFilter != 'all' && job.location != selectedLocationFilter) {
+      if (selectedLocationFilter != 'all' && selectedLocationFilter != 'any' && job.location != selectedLocationFilter) {
         return false;
       }
       if (job.wage > maxWageFilter) return false;

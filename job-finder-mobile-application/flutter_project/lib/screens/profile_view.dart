@@ -583,11 +583,10 @@ class ProfileViewScreen extends StatelessWidget {
     if (idType == null) return lang == 'ne' ? 'उल्लेख गरिएको छैन' : 'Not specified';
     
     final idTypes = {
-      'citizenship': {'en': 'Citizenship Certificate', 'ne': 'नागरिकता'},
-      'passport': {'en': 'Passport', 'ne': 'राहदानी'},
+      'citizenship': {'en': 'Citizenship', 'ne': 'नागरिकता'},
+      'nid': {'en': 'National ID (NID)', 'ne': 'राष्ट्रिय परिचयपत्र (NID)'},
+      'license': {'en': 'Driving License', 'ne': 'सवारी चालक अनुमति'},
       'pan': {'en': 'PAN Card', 'ne': 'प्यान कार्ड'},
-      'voter': {'en': 'Voter ID', 'ne': 'मतदाता परिचय पत्र'},
-      'license': {'en': 'Driving License', 'ne': 'चालक अनुमति पत्र'},
     };
     
     return idTypes[idType]?[lang] ?? idType;

@@ -50,6 +50,28 @@ class _GovIdSectionState extends State<GovIdSection> {
 
   String _label(String en, String ne) => _isNe ? ne : en;
 
+  TextEditingController? _numController;
+
+  @override
+  void initState() {
+    super.initState();
+    _numController = TextEditingController(text: widget.govIdNum);
+  }
+
+  @override
+  void didUpdateWidget(covariant GovIdSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.govIdNum != widget.govIdNum && _numController?.text != widget.govIdNum) {
+      _numController?.text = widget.govIdNum;
+    }
+  }
+
+  @override
+  void dispose() {
+    _numController?.dispose();
+    super.dispose();
+  }
+
   void _pick(String key) async {
     final path = await ImagePickService.instance.pickImage();
     if (path != null && mounted) {
@@ -191,52 +213,63 @@ class _GovIdSectionState extends State<GovIdSection> {
             ],
           ),
           SizedBox(height: 10),
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: widget.govIdType,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.slate200),
-                    ),
+              DropdownButtonFormField<String>(
+                initialValue: widget.govIdType,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.slate200),
                   ),
-                  style: TextStyle(
-                    fontSize: 11, 
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.slate900,
-                  ),
-                  items: _typeOptions(),
-                  onChanged: (v) {
-                    if (v != null) widget.onTypeChanged(v);
-                  },
                 ),
+                style: TextStyle(
+                  fontSize: 11, 
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.slate900,
+                ),
+                items: _typeOptions(),
+                onChanged: (v) {
+                  if (v != null) {
+                    widget.onTypeChanged(v);
+                    _numController?.clear();
+                    widget.onNumChanged('');
+                  }
+                },
               ),
-              SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: TextEditingController(text: widget.govIdNum),
-                  onChanged: widget.onNumChanged,
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: _idNumberHint(widget.govIdType),
-                    hintStyle: TextStyle(fontSize: 11, color: AppColors.slate600),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.slate200),
-                    ),
+              SizedBox(height: 12),
+              Text(
+                _idNumberHint(widget.govIdType),
+                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate900, fontSize: 11),
+              ),
+              SizedBox(height: 4),
+              TextField(
+                controller: _numController ??= TextEditingController(text: widget.govIdNum),
+                onChanged: widget.onNumChanged,
+                keyboardType: (widget.govIdType == 'nid' || widget.govIdType == 'pan')
+                    ? TextInputType.number
+                    : TextInputType.text,
+                inputFormatters: (widget.govIdType == 'nid' || widget.govIdType == 'pan')
+                    ? [FilteringTextInputFormatter.digitsOnly]
+                    : [],
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: _label('Enter number', 'नम्बर प्रविष्ट गर्नुहोस्'),
+                  hintStyle: TextStyle(fontSize: 11, color: AppColors.slate600),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.slate200),
                   ),
                 ),
               ),
@@ -264,12 +297,10 @@ class _GovIdSectionState extends State<GovIdSection> {
 
   List<DropdownMenuItem<String>> _typeOptions() {
     return [
-      _opt('citizenship', 'Citizenship Card', 'नागरिकता प्रमाण-पत्र'),
+      _opt('citizenship', 'Citizenship', 'नागरिकता'),
       _opt('nid', 'National ID (NID)', 'राष्ट्रिय परिचयपत्र (NID)'),
       _opt('license', 'Driving License', 'सवारी चालक अनुमति'),
-      _opt('pan', 'PAN / VAT Card', 'प्यान/भ्याट (PAN Card)'),
-      if (widget.showRegistration)
-        _opt('registration', 'Business Registry', 'कम्पनी दर्ता प्रमाण'),
+      _opt('pan', 'PAN Card', 'प्यान कार्ड'),
     ];
   }
 

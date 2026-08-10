@@ -58,11 +58,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   // Government ID types
   final List<Map<String, String>> _govIdTypes = [
-    {'id': 'citizenship', 'nameEn': 'Citizenship Certificate', 'nameNe': 'नागरिकता'},
-    {'id': 'passport', 'nameEn': 'Passport', 'nameNe': 'राहदानी'},
+    {'id': 'citizenship', 'nameEn': 'Citizenship', 'nameNe': 'नागरिकता'},
+    {'id': 'nid', 'nameEn': 'National ID (NID)', 'nameNe': 'राष्ट्रिय परिचयपत्र (NID)'},
+    {'id': 'license', 'nameEn': 'Driving License', 'nameNe': 'सवारी चालक अनुमति'},
     {'id': 'pan', 'nameEn': 'PAN Card', 'nameNe': 'प्यान कार्ड'},
-    {'id': 'voter', 'nameEn': 'Voter ID', 'nameNe': 'मतदाता परिचय पत्र'},
-    {'id': 'license', 'nameEn': 'Driving License', 'nameNe': 'चालक अनुमति पत्र'},
   ];
 
   @override
@@ -603,11 +602,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   controller: _govIdNumberController,
                   onChanged: (_) => _markAsChanged(),
                   decoration: InputDecoration(
-                    labelText: lang == 'ne' ? 'परिचय पत्र नम्बर' : 'ID Number',
+                    labelText: _selectedGovIdType != null 
+                        ? _getIdNumberLabel(_selectedGovIdType!, lang) 
+                        : (lang == 'ne' ? 'परिचय पत्र नम्बर' : 'ID Number'),
+                    hintText: lang == 'ne' ? 'नम्बर प्रविष्ट गर्नुहोस्' : 'Enter number',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: Colors.white,
                   ),
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) {
+                      return lang == 'ne' ? 'कृपया नम्बर प्रविष्ट गर्नुहोस्' : 'Please enter the ID number';
+                    }
+                    if (_selectedGovIdType != null) {
+                      final validationError = _validateGovIdNumber(_selectedGovIdType!, val.trim(), lang);
+                      if (validationError != null) return validationError;
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -737,5 +749,47 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
       ],
     );
+    );
+  }
+
+  String _getIdNumberLabel(String type, String lang) {
+    switch (type) {
+      case 'citizenship':
+        return lang == 'ne' ? 'नागरिकता नम्बर' : 'Citizenship ID Number';
+      case 'nid':
+        return lang == 'ne' ? 'राष्ट्रिय परिचयपत्र नम्बर (NID Number)' : 'NID Number';
+      case 'license':
+        return lang == 'ne' ? 'सवारी चालक अनुमति नम्बर' : 'Driving License Number';
+      case 'pan':
+        return lang == 'ne' ? 'प्यान नम्बर' : 'PAN Number';
+      default:
+        return lang == 'ne' ? 'परिचय पत्र नम्बर' : 'ID Number';
+    }
+  }
+
+  String? _validateGovIdNumber(String type, String num, String lang) {
+    switch (type) {
+      case 'citizenship':
+        if (!RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num)) {
+          return lang == 'ne' ? 'नागरिकता नम्बरको ढाँचा मिलेन' : 'Invalid Citizenship number format';
+        }
+        break;
+      case 'nid':
+        if (!RegExp(r'^\d{10}$').hasMatch(num)) {
+          return lang == 'ne' ? 'राष्ट्रिय परिचयपत्र नम्बर १० अंकको हुनुपर्छ' : 'NID Number must be exactly 10 digits';
+        }
+        break;
+      case 'license':
+        if (!RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num)) {
+          return lang == 'ne' ? 'सवारी चालक अनुमति नम्बरको ढाँचा मिलेन' : 'Invalid Driving License format';
+        }
+        break;
+      case 'pan':
+        if (!RegExp(r'^\d{9}$').hasMatch(num)) {
+          return lang == 'ne' ? 'प्यान नम्बर ९ अंकको हुनुपर्छ' : 'PAN Number must be exactly 9 digits';
+        }
+        break;
+    }
+    return null;
   }
 }

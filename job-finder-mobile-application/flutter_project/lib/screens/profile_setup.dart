@@ -27,6 +27,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _locationController = TextEditingController();
   final _locationNeController = TextEditingController();
   final _experienceController = TextEditingController();
+  final _govIdNumberController = TextEditingController();
   
   String? _selectedSkill;
   String? _selectedIndustry;
@@ -88,6 +89,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     _locationController.dispose();
     _locationNeController.dispose();
     _experienceController.dispose();
+    _govIdNumberController.dispose();
     super.dispose();
   }
 
@@ -158,7 +160,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       locationNe: _locationNeController.text.trim().isNotEmpty ? _locationNeController.text.trim() : null,
       profilePhotoUrl: _profilePhotoUrl,
       governmentIdType: _selectedGovIdType,
-      governmentIdNumber: '',
+      governmentIdNumber: _govIdNumberController.text.trim(),
       governmentIdImageUrl: _govIdImageUrl,
       experience: _experienceController.text.trim().isNotEmpty ? _experienceController.text.trim() : null,
       jobCategory: _selectedJobCategory,
@@ -745,15 +747,123 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               fillColor: Colors.white,
             ),
             hint: Text(lang == 'ne' ? 'परिचय पत्र छान्नुहोस्' : 'Select ID type'),
+            validator: (val) {
+              if (val == null || val.isEmpty) {
+                return lang == 'ne' ? 'कृपया परिचय पत्रको प्रकार छान्नुहोस्' : 'Please select an ID type';
+              }
+              return null;
+            },
             items: [
               DropdownMenuItem(value: 'citizenship', child: Text(lang == 'ne' ? 'नागरिकता' : 'Citizenship')),
-              DropdownMenuItem(value: 'passport', child: Text(lang == 'ne' ? 'राहदानी' : 'Passport')),
+              DropdownMenuItem(value: 'nid', child: Text(lang == 'ne' ? 'राष्ट्रिय परिचयपत्र (NID)' : 'National ID (NID)')),
+              DropdownMenuItem(value: 'license', child: Text(lang == 'ne' ? 'सवारी चालक अनुमति' : 'Driving License')),
               DropdownMenuItem(value: 'pan', child: Text(lang == 'ne' ? 'प्यान कार्ड' : 'PAN Card')),
             ],
             onChanged: (val) {
               setState(() {
                 _selectedGovIdType = val;
+                _govIdNumberController.clear(); // Clear number when type changes
               });
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // Dynamic Government ID Number
+          if (_selectedGovIdType != null) ...[
+            Text(
+              _getIdNumberLabel(_selectedGovIdType!, lang),
+              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _govIdNumberController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.white,
+                hintText: lang == 'ne' ? 'नम्बर प्रविष्ट गर्नुहोस्' : 'Enter number',
+              ),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return lang == 'ne' ? 'कृपया नम्बर प्रविष्ट गर्नुहोस्' : 'Please enter the ID number';
+                }
+                final validationError = _validateGovIdNumber(_selectedGovIdType!, val.trim(), lang);
+                if (validationError != null) return validationError;
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+          
+          // Government ID Image Slot
+          Text(
+            lang == 'ne' ? 'परिचय पत्रको फोटो' : 'ID Photo',
+            style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+          ),
+          const SizedBox(height: 8),
+          FormField<String>(
+            validator: (val) {
+              if (_govIdImageUrl == null || _govIdImageUrl!.isEmpty) {
+                return lang == 'ne' ? 'कृपया परिचय पत्रको फोटो अपलोड गर्नुहोस्' : 'Please upload your ID photo';
+              }
+              return null;
+            },
+            builder: (formFieldState) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      _showImageSourceDialog('govId');
+                      formFieldState.didChange(_govIdImageUrl);
+                    },
+                    child: Container(
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _govIdImageUrl != null
+                              ? const Color(0xFF10B981)
+                              : (formFieldState.hasError ? Colors.red : const Color(0xFFE2E8F0)),
+                          width: 2,
+                        ),
+                      ),
+                      child: _govIdImageUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.network(
+                                _govIdImageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Center(child: Icon(Icons.error, color: Colors.red));
+                                },
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.upload_file, size: 48, color: Color(0xFF94A3B8)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  lang == 'ne' ? 'फोटो अपलोड गर्न यहाँ थिच्नुहोस्' : 'Tap to upload ID photo',
+                                  style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  if (formFieldState.hasError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 12),
+                      child: Text(
+                        formFieldState.errorText!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                ],
+              );
             },
           ),
           const SizedBox(height: 20),
@@ -877,5 +987,46 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         ],
       ),
     );
+  }
+
+  String _getIdNumberLabel(String type, String lang) {
+    switch (type) {
+      case 'citizenship':
+        return lang == 'ne' ? 'नागरिकता नम्बर' : 'Citizenship ID Number';
+      case 'nid':
+        return lang == 'ne' ? 'राष्ट्रिय परिचयपत्र नम्बर (NID Number)' : 'NID Number';
+      case 'license':
+        return lang == 'ne' ? 'सवारी चालक अनुमति नम्बर' : 'Driving License Number';
+      case 'pan':
+        return lang == 'ne' ? 'प्यान नम्बर' : 'PAN Number';
+      default:
+        return lang == 'ne' ? 'परिचय पत्र नम्बर' : 'ID Number';
+    }
+  }
+
+  String? _validateGovIdNumber(String type, String num, String lang) {
+    switch (type) {
+      case 'citizenship':
+        if (!RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num)) {
+          return lang == 'ne' ? 'नागरिकता नम्बरको ढाँचा मिलेन' : 'Invalid Citizenship number format';
+        }
+        break;
+      case 'nid':
+        if (!RegExp(r'^\d{10}$').hasMatch(num)) {
+          return lang == 'ne' ? 'राष्ट्रिय परिचयपत्र नम्बर १० अंकको हुनुपर्छ' : 'NID Number must be exactly 10 digits';
+        }
+        break;
+      case 'license':
+        if (!RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num)) {
+          return lang == 'ne' ? 'सवारी चालक अनुमति नम्बरको ढाँचा मिलेन' : 'Invalid Driving License format';
+        }
+        break;
+      case 'pan':
+        if (!RegExp(r'^\d{9}$').hasMatch(num)) {
+          return lang == 'ne' ? 'प्यान नम्बर ९ अंकको हुनुपर्छ' : 'PAN Number must be exactly 9 digits';
+        }
+        break;
+    }
+    return null;
   }
 }
