@@ -8,7 +8,7 @@ import '../theme/app_colors.dart';
 
 /// Mirrors the React `LOGIN` screen (OTP phone login).
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
   bool _isLoading = false;
-  String _otpMethod = 'sms';
   
   Timer? _timer;
   int _countdown = 0;
@@ -46,54 +45,88 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  bool get _isPhoneValid => _phoneController.text.replaceAll(RegExp(r'\D'), '').length == 10;
+  bool get _isOtpValid => _otpController.text.trim().length == 6;
+
   void _sendOtp() {
+    if (_isLoading) return;
     setState(() => _isLoading = true);
-    final lang = store.lang;
     store.sendOtp(
       (error) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: AppColors.red500),
-        );
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error),
+              backgroundColor: AppColors.red500,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       },
       (message) {
-        setState(() {
-          _isLoading = false;
-          _otpSent = true;
-        });
-        _startTimer();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppColors.emerald500,
-            duration: const Duration(seconds: 6),
-          ),
-        );
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _otpSent = true;
+            _otpController.clear();
+          });
+          _startTimer();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: AppColors.emerald500,
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
       },
     );
   }
 
   void _verifyOtp() {
+    if (_isLoading) return;
+    final otpCode = _otpController.text.trim();
+    if (otpCode.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(store.lang == 'ne'
+              ? 'कृपया ६-अंकको ओटिपी कोड हाल्नुहोस्।'
+              : 'Please enter the complete 6-digit OTP code.'),
+          backgroundColor: AppColors.red500,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     store.verifyOtp(
-      _otpController.text,
+      otpCode,
       (error) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: AppColors.red500),
-        );
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error),
+              backgroundColor: AppColors.red500,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
       },
       (existingWorker, existingEmployer) {
-        setState(() => _isLoading = false);
-        if (existingWorker) {
-          store.setRole('worker');
-          Navigator.pushReplacementNamed(context, '/worker-home');
-        } else if (existingEmployer) {
-          store.setRole('employer');
-          Navigator.pushReplacementNamed(context, '/employer-home');
-        } else {
-          // No profile exists - go to role selection to create profile.
-          Navigator.pushReplacementNamed(context, '/role-selection');
+        if (mounted) {
+          setState(() => _isLoading = false);
+          if (existingWorker) {
+            store.setRole('worker');
+            Navigator.pushReplacementNamed(context, '/worker-home');
+          } else if (existingEmployer) {
+            store.setRole('employer');
+            Navigator.pushReplacementNamed(context, '/employer-home');
+          } else {
+            // No profile exists - go to role selection to create profile.
+            Navigator.pushReplacementNamed(context, '/role-selection');
+          }
         }
       },
     );
@@ -130,8 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               Text(
                 lang == 'ne'
-                    ? 'सुरक्षित प्रवेशको लागि आफ्नो मोबाइल नम्बर राख्नुहोस्। पासवर्ड चाहिँदैन।'
-                    : 'Enter your 10-digit mobile number. No password required.',
+                    ? 'सुरक्षित प्रवेशको लागि आफ्नो मोबाइल नम्बर राख्नुहोस्।'
+                    : 'Enter your 10-digit mobile number.',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.slate500,
@@ -142,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               if (!_otpSent) ...[
                 Text(
-                  lang == 'ne' ? 'नेपाली मोबाइल नम्बर' : 'Nepali Mobile Number',
+                  lang == 'ne' ? ' मोबाइल नम्बर' : ' Mobile Number',
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     color: AppColors.slate700,
@@ -173,7 +206,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         maxLength: 10,
-                        onChanged: (v) => store.setPhone(v.replaceAll(RegExp(r'\D'), '')),
+                        onChanged: (v) {
+                          store.setPhone(v.replaceAll(RegExp(r'\D'), ''));
+                          setState(() {});
+                        },
                         decoration: InputDecoration(
                           counterText: '',
                           hintText: '98XXXXXXXX',
@@ -194,71 +230,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _otpMethod = 'sms'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _otpMethod == 'sms' ? Colors.white : AppColors.slate100,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: _otpMethod == 'sms' ? AppColors.slate900 : AppColors.slate200,
-                              width: _otpMethod == 'sms' ? 2 : 1,
-                            ),
-                            boxShadow: _otpMethod == 'sms' 
-                              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                              : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'SMS',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: _otpMethod == 'sms' ? AppColors.slate900 : AppColors.slate500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _otpMethod = 'whatsapp'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _otpMethod == 'whatsapp' ? Colors.white : AppColors.slate100,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: _otpMethod == 'whatsapp' ? AppColors.emerald500 : AppColors.slate200,
-                              width: _otpMethod == 'whatsapp' ? 2 : 1,
-                            ),
-                            boxShadow: _otpMethod == 'whatsapp' 
-                              ? [BoxShadow(color: AppColors.emerald500.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))]
-                              : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'WhatsApp',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: _otpMethod == 'whatsapp' ? AppColors.emerald600 : AppColors.slate500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _sendOtp,
+                  onPressed: (_isLoading || !_isPhoneValid) ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.slate900,
+                    backgroundColor: (_isLoading || !_isPhoneValid)
+                        ? AppColors.slate300
+                        : AppColors.slate900,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -289,6 +267,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Pinput(
                     controller: _otpController,
                     length: 6,
+                    onChanged: (v) => setState(() {}),
                     onCompleted: (v) => _verifyOtp(),
                     defaultPinTheme: PinTheme(
                       width: 50,
@@ -314,9 +293,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _verifyOtp,
+                  onPressed: (_isLoading || !_isOtpValid) ? null : _verifyOtp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.emerald500,
+                    backgroundColor: (_isLoading || !_isOtpValid)
+                        ? AppColors.slate300
+                        : AppColors.emerald500,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -343,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: AppColors.slate500),
                     ),
                     TextButton(
-                      onPressed: _countdown == 0 ? _sendOtp : null,
+                      onPressed: (_countdown == 0 && !_isLoading) ? _sendOtp : null,
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: const Size(0, 0),
@@ -366,6 +347,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     setState(() {
                       _otpSent = false;
+                      _isLoading = false;
                       _otpController.clear();
                     });
                   },

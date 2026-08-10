@@ -11,11 +11,13 @@ class ChatService {
 
   /// Creates a conversation when an application is accepted.
   /// The document ID is deterministic based on the application ID to prevent duplicates.
-  Future<void> createConversation(JobApplication app, EmployerProfile employer) async {
+  Future<void> createConversation(
+      JobApplication app, EmployerProfile employer) async {
     final String conversationId = 'chat_${app.id}';
-    
-    final conversationRef = _firestore.collection('conversations').doc(conversationId);
-    
+
+    final conversationRef =
+        _firestore.collection('conversations').doc(conversationId);
+
     // Use set with merge: true to avoid overwriting an existing conversation
     await conversationRef.set({
       'applicationId': app.id,
@@ -23,21 +25,24 @@ class ChatService {
       'employerId': employer.id,
       'workerName': app.workerName,
       'employerName': employer.name,
-      'jobTitle': 'Job ID: ${app.jobId}', // Since jobTitle isn't in JobApplication directly, we put ID or it can be fetched
+      'jobTitle':
+          'Job ID: ${app.jobId}', // Since jobTitle isn't in JobApplication directly, we put ID or it can be fetched
       'lastMessage': 'Application Accepted! Start chatting.',
       'lastUpdatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    
+
     // Add an initial system message
     await conversationRef.collection('messages').add({
       'senderId': 'system',
-      'text': 'Employer ${employer.name} has accepted the application. You can now chat directly!',
+      'text':
+          'Employer ${employer.name} has accepted the application. You can now chat directly!',
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
 
   /// Get conversations for a specific user (Worker or Employer)
-  Stream<List<Conversation>> getConversationsForUser(String userId, String role) {
+  Stream<List<Conversation>> getConversationsForUser(
+      String userId, String role) {
     String queryField = role == 'worker' ? 'workerId' : 'employerId';
 
     return _firestore
@@ -45,8 +50,9 @@ class ChatService {
         .where(queryField, isEqualTo: userId)
         .orderBy('lastUpdatedAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Conversation.fromFirestore(doc)).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Conversation.fromFirestore(doc))
+            .toList());
   }
 
   /// Get messages for a specific conversation
@@ -62,12 +68,14 @@ class ChatService {
   }
 
   /// Send a new message
-  Future<void> sendMessage(String conversationId, String senderId, String text) async {
+  Future<void> sendMessage(
+      String conversationId, String senderId, String text) async {
     if (text.trim().isEmpty) return;
 
     final batch = _firestore.batch();
-    
-    final conversationRef = _firestore.collection('conversations').doc(conversationId);
+
+    final conversationRef =
+        _firestore.collection('conversations').doc(conversationId);
     final messageRef = conversationRef.collection('messages').doc();
 
     batch.set(messageRef, {

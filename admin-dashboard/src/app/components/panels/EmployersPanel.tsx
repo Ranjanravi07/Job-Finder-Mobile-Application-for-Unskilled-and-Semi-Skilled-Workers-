@@ -2,8 +2,10 @@ import { useState } from "react";
 import React from "react";
 import {
   Building2, MapPin, Users, MoreVertical, CheckCircle, Ban, Trash2,
-  X, Phone, CreditCard, Briefcase,
+  X, Phone, CreditCard, Briefcase, FileText, Check
 } from "lucide-react";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "../../../firebase";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +22,7 @@ const statusStyle: Record<Status, string> = {
   inactive: "bg-slate-500/10  text-slate-400  border border-slate-500/20",
 };
 
-/** Profile modal */
+/** Profile modal displaying complete Employer details & all Government IDs */
 function ProfileModal({ employer, onClose }: { employer: Employer; onClose: () => void }) {
   return (
     <div
@@ -29,7 +31,7 @@ function ProfileModal({ employer, onClose }: { employer: Employer; onClose: () =
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden"
+        className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header band */}
@@ -45,8 +47,12 @@ function ProfileModal({ employer, onClose }: { employer: Employer; onClose: () =
         <div className="px-6 pb-6">
           {/* Avatar overlapping header */}
           <div className="-mt-8 mb-4 flex items-end justify-between">
-            <div className="w-16 h-16 rounded-xl bg-primary/15 flex items-center justify-center ring-4 ring-card flex-shrink-0">
-              <Building2 className="w-7 h-7 text-primary" />
+            <div className="w-16 h-16 rounded-xl bg-primary/15 flex items-center justify-center ring-4 ring-card flex-shrink-0 overflow-hidden">
+              {employer.profilePhoto ? (
+                <img src={employer.profilePhoto} alt={employer.name} className="w-full h-full object-cover" />
+              ) : (
+                <Building2 className="w-7 h-7 text-primary" />
+              )}
             </div>
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${statusStyle[employer.status]}`}>
               {employer.status}
@@ -112,38 +118,72 @@ function ProfileModal({ employer, onClose }: { employer: Employer; onClose: () =
               </div>
             </div>
 
-            {/* Gov ID number */}
+            {/* Primary Gov ID number */}
             <div className="flex items-start gap-3">
               <div className="w-7 h-7 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
                 <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Government ID Number</p>
+                <p className="text-xs text-muted-foreground">Primary Government ID ({employer.govIdType || 'Citizenship'})</p>
                 <p className="text-sm font-medium text-foreground mt-0.5" style={{ fontFamily: "'DM Mono', monospace" }}>
-                  {employer.govIdNumber}
+                  {employer.govIdNumber || "N/A"}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Gov ID image */}
-          <div className="mt-4">
-            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <CreditCard className="w-3 h-3" /> Government ID Image
-            </p>
-            {employer.govIdImage ? (
-              <img
-                src={employer.govIdImage}
-                alt="Government ID"
-                className="w-full rounded-lg border border-border object-cover max-h-40"
-              />
-            ) : (
-              <div className="w-full h-28 rounded-lg border border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2">
-                <CreditCard className="w-6 h-6 text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">No ID image uploaded</p>
+          {/* Multi-Selection Government IDs Breakdown */}
+          {employer.governmentIds && Object.keys(employer.governmentIds).length > 0 && (
+            <div className="mt-4 border-t border-border pt-4 space-y-3">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-primary" /> Submitted Government IDs ({Object.keys(employer.governmentIds).length})
+              </p>
+              <div className="space-y-2">
+                {Object.entries(employer.governmentIds).map(([typeKey, idObj]) => (
+                  <div key={typeKey} className="bg-muted/40 border border-border rounded-lg p-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground capitalize flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-400" /> {typeKey}
+                      </span>
+                      <span className="font-mono text-muted-foreground">{idObj.idNumber}</span>
+                    </div>
+                    {idObj.documentFiles && idObj.documentFiles.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {idObj.documentFiles.map((docUrl, idx) => (
+                          <a key={idx} href={docUrl} target="_blank" rel="noreferrer" className="block">
+                            <img src={docUrl} alt={`${typeKey} doc ${idx + 1}`} className="w-full h-16 object-cover rounded border border-border hover:opacity-80 transition-opacity" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Gov ID image fallback if no governmentIds map */}
+          {(!employer.governmentIds || Object.keys(employer.governmentIds).length === 0) && (
+            <div className="mt-4">
+              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                <CreditCard className="w-3 h-3" /> Government ID Image
+              </p>
+              {employer.govIdImage ? (
+                <a href={employer.govIdImage} target="_blank" rel="noreferrer">
+                  <img
+                    src={employer.govIdImage}
+                    alt="Government ID"
+                    className="w-full rounded-lg border border-border object-cover max-h-40"
+                  />
+                </a>
+              ) : (
+                <div className="w-full h-28 rounded-lg border border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2">
+                  <CreditCard className="w-6 h-6 text-muted-foreground/50" />
+                  <p className="text-xs text-muted-foreground">No ID image uploaded</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -158,13 +198,40 @@ export default function EmployersPanel({ search, filters, employers, setEmployer
 }) {
   const [selected, setSelected] = useState<Employer | null>(null);
 
-  const approve = (id: string) =>
-    setEmployers((prev) => prev.map((e) => (e.id === id ? { ...e, status: "active" } : e)));
+  const approve = async (id: string) => {
+    if (db) {
+      try {
+        await updateDoc(doc(db, "employers", id), {
+          verificationStatus: "verified",
+        });
+      } catch (err) {
+        console.error("Failed to approve employer in Firestore:", err);
+      }
+    }
+    setEmployers((prev) => prev.map((e) => (e.id === id ? { ...e, status: "active", verificationStatus: "verified" } : e)));
+  };
 
-  const block = (id: string) =>
-    setEmployers((prev) => prev.map((e) => (e.id === id ? { ...e, status: "inactive" } : e)));
+  const block = async (id: string) => {
+    if (db) {
+      try {
+        await updateDoc(doc(db, "employers", id), {
+          verificationStatus: "inactive",
+        });
+      } catch (err) {
+        console.error("Failed to block employer in Firestore:", err);
+      }
+    }
+    setEmployers((prev) => prev.map((e) => (e.id === id ? { ...e, status: "inactive", verificationStatus: "inactive" } : e)));
+  };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
+    if (db) {
+      try {
+        await deleteDoc(doc(db, "employers", id));
+      } catch (err) {
+        console.error("Failed to delete employer from Firestore:", err);
+      }
+    }
     setEmployers((prev) => prev.filter((e) => e.id !== id));
     if (selected?.id === id) setSelected(null);
   };
@@ -215,7 +282,7 @@ export default function EmployersPanel({ search, filters, employers, setEmployer
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                      No employers found.
+                      No employers registered yet.
                     </td>
                   </tr>
                 ) : (
@@ -236,8 +303,12 @@ export default function EmployersPanel({ search, filters, employers, setEmployer
                       {/* Company */}
                       <td className="px-4 py-3 text-xs font-medium text-foreground whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="w-3 h-3 text-primary" />
+                          <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {employer.profilePhoto ? (
+                              <img src={employer.profilePhoto} alt={employer.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Building2 className="w-3 h-3 text-primary" />
+                            )}
                           </div>
                           {employer.name}
                         </div>

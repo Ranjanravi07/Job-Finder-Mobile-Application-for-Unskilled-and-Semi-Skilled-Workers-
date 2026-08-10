@@ -7,7 +7,7 @@ import '../theme/app_colors.dart';
 
 /// Mirrors the React `ACTIVE JOB DETAILS` modal bottom sheet.
 class JobDetailsSheet extends StatelessWidget {
-  const JobDetailsSheet({Key? key, required this.job}) : super(key: key);
+  const JobDetailsSheet({super.key, required this.job});
 
   final Job job;
 
@@ -29,7 +29,7 @@ class JobDetailsSheet extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -42,7 +42,7 @@ class JobDetailsSheet extends StatelessWidget {
                 width: 48,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: AppColors.slate200,
+                  color: context.appColors.slate200,
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -59,7 +59,7 @@ class JobDetailsSheet extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
-                      color: AppColors.slate900,
+                      color: context.appColors.slate900,
                       height: 1.3,
                     ),
                   ),
@@ -67,9 +67,10 @@ class JobDetailsSheet extends StatelessWidget {
                 IconButton(
                   onPressed: () => store.playJobAudio(job),
                   tooltip: 'Read details audibly (TTS)',
-                  icon: Icon(Icons.volume_up_rounded, color: AppColors.slate800),
+                  icon: Icon(Icons.volume_up_rounded,
+                      color: context.appColors.slate800),
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.slate100,
+                    backgroundColor: context.appColors.slate100,
                   ),
                 ),
               ],
@@ -80,9 +81,10 @@ class JobDetailsSheet extends StatelessWidget {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.emerald500.withValues(alpha: 0.1),
+                color: context.appColors.emerald500.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.emerald500.withValues(alpha: 0.2)),
+                border: Border.all(
+                    color: context.appColors.emerald500.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -90,7 +92,7 @@ class JobDetailsSheet extends StatelessWidget {
                   Text(
                     _t('Expected Wage:', 'प्रस्तावित ज्याला:'),
                     style: TextStyle(
-                      color: AppColors.emerald600,
+                      color: context.appColors.emerald600,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -98,7 +100,7 @@ class JobDetailsSheet extends StatelessWidget {
                   Text(
                     'Rs. ${job.wage} / Day',
                     style: TextStyle(
-                      color: AppColors.emerald600,
+                      color: context.appColors.emerald600,
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
@@ -115,18 +117,18 @@ class JobDetailsSheet extends StatelessWidget {
                 Text(
                   _t('Job Details', 'विवरण').toUpperCase(),
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1,
-                    color: AppColors.slate400,
+                    color: context.appColors.slate600,
                   ),
                 ),
                 SizedBox(height: 6),
                 Text(
                   job.description,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.slate600,
+                    fontSize: 14,
+                    color: context.appColors.slate600,
                     height: 1.5,
                   ),
                 ),
@@ -158,10 +160,10 @@ class JobDetailsSheet extends StatelessWidget {
             Text(
               _t('Direct Employer Connection', 'सिधा रोजगारदाता सम्पर्क'),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1,
-                color: AppColors.slate500,
+                color: context.appColors.slate700,
               ),
             ),
             const SizedBox(height: 10),
@@ -176,8 +178,8 @@ class JobDetailsSheet extends StatelessWidget {
                     icon: Icon(Icons.call_rounded, size: 16),
                     label: Text(_t('Direct Call', 'सिधा फोन')),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.slate900,
-                      foregroundColor: Colors.white,
+                      backgroundColor: context.appColors.slate900,
+                      foregroundColor: context.appColors.white,
                       padding: EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -192,8 +194,8 @@ class JobDetailsSheet extends StatelessWidget {
                     icon: Icon(Icons.chat_rounded, size: 16),
                     label: Text('WhatsApp'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.emerald500,
-                      foregroundColor: Colors.white,
+                      backgroundColor: context.appColors.emerald500,
+                      foregroundColor: context.appColors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -227,16 +229,16 @@ class _MetaCell extends StatelessWidget {
           style: TextStyle(
             fontSize: 8,
             fontWeight: FontWeight.w700,
-            color: AppColors.slate400,
+            color: context.appColors.slate600,
           ),
         ),
         SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 14,
             fontWeight: FontWeight.w900,
-            color: AppColors.slate700,
+            color: context.appColors.slate700,
           ),
         ),
       ],

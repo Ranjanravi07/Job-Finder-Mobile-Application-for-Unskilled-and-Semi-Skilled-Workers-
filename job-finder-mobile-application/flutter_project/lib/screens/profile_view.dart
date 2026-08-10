@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/user_profile.dart';
@@ -7,7 +8,7 @@ import '../providers/profile_provider.dart';
 class ProfileViewScreen extends StatelessWidget {
   final UserProfile? profile;
 
-  const ProfileViewScreen({Key? key, this.profile}) : super(key: key);
+  const ProfileViewScreen({super.key, this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,7 @@ class ProfileViewScreen extends StatelessWidget {
       return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
-          foregroundColor: Colors.white,
+          foregroundColor: context.appColors.white,
           title: Text(
             lang == 'ne' ? 'प्रोफाइल' : 'Profile',
             style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold),
@@ -29,7 +30,8 @@ class ProfileViewScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.person_outline, size: 80, color: Color(0xFF94A3B8)),
+              const Icon(Icons.person_outline,
+                  size: 80, color: Color(0xFF94A3B8)),
               const SizedBox(height: 16),
               Text(
                 lang == 'ne' ? 'प्रोफाइल भेटिएन' : 'Profile not found',
@@ -47,12 +49,16 @@ class ProfileViewScreen extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  foregroundColor: context.appColors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
                 child: Text(
-                  lang == 'ne' ? 'प्रोफाइल सिर्जना गर्नुहोस्' : 'Create Profile',
+                  lang == 'ne'
+                      ? 'प्रोफाइल सिर्जना गर्नुहोस्'
+                      : 'Create Profile',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -72,7 +78,7 @@ class ProfileViewScreen extends StatelessWidget {
             floating: false,
             pinned: true,
             backgroundColor: const Color(0xFF0F172A),
-            foregroundColor: Colors.white,
+            foregroundColor: context.appColors.white,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -96,10 +102,11 @@ class ProfileViewScreen extends StatelessWidget {
                         height: 120,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF10B981), width: 4),
+                          border: Border.all(
+                              color: const Color(0xFF10B981), width: 4),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -111,11 +118,12 @@ class ProfileViewScreen extends StatelessWidget {
                                   userProfile.profilePhotoUrl!,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return _buildInitialsAvatar(userProfile);
+                                    return _buildInitialsAvatar(
+                                        context, userProfile);
                                   },
                                 ),
                               )
-                            : _buildInitialsAvatar(userProfile),
+                            : _buildInitialsAvatar(context, userProfile),
                       ),
                       const SizedBox(height: 16),
                       // Name
@@ -124,24 +132,26 @@ class ProfileViewScreen extends StatelessWidget {
                         style: GoogleFonts.spaceGrotesk(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: context.appColors.white,
                         ),
                       ),
                       const SizedBox(height: 4),
                       // Role badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.2),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFF10B981), width: 1),
+                          border: Border.all(
+                              color: const Color(0xFF10B981), width: 1),
                         ),
                         child: Text(
                           userProfile.role == 'worker'
                               ? (lang == 'ne' ? 'कामदार' : 'Worker')
                               : (lang == 'ne' ? 'रोजगारदाता' : 'Employer'),
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF10B981),
                           ),
@@ -184,7 +194,7 @@ class ProfileViewScreen extends StatelessWidget {
                     Icons.contact_phone_outlined,
                   ),
                   const SizedBox(height: 12),
-                  _buildInfoCard([
+                  _buildInfoCard(context, [
                     _buildInfoRow(
                       icon: Icons.phone_outlined,
                       label: lang == 'ne' ? 'मोबाइल नम्बर' : 'Mobile Number',
@@ -201,17 +211,24 @@ class ProfileViewScreen extends StatelessWidget {
                   // Professional Information
                   _buildSectionTitle(
                     userProfile.role == 'worker'
-                        ? (lang == 'ne' ? 'व्यावसायिक जानकारी' : 'Professional Details')
-                        : (lang == 'ne' ? 'व्यवसाय जानकारी' : 'Business Details'),
+                        ? (lang == 'ne'
+                            ? 'व्यावसायिक जानकारी'
+                            : 'Professional Details')
+                        : (lang == 'ne'
+                            ? 'व्यवसाय जानकारी'
+                            : 'Business Details'),
                     Icons.work_outline,
                   ),
                   const SizedBox(height: 12),
-                  _buildInfoCard([
+                  _buildInfoCard(context, [
                     if (userProfile.role == 'worker') ...[
                       _buildInfoRow(
                         icon: Icons.build_outlined,
                         label: lang == 'ne' ? 'मुख्य सीप' : 'Primary Skill',
-                        value: userProfile.skill ?? (lang == 'ne' ? 'उल्लेख गरिएको छैन' : 'Not specified'),
+                        value: userProfile.skill ??
+                            (lang == 'ne'
+                                ? 'उल्लेख गरिएको छैन'
+                                : 'Not specified'),
                       ),
                       if (userProfile.experience != null)
                         _buildInfoRow(
@@ -223,7 +240,10 @@ class ProfileViewScreen extends StatelessWidget {
                       _buildInfoRow(
                         icon: Icons.business_outlined,
                         label: lang == 'ne' ? 'उद्योग' : 'Industry',
-                        value: userProfile.industry ?? (lang == 'ne' ? 'उल्लेख गरिएको छैन' : 'Not specified'),
+                        value: userProfile.industry ??
+                            (lang == 'ne'
+                                ? 'उल्लेख गरिएको छैन'
+                                : 'Not specified'),
                       ),
                     ],
                   ]),
@@ -235,11 +255,12 @@ class ProfileViewScreen extends StatelessWidget {
                     Icons.verified_user_outlined,
                   ),
                   const SizedBox(height: 12),
-                  _buildInfoCard([
+                  _buildInfoCard(context, [
                     _buildInfoRow(
                       icon: Icons.credit_card_outlined,
                       label: lang == 'ne' ? 'परिचय पत्रको प्रकार' : 'ID Type',
-                      value: _getGovIdTypeName(userProfile.governmentIdType, lang),
+                      value:
+                          _getGovIdTypeName(userProfile.governmentIdType, lang),
                     ),
                     if (userProfile.governmentIdNumber != null &&
                         userProfile.governmentIdNumber!.isNotEmpty)
@@ -263,12 +284,13 @@ class ProfileViewScreen extends StatelessWidget {
                       child: Container(
                         height: 200,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.appColors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+                          border: Border.all(
+                              color: const Color(0xFFE2E8F0), width: 1.5),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -277,7 +299,8 @@ class ProfileViewScreen extends StatelessWidget {
                         child: Column(
                           children: [
                             ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(15)),
                               child: Image.network(
                                 userProfile.governmentIdImageUrl!,
                                 fit: BoxFit.cover,
@@ -288,7 +311,8 @@ class ProfileViewScreen extends StatelessWidget {
                                     height: 160,
                                     color: const Color(0xFFF1F5F9),
                                     child: const Center(
-                                      child: Icon(Icons.broken_image_outlined, size: 48, color: Color(0xFF94A3B8)),
+                                      child: Icon(Icons.broken_image_outlined,
+                                          size: 48, color: Color(0xFF94A3B8)),
                                     ),
                                   );
                                 },
@@ -306,7 +330,9 @@ class ProfileViewScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    lang == 'ne' ? 'ठूलो आकारमा हेर्नुहोस्' : 'Tap to view full size',
+                                    lang == 'ne'
+                                        ? 'ठूलो आकारमा हेर्नुहोस्'
+                                        : 'Tap to view full size',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF64748B),
@@ -330,7 +356,7 @@ class ProfileViewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInitialsAvatar(UserProfile profile) {
+  Widget _buildInitialsAvatar(BuildContext context, UserProfile profile) {
     return Container(
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
@@ -339,10 +365,10 @@ class ProfileViewScreen extends StatelessWidget {
       child: Center(
         child: Text(
           profile.initials,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 48,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: context.appColors.white,
           ),
         ),
       ),
@@ -357,8 +383,8 @@ class ProfileViewScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF10B981).withOpacity(0.1),
-            const Color(0xFF0F172A).withOpacity(0.05),
+            const Color(0xFF10B981).withValues(alpha: 0.1),
+            const Color(0xFF0F172A).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
@@ -374,10 +400,10 @@ class ProfileViewScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: profile.status == 'active'
-                        ? const Color(0xFF10B981).withOpacity(0.1)
+                        ? const Color(0xFF10B981).withValues(alpha: 0.1)
                         : profile.status == 'pending'
-                            ? Colors.orange.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
+                            ? Colors.orange.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -402,7 +428,7 @@ class ProfileViewScreen extends StatelessWidget {
                           ? (lang == 'ne' ? 'पेन्डिङ' : 'Pending')
                           : (lang == 'ne' ? 'निष्क्रिय' : 'Inactive'),
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF475569),
                   ),
@@ -423,7 +449,7 @@ class ProfileViewScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
+                    color: Colors.amber.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -444,7 +470,7 @@ class ProfileViewScreen extends StatelessWidget {
                 Text(
                   lang == 'ne' ? 'मूल्यांकन' : 'Rating',
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 14,
                     color: Color(0xFF94A3B8),
                   ),
                 ),
@@ -464,7 +490,7 @@ class ProfileViewScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withOpacity(0.1),
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -487,7 +513,7 @@ class ProfileViewScreen extends StatelessWidget {
                       ? (lang == 'ne' ? 'काम पूरा' : 'Jobs Done')
                       : (lang == 'ne' ? 'कामदार' : 'Hired'),
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 14,
                     color: Color(0xFF94A3B8),
                   ),
                 ),
@@ -516,10 +542,10 @@ class ProfileViewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(List<Widget> children) {
+  Widget _buildInfoCard(BuildContext context, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
       ),
@@ -558,7 +584,7 @@ class ProfileViewScreen extends StatelessWidget {
                 Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     color: Color(0xFF94A3B8),
                   ),
                 ),
@@ -580,15 +606,17 @@ class ProfileViewScreen extends StatelessWidget {
   }
 
   String _getGovIdTypeName(String? idType, String lang) {
-    if (idType == null) return lang == 'ne' ? 'उल्लेख गरिएको छैन' : 'Not specified';
-    
+    if (idType == null) {
+      return lang == 'ne' ? 'उल्लेख गरिएको छैन' : 'Not specified';
+    }
+
     final idTypes = {
       'citizenship': {'en': 'Citizenship', 'ne': 'नागरिकता'},
       'nid': {'en': 'National ID (NID)', 'ne': 'राष्ट्रिय परिचयपत्र (NID)'},
       'license': {'en': 'Driving License', 'ne': 'सवारी चालक अनुमति'},
       'pan': {'en': 'PAN Card', 'ne': 'प्यान कार्ड'},
     };
-    
+
     return idTypes[idType]?[lang] ?? idType;
   }
 
@@ -601,7 +629,7 @@ class ProfileViewScreen extends StatelessWidget {
           children: [
             AppBar(
               backgroundColor: const Color(0xFF0F172A),
-              foregroundColor: Colors.white,
+              foregroundColor: context.appColors.white,
               title: Text(title),
               automaticallyImplyLeading: false,
               actions: [
@@ -619,7 +647,8 @@ class ProfileViewScreen extends StatelessWidget {
                   height: 300,
                   color: const Color(0xFFF1F5F9),
                   child: const Center(
-                    child: Icon(Icons.broken_image_outlined, size: 64, color: Color(0xFF94A3B8)),
+                    child: Icon(Icons.broken_image_outlined,
+                        size: 64, color: Color(0xFF94A3B8)),
                   ),
                 );
               },

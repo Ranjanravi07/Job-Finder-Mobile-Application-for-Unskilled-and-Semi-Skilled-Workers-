@@ -96,6 +96,11 @@ app.use(
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
 
 // ============================================================
 // Helper Functions
@@ -430,34 +435,27 @@ app.post(
         let userRecord;
 
         try {
-
-          userRecord =
-            await auth.getUserByPhoneNumber(phone);
-
+          userRecord = await auth.getUserByPhoneNumber(phone);
         } catch (error) {
-
-          if (
-            error.code === 'auth/user-not-found'
-          ) {
-
-            return res.status(404).json({
+          if (error.code === 'auth/user-not-found') {
+            try {
+              userRecord = await auth.createUser({
+                phoneNumber: phone,
+              });
+            } catch (createErr) {
+              console.error('Firebase user creation failed:', createErr.message);
+              return res.status(500).json({
+                success: false,
+                message: 'Unable to complete authentication.',
+              });
+            }
+          } else {
+            console.error('Firebase user lookup failed:', error.message);
+            return res.status(500).json({
               success: false,
-              message:
-                'Account not found. Please register first.',
+              message: 'Authentication failed.',
             });
           }
-
-
-          console.error(
-            'Firebase user lookup failed:',
-            error.message
-          );
-
-          return res.status(500).json({
-            success: false,
-            message:
-              'Authentication failed.',
-          });
         }
 
 

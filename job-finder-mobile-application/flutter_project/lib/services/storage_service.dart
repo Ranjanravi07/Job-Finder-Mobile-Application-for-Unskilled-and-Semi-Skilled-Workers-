@@ -44,7 +44,8 @@ class StorageService {
     _p!.setString(key, jsonEncode(data));
   }
 
-  List<Map<String, dynamic>> getList(String key, List<Map<String, dynamic>> defaultValue) {
+  List<Map<String, dynamic>> getList(
+      String key, List<Map<String, dynamic>> defaultValue) {
     if (_p == null) return defaultValue;
     final stored = _p!.getString(key);
     if (stored == null) {

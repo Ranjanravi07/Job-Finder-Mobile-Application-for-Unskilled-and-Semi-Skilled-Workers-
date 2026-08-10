@@ -1,19 +1,19 @@
 import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
-import 'otp/otp_service.dart';
-import 'otp/api_otp_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../data/mock_data.dart';
-import '../models/job.dart';
-import '../models/worker_profile.dart';
-import '../models/employer_profile.dart';
-import '../models/job_application.dart';
 import '../models/chat_message.dart';
-import 'storage_service.dart';
-import 'speech_service.dart';
+import '../models/employer_profile.dart';
+import '../models/job.dart';
+import '../models/job_application.dart';
+import '../models/worker_profile.dart';
 import 'chat_service.dart';
+import 'firebase_service.dart';
+import 'otp/api_otp_service.dart';
+import 'otp/otp_service.dart';
+import 'speech_service.dart';
+import 'storage_service.dart';
 
 /// Central application state.
 ///
@@ -387,7 +387,7 @@ class AppStore extends ChangeNotifier {
     }
     try {
       await otpService.sendOtp(phone);
-      onSuccess('Demo OTP generated successfully. Check console.');
+      onSuccess('OTP Sent successfully.');
     } catch (e) {
       onError(e.toString());
     }
@@ -414,7 +414,7 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  void createWorkerProfile({
+  Future<void> createWorkerProfile({
     String? name,
     String? mainSkill,
     String? experience,
@@ -423,9 +423,45 @@ class AppStore extends ChangeNotifier {
     String? govIdType,
     String? govIdNum,
     List<String>? govIdFiles,
-  }) {
+    Map<String, Map<String, dynamic>>? governmentIds,
+  }) async {
+    final authUid = FirebaseAuth.instance.currentUser?.uid;
+    final String uid = (authUid != null && authUid.isNotEmpty)
+        ? authUid
+        : 'worker-${DateTime.now().millisecondsSinceEpoch}';
+
+    String photoUrl = profilePhoto ?? '';
+    if (photoUrl.isNotEmpty) {
+      photoUrl = await FirebaseService.instance
+          .uploadFile(photoUrl, 'profile_photos/$uid/avatar.jpg');
+    }
+
+    final List<String> uploadedGovFiles = [];
+    if (govIdFiles != null) {
+      for (int i = 0; i < govIdFiles.length; i++) {
+        final uploaded = await FirebaseService.instance
+            .uploadFile(govIdFiles[i], 'kyc/$uid/doc_$i.jpg');
+        uploadedGovFiles.add(uploaded);
+      }
+    }
+
+    final Map<String, Map<String, dynamic>>? uploadedGovMap =
+        governmentIds != null ? Map.from(governmentIds) : null;
+    if (uploadedGovMap != null) {
+      for (final entry in uploadedGovMap.entries) {
+        final docs = (entry.value['documentFiles'] as List?)?.cast<String>() ?? [];
+        final List<String> uploadedDocs = [];
+        for (int i = 0; i < docs.length; i++) {
+          final up = await FirebaseService.instance
+              .uploadFile(docs[i], 'kyc/$uid/${entry.key}_$i.jpg');
+          uploadedDocs.add(up);
+        }
+        entry.value['documentFiles'] = uploadedDocs;
+      }
+    }
+
     final newProfile = WorkerProfile(
-      id: 'worker-${DateTime.now().millisecondsSinceEpoch}',
+      id: uid,
       name: (name ?? '').isNotEmpty ? name! : 'Anonymous Worker',
       phone: phone.isNotEmpty ? phone : '9845112233',
       mainSkill: (mainSkill ?? '').isNotEmpty ? mainSkill! : 'laborer',
@@ -434,14 +470,19 @@ class AppStore extends ChangeNotifier {
       expectedWageType: 'daily',
       location: (location ?? '').isNotEmpty ? location! : 'Balkumari, Lalitpur',
       availability: 'Immediate',
-      profilePhoto: profilePhoto ?? '',
+      profilePhoto: photoUrl,
       govIdType: govIdType ?? 'citizenship',
       govIdNum: govIdNum ?? '',
-      govIdFiles: govIdFiles ?? [],
+      govIdFiles: uploadedGovFiles,
+      verificationStatus: 'pending',
+      governmentIds: uploadedGovMap,
     );
     workers = [...workers, newProfile];
     _persistWorkers();
     setRole('worker');
+
+    // Save directly to Firestore
+    await FirebaseService.instance.saveWorkerProfile(newProfile);
     notifyListeners();
   }
 
@@ -457,6 +498,8 @@ class AppStore extends ChangeNotifier {
           govIdType: updated['govIdType'] as String? ?? w.govIdType,
           govIdNum: updated['govIdNum'] as String? ?? w.govIdNum,
           profilePhoto: updated['profilePhoto'] as String? ?? w.profilePhoto,
+          verificationStatus: 'pending',
+          governmentIds: updated['governmentIds'] as Map<String, Map<String, dynamic>>? ?? w.governmentIds,
         );
       }
       return w;
@@ -465,7 +508,7 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void createEmployerProfile({
+  Future<void> createEmployerProfile({
     String? name,
     String? companyName,
     String? role,
@@ -474,26 +517,66 @@ class AppStore extends ChangeNotifier {
     String? govIdNum,
     List<String>? govIdFiles,
     String? profilePhoto,
-  }) {
+    Map<String, Map<String, dynamic>>? governmentIds,
+  }) async {
+    final authUid = FirebaseAuth.instance.currentUser?.uid;
+    final String uid = (authUid != null && authUid.isNotEmpty)
+        ? authUid
+        : 'emp-${DateTime.now().millisecondsSinceEpoch}';
+
+    String photoUrl = profilePhoto ?? '';
+    if (photoUrl.isNotEmpty) {
+      photoUrl = await FirebaseService.instance
+          .uploadFile(photoUrl, 'profile_photos/$uid/avatar.jpg');
+    }
+
+    final List<String> uploadedGovFiles = [];
+    if (govIdFiles != null) {
+      for (int i = 0; i < govIdFiles.length; i++) {
+        final uploaded = await FirebaseService.instance
+            .uploadFile(govIdFiles[i], 'kyc/$uid/doc_$i.jpg');
+        uploadedGovFiles.add(uploaded);
+      }
+    }
+
+    final Map<String, Map<String, dynamic>>? uploadedGovMap =
+        governmentIds != null ? Map.from(governmentIds) : null;
+    if (uploadedGovMap != null) {
+      for (final entry in uploadedGovMap.entries) {
+        final docs = (entry.value['documentFiles'] as List?)?.cast<String>() ?? [];
+        final List<String> uploadedDocs = [];
+        for (int i = 0; i < docs.length; i++) {
+          final up = await FirebaseService.instance
+              .uploadFile(docs[i], 'kyc/$uid/${entry.key}_$i.jpg');
+          uploadedDocs.add(up);
+        }
+        entry.value['documentFiles'] = uploadedDocs;
+      }
+    }
+
     final newProfile = EmployerProfile(
-      id: 'emp-${DateTime.now().millisecondsSinceEpoch}',
+      id: uid,
       name: (name ?? '').isNotEmpty ? name! : 'Anonymous Employer',
       companyName: (companyName ?? '').isNotEmpty ? companyName! : 'Individual Project',
       phone: phone.isNotEmpty ? phone : '9851012345',
       location: (location ?? '').isNotEmpty ? location! : 'Balkumari, Lalitpur',
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       type: 'individual',
       role: (role ?? '').isNotEmpty ? role! : 'Contractor',
       govIdType: govIdType ?? 'citizenship',
       govIdNum: govIdNum ?? '',
-      govIdFiles: govIdFiles ?? [],
-      profilePhoto: (profilePhoto ?? '').isNotEmpty
-          ? profilePhoto!
+      govIdFiles: uploadedGovFiles,
+      profilePhoto: photoUrl.isNotEmpty
+          ? photoUrl
           : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
+      governmentIds: uploadedGovMap,
     );
     employers = [...employers, newProfile];
     _persistEmployers();
     setRole('employer');
+
+    // Save directly to Firestore
+    await FirebaseService.instance.saveEmployerProfile(newProfile);
     notifyListeners();
   }
 
@@ -509,7 +592,8 @@ class AppStore extends ChangeNotifier {
           govIdType: updated['govIdType'] as String? ?? e.govIdType,
           govIdNum: updated['govIdNum'] as String? ?? e.govIdNum,
           profilePhoto: updated['profilePhoto'] as String? ?? e.profilePhoto,
-          verificationStatus: 'verified',
+          verificationStatus: 'pending',
+          governmentIds: updated['governmentIds'] as Map<String, Map<String, dynamic>>? ?? e.governmentIds,
         );
       }
       return e;
@@ -518,7 +602,7 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void applyForJob(String jobId) {
+  Future<void> applyForJob(String jobId) async {
     final active = activeWorker;
     final newApp = JobApplication(
       id: 'app-${DateTime.now().millisecondsSinceEpoch}',
@@ -533,6 +617,10 @@ class AppStore extends ChangeNotifier {
     applications = [...applications, newApp];
     _persistApplications();
     notifyListeners();
+
+    // Persist application to Firestore
+    await FirebaseService.instance.createJobApplication(newApp);
+
     SpeechService.instance.speak(
       lang == 'ne'
           ? "आवेदन सफलतापूर्वक पठाइयो। रोजगारदाताले छिट्टै सम्पर्क गर्नेछ।"
@@ -541,8 +629,9 @@ class AppStore extends ChangeNotifier {
     );
   }
 
-  void postJob() {
+  Future<void> postJob() async {
     if (postTitle.trim().isEmpty) return;
+    final emp = activeEmployer;
     final newJob = Job(
       id: 'job-${DateTime.now().millisecondsSinceEpoch}',
       title: postTitle,
@@ -553,10 +642,10 @@ class AppStore extends ChangeNotifier {
       wage: postWage,
       wageType: 'daily',
       location: postLocation,
-      employerId: 'emp-verified',
-      employerName: 'NCIT Construction Group',
-      employerPhone: phone.isNotEmpty ? phone : '9851012345',
-      employerWhatsApp: phone.isNotEmpty ? phone : '9851012345',
+      employerId: emp?.id ?? 'emp-verified',
+      employerName: emp?.name ?? 'NCIT Construction Group',
+      employerPhone: phone.isNotEmpty ? phone : (emp?.phone ?? '9851012345'),
+      employerWhatsApp: phone.isNotEmpty ? phone : (emp?.phone ?? '9851012345'),
       requiredSkills: [postCategory, 'Manual Labor', 'Safety Gear'],
       datePosted: DateTime.now().toIso8601String(),
       lat: 27.6715 + (DateTime.now().millisecondsSinceEpoch % 100) / 10000 - 0.005,
@@ -568,6 +657,9 @@ class AppStore extends ChangeNotifier {
     postTitle = '';
     postDesc = '';
     notifyListeners();
+
+    // Persist new job to Firestore
+    await FirebaseService.instance.createJob(newJob);
   }
 
   Future<void> updateApplicantStatus(String appId, String status) async {

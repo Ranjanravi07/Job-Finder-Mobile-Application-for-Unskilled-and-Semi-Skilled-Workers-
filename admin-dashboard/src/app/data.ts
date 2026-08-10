@@ -3,6 +3,7 @@
 
 export type SeekerStatus   = "pending" | "active" | "inactive";
 export type EmployerStatus = "pending" | "active" | "inactive";
+export type KYCStatus = "pending" | "verified" | "rejected" | "blocked";
 
 export interface Seeker {
   id: string;
@@ -15,6 +16,12 @@ export interface Seeker {
   govIdNumber: string;
   govIdImage: string;
   profilePhoto: string;
+  govIdType: string;
+  verificationStatus: KYCStatus;
+  govIdFiles: string[];
+  requestedUpdate: boolean;
+  rejectionReason?: string;
+  governmentIds?: Record<string, { idNumber?: string; documentFiles?: string[]; submittedAt?: string }>;
 }
 
 export interface Employer {
@@ -29,6 +36,12 @@ export interface Employer {
   govIdNumber: string;
   govIdImage: string;
   profilePhoto: string;
+  govIdType: string;
+  verificationStatus: KYCStatus;
+  govIdFiles: string[];
+  requestedUpdate: boolean;
+  rejectionReason?: string;
+  governmentIds?: Record<string, { idNumber?: string; documentFiles?: string[]; submittedAt?: string }>;
 }
 
 export interface Application {
@@ -45,8 +58,14 @@ export interface Job {
   id: string;
   title: string;
   employer: string;
+  employerId?: string;
   location: string;
   salary: string;
+  wage?: number;
+  wageType?: string;
+  category?: string;
+  description?: string;
+  requiredSkills?: string[];
   type: "Daily" | "Monthly";
   posted: string;
   applicants: number;
@@ -65,24 +84,24 @@ export interface Placement {
 
 // ─── Job Seekers ───────────────────────────────────────────────────────────────
 export const seekers: Seeker[] = [
-  { id: "W-1042", name: "Ramon dela Cruz",   skill: "Construction",   location: "Manila",       rating: 4.8, status: "pending", phone: "+63 912 345 6789", govIdNumber: "PSN-2024-00142", govIdImage: "", profilePhoto: "" },
-  { id: "W-1041", name: "Maria Santos",       skill: "Domestic Help",  location: "Quezon City",  rating: 4.6, status: "pending", phone: "+63 917 234 5678", govIdNumber: "PSN-2024-00187", govIdImage: "", profilePhoto: "" },
-  { id: "W-1040", name: "Eduardo Bautista",   skill: "Factory Work",   location: "Caloocan",     rating: 4.9, status: "pending", phone: "+63 918 876 5432", govIdNumber: "PSN-2024-00203", govIdImage: "", profilePhoto: "" },
-  { id: "W-1039", name: "Josefina Reyes",     skill: "Security Guard", location: "Makati",       rating: 4.3, status: "pending", phone: "+63 919 111 2233", govIdNumber: "PSN-2024-00219", govIdImage: "", profilePhoto: "" },
-  { id: "W-1038", name: "Benjamin Lim",       skill: "Delivery Rider", location: "Pasig",        rating: 4.5, status: "pending", phone: "+63 920 444 5566", govIdNumber: "PSN-2024-00231", govIdImage: "", profilePhoto: "" },
-  { id: "W-1037", name: "Lourdes Magno",      skill: "Domestic Help",  location: "Marikina",     rating: 4.7, status: "pending", phone: "+63 921 667 8899", govIdNumber: "PSN-2024-00248", govIdImage: "", profilePhoto: "" },
-  { id: "W-1036", name: "Arturo Villanueva",  skill: "Construction",   location: "Taguig",       rating: 4.2, status: "pending", phone: "+63 922 321 0987", govIdNumber: "PSN-2024-00261", govIdImage: "", profilePhoto: "" },
-  { id: "W-1035", name: "Carina Ocampo",      skill: "Factory Work",   location: "Navotas",      rating: 4.8, status: "pending", phone: "+63 923 555 7744", govIdNumber: "PSN-2024-00275", govIdImage: "", profilePhoto: "" },
+  { id: "W-1042", name: "Ramon dela Cruz",   skill: "Construction",   location: "Manila",       rating: 4.8, status: "pending", phone: "+63 912 345 6789", govIdNumber: "PSN-2024-00142", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "pending", govIdFiles: [], requestedUpdate: false },
+  { id: "W-1041", name: "Maria Santos",       skill: "Domestic Help",  location: "Quezon City",  rating: 4.6, status: "pending", phone: "+63 917 234 5678", govIdNumber: "PSN-2024-00187", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "verified", govIdFiles: [], requestedUpdate: false },
+  { id: "W-1040", name: "Eduardo Bautista",   skill: "Factory Work",   location: "Caloocan",     rating: 4.9, status: "pending", phone: "+63 918 876 5432", govIdNumber: "PSN-2024-00203", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "pending", govIdFiles: [], requestedUpdate: false },
+  { id: "W-1039", name: "Josefina Reyes",     skill: "Security Guard", location: "Makati",       rating: 4.3, status: "pending", phone: "+63 919 111 2233", govIdNumber: "PSN-2024-00219", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "rejected", govIdFiles: [], requestedUpdate: false, rejectionReason: "Invalid document quality" },
+  { id: "W-1038", name: "Benjamin Lim",       skill: "Delivery Rider", location: "Pasig",        rating: 4.5, status: "pending", phone: "+63 920 444 5566", govIdNumber: "PSN-2024-00231", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "pending", govIdFiles: [], requestedUpdate: true },
+  { id: "W-1037", name: "Lourdes Magno",      skill: "Domestic Help",  location: "Marikina",     rating: 4.7, status: "pending", phone: "+63 921 667 8899", govIdNumber: "PSN-2024-00248", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "verified", govIdFiles: [], requestedUpdate: false },
+  { id: "W-1036", name: "Arturo Villanueva",  skill: "Construction",   location: "Taguig",       rating: 4.2, status: "pending", phone: "+63 922 321 0987", govIdNumber: "PSN-2024-00261", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "pending", govIdFiles: [], requestedUpdate: false },
+  { id: "W-1035", name: "Carina Ocampo",      skill: "Factory Work",   location: "Navotas",      rating: 4.8, status: "pending", phone: "+63 923 555 7744", govIdNumber: "PSN-2024-00275", govIdImage: "", profilePhoto: "", govIdType: "citizenship", verificationStatus: "blocked", govIdFiles: [], requestedUpdate: false, rejectionReason: "Account blocked by admin" },
 ];
 
 // ─── Employers ─────────────────────────────────────────────────────────────────
 export const employers: Employer[] = [
-  { id: "E-201", name: "SunBuild Corp.",      industry: "Construction", location: "Manila",       workers: 124, status: "pending", contactPerson: "Marco Dela Rosa", phone: "+63 912 100 2001", govIdNumber: "BIR-2024-E0201", govIdImage: "", profilePhoto: "" },
-  { id: "E-202", name: "Reyes Household",     industry: "Domestic",     location: "Quezon City",  workers: 3,   status: "pending", contactPerson: "Ana Reyes",       phone: "+63 917 200 3002", govIdNumber: "BIR-2024-E0202", govIdImage: "", profilePhoto: "" },
-  { id: "E-203", name: "FiliTex Mills",       industry: "Factory",      location: "Caloocan",     workers: 86,  status: "pending", contactPerson: "Roberto Filio",   phone: "+63 918 300 4003", govIdNumber: "BIR-2024-E0203", govIdImage: "", profilePhoto: "" },
-  { id: "E-204", name: "Shield Pro Security", industry: "Security",     location: "Makati",       workers: 45,  status: "pending", contactPerson: "Dante Escudo",    phone: "+63 919 400 5004", govIdNumber: "BIR-2024-E0204", govIdImage: "", profilePhoto: "" },
-  { id: "E-205", name: "QuickShip PH",        industry: "Logistics",    location: "Pasig",        workers: 32,  status: "pending", contactPerson: "Rina Velasco",    phone: "+63 920 500 6005", govIdNumber: "BIR-2024-E0205", govIdImage: "", profilePhoto: "" },
-  { id: "E-206", name: "MetroBuild Inc.",     industry: "Construction", location: "Taguig",       workers: 67,  status: "pending", contactPerson: "Jun Serrano",     phone: "+63 921 600 7006", govIdNumber: "BIR-2024-E0206", govIdImage: "", profilePhoto: "" },
+  { id: "E-201", name: "SunBuild Corp.",      industry: "Construction", location: "Manila",       workers: 124, status: "pending", contactPerson: "Marco Dela Rosa", phone: "+63 912 100 2001", govIdNumber: "BIR-2024-E0201", govIdImage: "", profilePhoto: "", govIdType: "business", verificationStatus: "verified", govIdFiles: [], requestedUpdate: false },
+  { id: "E-202", name: "Reyes Household",     industry: "Domestic",     location: "Quezon City",  workers: 3,   status: "pending", contactPerson: "Ana Reyes",       phone: "+63 917 200 3002", govIdNumber: "BIR-2024-E0202", govIdImage: "", profilePhoto: "", govIdType: "business", verificationStatus: "pending", govIdFiles: [], requestedUpdate: false },
+  { id: "E-203", name: "FiliTex Mills",       industry: "Factory",      location: "Caloocan",     workers: 86,  status: "pending", contactPerson: "Roberto Filio",   phone: "+63 918 300 4003", govIdNumber: "BIR-2024-E0203", govIdImage: "", profilePhoto: "", govIdType: "business", verificationStatus: "pending", govIdFiles: [], requestedUpdate: false },
+  { id: "E-204", name: "Shield Pro Security", industry: "Security",     location: "Makati",       workers: 45,  status: "pending", contactPerson: "Dante Escudo",    phone: "+63 919 400 5004", govIdNumber: "BIR-2024-E0204", govIdImage: "", profilePhoto: "", govIdType: "business", verificationStatus: "verified", govIdFiles: [], requestedUpdate: false },
+  { id: "E-205", name: "QuickShip PH",        industry: "Logistics",    location: "Pasig",        workers: 32,  status: "pending", contactPerson: "Rina Velasco",    phone: "+63 920 500 6005", govIdNumber: "BIR-2024-E0205", govIdImage: "", profilePhoto: "", govIdType: "business", verificationStatus: "pending", govIdFiles: [], requestedUpdate: true },
+  { id: "E-206", name: "MetroBuild Inc.",     industry: "Construction", location: "Taguig",       workers: 67,  status: "pending", contactPerson: "Jun Serrano",     phone: "+63 921 600 7006", govIdNumber: "BIR-2024-E0206", govIdImage: "", profilePhoto: "", govIdType: "business", verificationStatus: "rejected", govIdFiles: [], requestedUpdate: false, rejectionReason: "Incomplete business documents" },
 ];
 
 // ─── Applications ──────────────────────────────────────────────────────────────

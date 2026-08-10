@@ -11,52 +11,42 @@ import '../widgets/voice_parse_dialog.dart';
 
 /// Mirrors the React `WORKER PROFILE CREATION` screen.
 class WorkerProfileCreationScreen extends StatefulWidget {
-  const WorkerProfileCreationScreen({Key? key}) : super(key: key);
+  const WorkerProfileCreationScreen({super.key});
 
   @override
-  State<WorkerProfileCreationScreen> createState() => _WorkerProfileCreationScreenState();
+  State<WorkerProfileCreationScreen> createState() =>
+      _WorkerProfileCreationScreenState();
 }
 
-class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScreen> {
+class _WorkerProfileCreationScreenState
+    extends State<WorkerProfileCreationScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _expController = TextEditingController(text: 'Fresher');
+  final TextEditingController _expController =
+      TextEditingController(text: 'Fresher');
+  final TextEditingController _locationController = TextEditingController();
   String _selectedCategory = '';
   bool _isSubmitting = false;
 
-  final List<Map<String, String>> _jobCategories = [
-    {'id': 'laborer', 'en': 'Laborer', 'ne': 'मजदुर', 'icon': '👷'},
-    {'id': 'electrician', 'en': 'Electrician', 'ne': 'इलेक्ट्रिसियन', 'icon': '⚡'},
-    {'id': 'plumber', 'en': 'Plumber', 'ne': 'प्लम्बर', 'icon': '🔧'},
-    {'id': 'driver', 'en': 'Driver', 'ne': 'ड्राइभर', 'icon': '🚗'},
-    {'id': 'painter', 'en': 'Painter', 'ne': 'पेन्टर', 'icon': '🎨'},
-    {'id': 'carpenter', 'en': 'Carpenter', 'ne': 'सिकर्मी', 'icon': '🪚'},
-    {'id': 'mason', 'en': 'Mason', 'ne': 'डकर्मी', 'icon': '🧱'},
-    {'id': 'cleaner', 'en': 'Cleaner', 'ne': 'सफाई गर्ने', 'icon': '🧹'},
-    {'id': 'farmer', 'en': 'Farmer', 'ne': 'किसान', 'icon': '🌾'},
-    {'id': 'cook', 'en': 'Cook', 'ne': 'भान्छे', 'icon': '🍳'},
-    {'id': 'welder', 'en': 'Welder', 'ne': 'वेल्डर', 'icon': '🔩'},
-    {'id': 'tailor', 'en': 'Tailor', 'ne': 'सुचिकार', 'icon': '🧵'},
-    {'id': 'others', 'en': 'Others', 'ne': 'अन्य', 'icon': '➕'},
+  final List<Map<String, dynamic>> _jobCategories = [
+    {'id': 'laborer', 'en': 'Laborer', 'ne': 'मजदुर', 'icon': Icons.construction},
+    {'id': 'electrician', 'en': 'Electrician', 'ne': 'इलेक्ट्रिसियन', 'icon': Icons.electrical_services},
+    {'id': 'plumber', 'en': 'Plumber', 'ne': 'प्लम्बर', 'icon': Icons.plumbing},
+    {'id': 'driver', 'en': 'Driver', 'ne': 'ड्राइभर', 'icon': Icons.directions_car},
+    {'id': 'painter', 'en': 'Painter', 'ne': 'पेन्टर', 'icon': Icons.format_paint},
+    {'id': 'carpenter', 'en': 'Carpenter', 'ne': 'सिकर्मी', 'icon': Icons.carpenter},
+    {'id': 'mason', 'en': 'Mason', 'ne': 'डकर्मी', 'icon': Icons.foundation},
+    {'id': 'cleaner', 'en': 'Cleaner', 'ne': 'सफाई गर्ने', 'icon': Icons.cleaning_services},
+    {'id': 'farmer', 'en': 'Farmer', 'ne': 'किसान', 'icon': Icons.agriculture},
+    {'id': 'cook', 'en': 'Cook', 'ne': 'भान्छे', 'icon': Icons.restaurant},
+    {'id': 'welder', 'en': 'Welder', 'ne': 'वेल्डर', 'icon': Icons.build_circle},
+    {'id': 'tailor', 'en': 'Tailor', 'ne': 'सुचिकार', 'icon': Icons.content_cut},
+    {'id': 'others', 'en': 'Others', 'ne': 'अन्य', 'icon': Icons.category},
   ];
-  final List<Map<String, String>> _locations = [
-    {'id': 'kathmandu', 'en': 'Kathmandu', 'ne': 'काठमाडौं', 'icon': '📍'},
-    {'id': 'lalitpur', 'en': 'Lalitpur', 'ne': 'ललितपुर', 'icon': '📍'},
-    {'id': 'bhaktapur', 'en': 'Bhaktapur', 'ne': 'भक्तपुर', 'icon': '📍'},
-    {'id': 'janakpur', 'en': 'Janakpur', 'ne': 'जनकपुर', 'icon': '📍'},
-    {'id': 'pokhara', 'en': 'Pokhara', 'ne': 'पोखरा', 'icon': '📍'},
-    {'id': 'biratnagar', 'en': 'Biratnagar', 'ne': 'विराटनगर', 'icon': '📍'},
-    {'id': 'birgunj', 'en': 'Birgunj', 'ne': 'वीरगन्ज', 'icon': '📍'},
-    {'id': 'bharatpur', 'en': 'Bharatpur', 'ne': 'भरतपुर', 'icon': '📍'},
-    {'id': 'butwal', 'en': 'Butwal', 'ne': 'बुटवल', 'icon': '📍'},
-    {'id': 'nepalgunj', 'en': 'Nepalgunj', 'ne': 'नेपालगन्ज', 'icon': '📍'},
-    {'id': 'other', 'en': 'Other', 'ne': 'अन्य', 'icon': '📍'},
-    {'id': 'any', 'en': 'Any Location', 'ne': 'कुनै पनि स्थान', 'icon': '🌍'},
-  ];
-  String _selectedLocation = '';
+  // Location options removed as per requirements
 
   String _photoPath = '';
-  String _govIdType = 'citizenship';
-  String _govIdNum = '';
+  List<String> _selectedGovTypes = ['citizenship'];
+  final Map<String, String> _govIdNumbers = {};
   final Map<String, String> _files = {};
 
   AppStore get store => AppStore.instance;
@@ -70,10 +60,18 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
       context: context,
       builder: (_) => VoiceParseDialog(
         onConfirm: (profile) {
-          if (profile['name'] != null) _nameController.text = '${profile['name']}';
-          if (profile['mainSkill'] != null) _selectedCategory = '${profile['mainSkill']}';
-          if (profile['experience'] != null) _expController.text = '${profile['experience']}';
-          if (profile['location'] != null) _selectedLocation = '${profile['location']}';
+          if (profile['name'] != null) {
+            _nameController.text = '${profile['name']}';
+          }
+          if (profile['mainSkill'] != null) {
+            _selectedCategory = '${profile['mainSkill']}';
+          }
+          if (profile['experience'] != null) {
+            _expController.text = '${profile['experience']}';
+          }
+          if (profile['location'] != null) {
+            _locationController.text = '${profile['location']}';
+          }
           setState(() {});
         },
       ),
@@ -83,53 +81,83 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
   Future<void> _submit() async {
     String? error;
     if (_nameController.text.trim().isEmpty) {
-      error = _t('Please enter your full name.', 'कृपया आफ्नो पूरा नाम प्रविष्ट गर्नुहोस्।');
+      error = _t('Please enter your full name.',
+          'कृपया आफ्नो पूरा नाम प्रविष्ट गर्नुहोस्।');
     } else if (_selectedCategory.isEmpty) {
-      error = _t('Please select your job category.', 'कृपया आफ्नो कामको वर्ग छान्नुहोस्।');
+      error = _t('Please select your job category.',
+          'कृपया आफ्नो कामको वर्ग छान्नुहोस्।');
     } else if (_expController.text.trim().isEmpty) {
-      error = _t('Please enter your experience.', 'कृपया आफ्नो अनुभव प्रविष्ट गर्नुहोस्।');
-    } else if (_selectedLocation.isEmpty) {
-      error = _t('Please select your preferred location.', 'कृपया आफ्नो रोजगारीको स्थान छान्नुहोस्।');
+      error = _t('Please enter your experience.',
+          'कृपया आफ्नो अनुभव प्रविष्ट गर्नुहोस्।');
+    } else if (_locationController.text.trim().isEmpty) {
+      error = _t('Please enter your preferred location.',
+          'कृपया आफ्नो मनपर्ने स्थान लेख्नुहोस्।');
     } else if (_photoPath.isEmpty) {
-      error = _t('Please upload a profile photo.', 'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।');
-    } else if (_govIdNum.trim().isEmpty) {
-      error = _t(
-          'Please enter your Government ID number.',
-          'कृपया सरकारी परिचय-पत्र नम्बर प्रविष्ट गर्नुहोस्।');
-    } else if (!_validateGovId(_govIdType, _govIdNum.trim())) {
-      error = _t(
-          'Invalid Government ID format for the selected type.',
-          'चयन गरिएको प्रकारको लागि अमान्य सरकारी परिचय-पत्र ढाँचा।');
-    } else if (_govIdType == 'citizenship' &&
-        (_files['front'] == null || _files['back'] == null ||
-            (_files['front'] ?? '').isEmpty || (_files['back'] ?? '').isEmpty)) {
-      error = _t(
-          'Please upload both front and back images of the Citizenship card.',
-          'कृपया नागरिकताको अगाडि र पछाडिको फोटो अपलोड गर्नुहोस्।');
-    } else if ((_files[_govIdType] ?? '').isEmpty) {
-      error = _t('Please upload the required ID photo.', 'कृपया आवश्यक ID फोटो अपलोड गर्नुहोस्।');
+      error = _t('Please upload a profile photo.',
+          'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।');
     }
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: AppColors.red500),
+        SnackBar(
+            content: Text(error), backgroundColor: context.appColors.red500),
+      );
+      return;
+    }
+
+    // Validate Government IDs
+    final kycVal = validateGovernmentIds(
+      selectedTypes: _selectedGovTypes,
+      idNumbers: _govIdNumbers,
+      files: _files,
+    );
+    if (!kycVal.isValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(kycVal.message(store.lang)),
+          backgroundColor: context.appColors.red500,
+        ),
       );
       return;
     }
 
     setState(() => _isSubmitting = true);
-    
-    store.createWorkerProfile(
+
+    final primaryType = _selectedGovTypes.first;
+    final primaryNum = _govIdNumbers[primaryType] ?? '';
+
+    final Map<String, Map<String, dynamic>> govMap = {};
+    for (final type in _selectedGovTypes) {
+      final num = (_govIdNumbers[type] ?? '').trim();
+      final docs = <String>[];
+      if (type == 'citizenship') {
+        final f = _files['citizenship_front'] ?? _files['front'] ?? '';
+        final b = _files['citizenship_back'] ?? _files['back'] ?? '';
+        if (f.isNotEmpty) docs.add(f);
+        if (b.isNotEmpty) docs.add(b);
+      } else {
+        final img = _files[type] ?? _files['${type}_front'] ?? '';
+        if (img.isNotEmpty) docs.add(img);
+      }
+      govMap[type] = {
+        'idNumber': num,
+        'documentFiles': docs,
+        'submittedAt': DateTime.now().toIso8601String(),
+      };
+    }
+
+    await store.createWorkerProfile(
       name: _nameController.text.trim(),
       mainSkill: _selectedCategory,
       experience: _expController.text.trim(),
-      location: _selectedLocation,
+      location: _locationController.text.trim(),
       profilePhoto: _photoPath,
-      govIdType: _govIdType,
-      govIdNum: _govIdNum.trim(),
+      govIdType: primaryType,
+      govIdNum: primaryNum.trim(),
       govIdFiles: _files.values.toList(),
+      governmentIds: govMap,
     );
-    
+
     if (mounted) {
       setState(() => _isSubmitting = false);
       Navigator.pushReplacementNamed(context, '/worker-home');
@@ -140,6 +168,7 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
   void dispose() {
     _nameController.dispose();
     _expController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -147,10 +176,10 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
     return Text(
       _t(en, ne),
       style: TextStyle(
-        fontSize: 10,
+        fontSize: 13,
         fontWeight: FontWeight.w900,
         letterSpacing: 1,
-        color: AppColors.slate800,
+        color: context.appColors.slate800,
       ),
     );
   }
@@ -158,18 +187,18 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
   InputDecoration _inputDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(fontSize: 11, color: AppColors.slate600),
+      hintStyle: TextStyle(fontSize: 14, color: context.appColors.slate600),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: context.appColors.white,
       isDense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.slate200),
+        borderSide: BorderSide(color: context.appColors.slate200),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.slate900),
+        borderSide: BorderSide(color: context.appColors.slate900),
       ),
     );
   }
@@ -177,7 +206,7 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.slate50,
+      backgroundColor: context.appColors.slate50,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -186,14 +215,14 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
           style: GoogleFonts.spaceGrotesk(
             fontSize: 20,
             fontWeight: FontWeight.w900,
-            color: AppColors.slate900,
+            color: context.appColors.slate900,
           ),
         ),
         actions: [
           IconButton(
             onPressed: _openVoiceWizard,
             tooltip: _t('Voice Onboarding', 'आवाज दर्ता'),
-            icon: Icon(Icons.mic_rounded, color: AppColors.emerald600),
+            icon: Icon(Icons.mic_rounded, color: context.appColors.emerald600),
           ),
         ],
       ),
@@ -207,9 +236,9 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
               Container(
                 padding: EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appColors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.slate200),
+                  border: Border.all(color: context.appColors.slate200),
                 ),
                 child: Center(
                   child: ProfilePhotoPicker(
@@ -226,20 +255,22 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
               SizedBox(height: 6),
               TextField(
                 controller: _nameController,
-                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: context.appColors.slate900,
+                    fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(hint: 'Ram Bahadur'),
               ),
               SizedBox(height: 14),
 
               SizedBox(height: 8),
-              
+
               // SECTION 1: JOB CATEGORY
               Text(
                 _t('What work do you do?', 'तपाईं के काम गर्नुहुन्छ?'),
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.slate900,
+                  color: context.appColors.slate900,
                 ),
               ),
               const SizedBox(height: 12),
@@ -259,39 +290,55 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
                   return GestureDetector(
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      SpeechService.instance.speak(_t(cat['en']!, cat['ne']!), store.lang);
+                      SpeechService.instance
+                          .speak(_t(cat['en']!, cat['ne']!), store.lang);
                       setState(() {
                         _selectedCategory = cat['id']!;
                       });
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.slate900 : Colors.white,
+                        color: isSelected
+                            ? context.appColors.slate900
+                            : context.appColors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? AppColors.slate900 : AppColors.slate200,
+                          color: isSelected
+                              ? context.appColors.slate900
+                              : context.appColors.slate200,
                           width: 2,
                         ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(cat['icon']!, style: TextStyle(fontSize: 28)),
+                          Icon(
+                            cat['icon'] as IconData,
+                            size: 28,
+                            color: isSelected
+                                ? context.appColors.white
+                                : context.appColors.slate800,
+                          ),
                           SizedBox(height: 8),
                           Text(
                             cat['en']!,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : AppColors.slate700,
+                              color: isSelected
+                                  ? context.appColors.white
+                                  : context.appColors.slate700,
                             ),
                           ),
                           Text(
                             cat['ne']!,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: isSelected ? Colors.white70 : AppColors.slate700,
+                              color: isSelected
+                                  ? context.appColors.white
+                                      .withValues(alpha: 0.7)
+                                  : context.appColors.slate700,
                             ),
                           ),
                         ],
@@ -304,73 +351,46 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
 
               // SECTION 2: WORK PREFERENCES
               Text(
-                _t('Where do you want to work?', 'तपाईं कहाँ काम गर्न चाहनुहुन्छ?'),
+                _t('Enter your preferred location',
+                    'आफ्नो मनपर्ने स्थान लेख्नुहोस्'),
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.slate900,
+                  color: context.appColors.slate900,
                 ),
               ),
               SizedBox(height: 12),
 
-              _label('Preferred location', 'रोजगारीको स्थान'),
-              SizedBox(height: 12),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.1,
+              TextField(
+                controller: _locationController,
+                style: TextStyle(
+                    color: context.appColors.slate900,
+                    fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  hintText: _t('Type location...', 'स्थान लेख्नुहोस्...'),
+                  hintStyle: TextStyle(
+                      fontSize: 14, color: context.appColors.slate600),
+                  prefixIcon: Icon(Icons.search,
+                      color: context.appColors.slate600, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.mic, color: context.appColors.emerald600),
+                    onPressed: _openVoiceWizard,
+                    tooltip: _t('Voice Input', 'आवाजबाट लेख्नुहोस्'),
+                  ),
+                  filled: true,
+                  fillColor: context.appColors.white,
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: context.appColors.slate200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: context.appColors.slate900),
+                  ),
                 ),
-                itemCount: _locations.length,
-                itemBuilder: (context, index) {
-                  final loc = _locations[index];
-                  final isSelected = _selectedLocation == loc['id'];
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      SpeechService.instance.speak(_t(loc['en']!, loc['ne']!), store.lang);
-                      setState(() {
-                        _selectedLocation = loc['id']!;
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.slate900 : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected ? AppColors.slate900 : AppColors.slate200,
-                          width: 2,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(loc['icon']!, style: TextStyle(fontSize: 22)),
-                          SizedBox(height: 6),
-                          Text(
-                            loc['en']!,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : AppColors.slate700,
-                            ),
-                          ),
-                          Text(
-                            loc['ne']!,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected ? Colors.white70 : AppColors.slate700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
               ),
               SizedBox(height: 14),
 
@@ -378,7 +398,9 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
               SizedBox(height: 6),
               TextField(
                 controller: _expController,
-                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: context.appColors.slate900,
+                    fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(
                     hint: _t('Type years or description (e.g. 2 Years)',
                         'वर्ष/अनुभव लेख्नुहोस्')),
@@ -387,12 +409,13 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
 
               // Government ID
               GovIdSection(
-                govIdType: _govIdType,
-                govIdNum: _govIdNum,
-                onTypeChanged: (v) => setState(() => _govIdType = v),
-                onNumChanged: (v) => setState(() => _govIdNum = v),
+                selectedTypes: _selectedGovTypes,
+                idNumbers: _govIdNumbers,
+                onTypesChanged: (types) => setState(() => _selectedGovTypes = types),
+                onNumChanged: (type, idNum) => setState(() => _govIdNumbers[type] = idNum),
                 files: _files,
-                onFilePicked: (key, value) => setState(() => _files[key] = value),
+                onFilePicked: (key, value) =>
+                    setState(() => _files[key] = value),
                 onFileRemoved: (key) => setState(() => _files.remove(key)),
               ),
               const SizedBox(height: 24),
@@ -401,8 +424,8 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
               ElevatedButton(
                 onPressed: _isSubmitting ? null : () async => await _submit(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.slate900,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.appColors.slate900,
+                  foregroundColor: context.appColors.white,
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -412,16 +435,19 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
                     ? SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                            color: context.appColors.white, strokeWidth: 2),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.verified_rounded, color: AppColors.emerald400, size: 18),
+                          Icon(Icons.verified_rounded,
+                              color: context.appColors.emerald400, size: 18),
                           SizedBox(width: 8),
                           Text(
                             _t('Verify & Save Profile', 'सुरक्षित गर्नुहोस्'),
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w900),
                           ),
                         ],
                       ),
@@ -432,9 +458,9 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
                   'ROJGAR VERIFIED RECRUITMENT • GOVT OF NEPAL COMPLIANCE',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.slate400,
+                    color: context.appColors.slate600,
                   ),
                 ),
               ),
@@ -443,33 +469,5 @@ class _WorkerProfileCreationScreenState extends State<WorkerProfileCreationScree
         ),
       ),
     );
-  }
-
-  String _typeSingleLabelNe(String type) {
-    switch (type) {
-      case 'nid':
-        return 'NID फोटो अपलोड गर्नुहोस्';
-      case 'license':
-        return 'ड्राइभिङ लाइसेन्स फोटो अपलोड गर्नुहोस्';
-      case 'pan':
-        return 'PAN/VAT फोटो अपलोड गर्नुहोस्';
-      default:
-        return 'फाइल अपलोड गर्नुहोस्';
-    }
-  }
-
-  bool _validateGovId(String type, String num) {
-    switch (type) {
-      case 'citizenship':
-        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
-      case 'nid':
-        return RegExp(r'^\d{10}$').hasMatch(num);
-      case 'license':
-        return RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num);
-      case 'pan':
-        return RegExp(r'^\d{9}$').hasMatch(num);
-      default:
-        return num.isNotEmpty;
-    }
   }
 }

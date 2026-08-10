@@ -11,13 +11,13 @@ import '../theme/app_colors.dart';
 /// Mirrors the React profile-photo blocks in `MobileSimulator.tsx`.
 class ProfilePhotoPicker extends StatelessWidget {
   const ProfilePhotoPicker({
-    Key? key,
+    super.key,
     required this.photoPath,
     required this.onChanged,
     this.size = 64,
     this.labelEn = 'Profile Photo',
     this.labelNe = 'प्रोफाइल फोटो',
-  }) : super(key: key);
+  });
 
   final String photoPath;
   final ValueChanged<String> onChanged;
@@ -43,10 +43,10 @@ class ProfilePhotoPicker extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 13,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
-            color: AppColors.slate400,
+            color: context.appColors.slate600,
           ),
         ),
         const SizedBox(height: 8),
@@ -62,8 +62,9 @@ class ProfilePhotoPicker extends StatelessWidget {
                   errorBuilder: (_, __, ___) => Container(
                     width: size,
                     height: size,
-                    color: AppColors.slate100,
-                    child: Icon(Icons.person, color: AppColors.slate400),
+                    color: context.appColors.slate100,
+                    child:
+                        Icon(Icons.person, color: context.appColors.slate600),
                   ),
                 ),
               ),
@@ -78,11 +79,14 @@ class ProfilePhotoPicker extends StatelessWidget {
                       child: Container(
                         padding: EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.appColors.white,
                           shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 4)
+                          ],
                         ),
-                        child: Icon(Icons.refresh, size: 14, color: AppColors.slate700),
+                        child: Icon(Icons.refresh,
+                            size: 14, color: context.appColors.slate700),
                       ),
                     ),
                     const SizedBox(width: 2),
@@ -91,10 +95,11 @@ class ProfilePhotoPicker extends StatelessWidget {
                       child: Container(
                         padding: EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: AppColors.red500,
+                          color: context.appColors.red500,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.close, size: 14, color: Colors.white),
+                        child: Icon(Icons.close,
+                            size: 14, color: context.appColors.white),
                       ),
                     ),
                   ],
@@ -109,15 +114,16 @@ class ProfilePhotoPicker extends StatelessWidget {
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: AppColors.slate100,
+                color: context.appColors.slate100,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.slate300,
+                  color: context.appColors.slate300,
                   width: 2,
                   style: BorderStyle.solid,
                 ),
               ),
-              child: Icon(Icons.person_add_alt_rounded, color: AppColors.slate400, size: size * 0.5),
+              child: Icon(Icons.person_add_alt_rounded,
+                  color: context.appColors.slate600, size: size * 0.5),
             ),
           ),
         SizedBox(height: 8),
@@ -125,9 +131,9 @@ class ProfilePhotoPicker extends StatelessWidget {
           Text(
             _isNe ? 'फोटो अपलोड गर्नुहोस्' : 'Upload a single profile photo',
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppColors.slate400,
+              color: context.appColors.slate600,
             ),
           ),
       ],

@@ -39,7 +39,7 @@ class DemoOtpService extends OtpService {
     const record = this.otpStore.get(phone);
 
     if (!record) {
-      const error = new Error('Incorrect verification code.');
+      const error = new Error('Verification code is invalid or has already been used.');
       error.code = 'invalid_code';
       throw error;
     }

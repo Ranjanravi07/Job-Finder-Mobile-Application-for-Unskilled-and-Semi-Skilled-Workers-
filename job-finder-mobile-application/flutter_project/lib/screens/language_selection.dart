@@ -6,7 +6,7 @@ import '../theme/app_colors.dart';
 
 /// Mirrors the React `LANGUAGE SELECTION` screen.
 class LanguageSelectionScreen extends StatelessWidget {
-  const LanguageSelectionScreen({Key? key}) : super(key: key);
+  const LanguageSelectionScreen({super.key});
 
   void _select(BuildContext context, String lang) {
     final store = AppStore.instance;
@@ -17,7 +17,7 @@ class LanguageSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.slate50,
+      backgroundColor: context.appColors.slate50,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
@@ -31,13 +31,13 @@ class LanguageSelectionScreen extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.slate900.withValues(alpha: 0.05),
+                    color: context.appColors.slate900.withValues(alpha: 0.05),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.work_outline_rounded,
                     size: 80,
-                    color: AppColors.slate900,
+                    color: context.appColors.slate900,
                   ),
                 ),
               ),
@@ -49,7 +49,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.slate900,
+                  color: context.appColors.slate900,
                 ),
               ),
               SizedBox(height: 4),
@@ -59,7 +59,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                 style: GoogleFonts.hind(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.slate500,
+                  color: context.appColors.slate700,
                 ),
               ),
               SizedBox(height: 4),
@@ -67,8 +67,8 @@ class LanguageSelectionScreen extends StatelessWidget {
                 'For Unskilled & Semi-Skilled Workers',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: AppColors.slate400,
+                  fontSize: 14,
+                  color: context.appColors.slate600,
                 ),
               ),
               Spacer(),
@@ -78,7 +78,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.slate500,
+                  color: context.appColors.slate700,
                   height: 1.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -88,8 +88,8 @@ class LanguageSelectionScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: () => _select(context, 'en'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.slate900,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.appColors.slate900,
+                  foregroundColor: context.appColors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -116,10 +116,10 @@ class LanguageSelectionScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: () => _select(context, 'ne'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.slate900,
+                  backgroundColor: context.appColors.white,
+                  foregroundColor: context.appColors.slate900,
                   padding: EdgeInsets.symmetric(vertical: 18),
-                  side: BorderSide(color: AppColors.slate200, width: 2),
+                  side: BorderSide(color: context.appColors.slate200, width: 2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -144,7 +144,8 @@ class LanguageSelectionScreen extends StatelessWidget {
               Center(
                 child: Text(
                   'Nepal College of Information Technology',
-                  style: TextStyle(fontSize: 12, color: AppColors.slate300),
+                  style: TextStyle(
+                      fontSize: 14, color: context.appColors.slate300),
                 ),
               ),
             ],

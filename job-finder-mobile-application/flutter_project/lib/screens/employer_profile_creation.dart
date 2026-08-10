@@ -8,24 +8,26 @@ import '../widgets/profile_photo_picker.dart';
 
 /// Mirrors the React `EMPLOYER PROFILE CREATION` screen.
 class EmployerProfileCreationScreen extends StatefulWidget {
-  const EmployerProfileCreationScreen({Key? key}) : super(key: key);
+  const EmployerProfileCreationScreen({super.key});
 
   @override
   State<EmployerProfileCreationScreen> createState() =>
       _EmployerProfileCreationScreenState();
 }
 
-class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationScreen> {
+class _EmployerProfileCreationScreenState
+    extends State<EmployerProfileCreationScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _roleController = TextEditingController(text: 'Contractor');
+  final TextEditingController _roleController =
+      TextEditingController(text: 'Contractor');
   final TextEditingController _locController =
       TextEditingController(text: 'Balkumari, Lalitpur');
   final TextEditingController _companyController = TextEditingController();
   bool _isSubmitting = false;
 
   String _photoPath = '';
-  String _govIdType = 'citizenship';
-  String _govIdNum = '';
+  List<String> _selectedGovTypes = ['citizenship'];
+  final Map<String, String> _govIdNumbers = {};
   final Map<String, String> _files = {};
 
   AppStore get store => AppStore.instance;
@@ -34,68 +36,83 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
 
   String _t(String en, String ne) => _isNe ? ne : en;
 
-  bool _validateGovId(String type, String num) {
-    switch (type) {
-      case 'citizenship':
-        return RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num);
-      case 'nid':
-        return RegExp(r'^\d{10}$').hasMatch(num);
-      case 'license':
-        return RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num);
-      case 'pan':
-        return RegExp(r'^\d{9}$').hasMatch(num);
-      default:
-        return num.isNotEmpty;
-    }
-  }
-
   Future<void> _submit() async {
     String? error;
     if (_nameController.text.trim().isEmpty) {
-      error = _t('Please enter your full name.', 'कृपया आफ्नो पूरा नाम प्रविष्ट गर्नुहोस्।');
+      error = _t('Please enter your full name.',
+          'कृपया आफ्नो पूरा नाम प्रविष्ट गर्नुहोस्।');
     } else if (_roleController.text.trim().isEmpty) {
-      error = _t('Please enter your role / title.', 'कृपया भूमिका प्रविष्ट गर्नुहोस्।');
+      error = _t('Please enter your role / title.',
+          'कृपया भूमिका प्रविष्ट गर्नुहोस्।');
     } else if (_locController.text.trim().isEmpty) {
-      error = _t('Please enter your location.', 'कृपया स्थान प्रविष्ट गर्नुहोस्।');
+      error =
+          _t('Please enter your location.', 'कृपया स्थान प्रविष्ट गर्नुहोस्।');
     } else if (_photoPath.isEmpty) {
-      error = _t('Please upload a profile photo.', 'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।');
-    } else if (_govIdNum.trim().isEmpty) {
-      error = _t(
-          'Please enter your Government ID number.',
-          'कृपया सरकारी परिचय-पत्र नम्बर प्रविष्ट गर्नुहोस्।');
-    } else if (!_validateGovId(_govIdType, _govIdNum.trim())) {
-      error = _t(
-          'Invalid Government ID format for the selected type.',
-          'चयन गरिएको प्रकारको लागि अमान्य सरकारी परिचय-पत्र ढाँचा।');
-    } else if (_govIdType == 'citizenship' &&
-        ((_files['front'] ?? '').isEmpty || (_files['back'] ?? '').isEmpty)) {
-      error = _t(
-          'Please upload both front and back images of the Citizenship card.',
-          'कृपया नागरिकताको अगाडि र पछाडिको फोटो अपलोड गर्नुहोस्।');
-    } else if ((_files[_govIdType] ?? '').isEmpty) {
-      error = _t('Please upload the required ID photo.', 'कृपया आवश्यक ID फोटो अपलोड गर्नुहोस्।');
+      error = _t('Please upload a profile photo.',
+          'कृपया प्रोफाइल फोटो अपलोड गर्नुहोस्।');
     }
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: AppColors.red500),
+        SnackBar(
+            content: Text(error), backgroundColor: context.appColors.red500),
+      );
+      return;
+    }
+
+    // Validate Government IDs
+    final kycVal = validateGovernmentIds(
+      selectedTypes: _selectedGovTypes,
+      idNumbers: _govIdNumbers,
+      files: _files,
+    );
+    if (!kycVal.isValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(kycVal.message(store.lang)),
+          backgroundColor: context.appColors.red500,
+        ),
       );
       return;
     }
 
     setState(() => _isSubmitting = true);
 
-    store.createEmployerProfile(
+    final primaryType = _selectedGovTypes.first;
+    final primaryNum = _govIdNumbers[primaryType] ?? '';
+
+    final Map<String, Map<String, dynamic>> govMap = {};
+    for (final type in _selectedGovTypes) {
+      final num = (_govIdNumbers[type] ?? '').trim();
+      final docs = <String>[];
+      if (type == 'citizenship') {
+        final f = _files['citizenship_front'] ?? _files['front'] ?? '';
+        final b = _files['citizenship_back'] ?? _files['back'] ?? '';
+        if (f.isNotEmpty) docs.add(f);
+        if (b.isNotEmpty) docs.add(b);
+      } else {
+        final img = _files[type] ?? _files['${type}_front'] ?? '';
+        if (img.isNotEmpty) docs.add(img);
+      }
+      govMap[type] = {
+        'idNumber': num,
+        'documentFiles': docs,
+        'submittedAt': DateTime.now().toIso8601String(),
+      };
+    }
+
+    await store.createEmployerProfile(
       name: _nameController.text.trim(),
       role: _roleController.text.trim(),
       location: _locController.text.trim(),
       companyName: _companyController.text.trim().isNotEmpty
           ? _companyController.text.trim()
           : 'Individual',
-      govIdType: _govIdType,
-      govIdNum: _govIdNum.trim(),
+      govIdType: primaryType,
+      govIdNum: primaryNum.trim(),
       govIdFiles: _files.values.toList(),
       profilePhoto: _photoPath,
+      governmentIds: govMap,
     );
 
     if (mounted) {
@@ -117,10 +134,10 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
     return Text(
       _t(en, ne),
       style: TextStyle(
-        fontSize: 10,
+        fontSize: 13,
         fontWeight: FontWeight.w900,
         letterSpacing: 1,
-        color: AppColors.slate800,
+        color: context.appColors.slate800,
       ),
     );
   }
@@ -128,18 +145,18 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
   InputDecoration _inputDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(fontSize: 11, color: AppColors.slate600),
+      hintStyle: TextStyle(fontSize: 14, color: context.appColors.slate600),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: context.appColors.white,
       isDense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.slate200),
+        borderSide: BorderSide(color: context.appColors.slate200),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.indigo600),
+        borderSide: BorderSide(color: context.appColors.indigo600),
       ),
     );
   }
@@ -147,7 +164,7 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.slate50,
+      backgroundColor: context.appColors.slate50,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -156,7 +173,7 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
           style: GoogleFonts.spaceGrotesk(
             fontSize: 20,
             fontWeight: FontWeight.w900,
-            color: AppColors.slate900,
+            color: context.appColors.slate900,
           ),
         ),
       ),
@@ -170,9 +187,9 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
               Container(
                 padding: EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appColors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.slate200),
+                  border: Border.all(color: context.appColors.slate200),
                 ),
                 child: Center(
                   child: ProfilePhotoPicker(
@@ -189,7 +206,9 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
               SizedBox(height: 6),
               TextField(
                 controller: _nameController,
-                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: context.appColors.slate900,
+                    fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(hint: 'Ravi Ranjan Sah'),
               ),
               SizedBox(height: 14),
@@ -204,7 +223,9 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
                         SizedBox(height: 6),
                         TextField(
                           controller: _roleController,
-                          style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              color: context.appColors.slate900,
+                              fontWeight: FontWeight.w600),
                           decoration: _inputDecoration(),
                         ),
                       ],
@@ -219,7 +240,9 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
                         SizedBox(height: 6),
                         TextField(
                           controller: _locController,
-                          style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              color: context.appColors.slate900,
+                              fontWeight: FontWeight.w600),
                           decoration: _inputDecoration(),
                         ),
                       ],
@@ -233,21 +256,23 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
               SizedBox(height: 6),
               TextField(
                 controller: _companyController,
-                style: TextStyle(color: AppColors.slate900, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: context.appColors.slate900,
+                    fontWeight: FontWeight.w600),
                 decoration: _inputDecoration(hint: 'e.g. Gupta Construction'),
               ),
               const SizedBox(height: 20),
 
               // Government ID with registration option
               GovIdSection(
-                govIdType: _govIdType,
-                govIdNum: _govIdNum,
-                onTypeChanged: (v) => setState(() => _govIdType = v),
-                onNumChanged: (v) => setState(() => _govIdNum = v),
+                selectedTypes: _selectedGovTypes,
+                idNumbers: _govIdNumbers,
+                onTypesChanged: (types) => setState(() => _selectedGovTypes = types),
+                onNumChanged: (type, idNum) => setState(() => _govIdNumbers[type] = idNum),
                 files: _files,
-                onFilePicked: (key, value) => setState(() => _files[key] = value),
+                onFilePicked: (key, value) =>
+                    setState(() => _files[key] = value),
                 onFileRemoved: (key) => setState(() => _files.remove(key)),
-                showRegistration: true,
                 titleEn: 'Government ID Verification',
                 titleNe: 'सरकारी परिचय-पत्र (सत्यापन)',
               ),
@@ -257,8 +282,8 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
               ElevatedButton(
                 onPressed: _isSubmitting ? null : () async => await _submit(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.slate900,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.appColors.slate900,
+                  foregroundColor: context.appColors.white,
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -268,16 +293,20 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
                     ? SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                            color: context.appColors.white, strokeWidth: 2),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.verified_rounded, color: AppColors.emerald400, size: 18),
+                          Icon(Icons.verified_rounded,
+                              color: context.appColors.emerald400, size: 18),
                           SizedBox(width: 8),
                           Text(
-                            _t('Verify ID & Start Hiring', 'सुरक्षित गर्नुहोस्'),
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                            _t('Verify ID & Start Hiring',
+                                'सुरक्षित गर्नुहोस्'),
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w900),
                           ),
                         ],
                       ),
@@ -288,9 +317,9 @@ class _EmployerProfileCreationScreenState extends State<EmployerProfileCreationS
                   'ROJGAR VERIFIED RECRUITMENT • GOVT OF NEPAL COMPLIANCE',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.slate400,
+                    color: context.appColors.slate600,
                   ),
                 ),
               ),

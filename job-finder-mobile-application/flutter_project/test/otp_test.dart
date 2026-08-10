@@ -49,7 +49,8 @@ void main() {
 
     // The valid OTP still works afterwards.
     bool? verified;
-    store.verifyOtp(sentOtp!, (_) => fail('should not error'), (w, e) => verified = true);
+    store.verifyOtp(
+        sentOtp!, (_) => fail('should not error'), (w, e) => verified = true);
     expect(verified, isTrue);
   });
 

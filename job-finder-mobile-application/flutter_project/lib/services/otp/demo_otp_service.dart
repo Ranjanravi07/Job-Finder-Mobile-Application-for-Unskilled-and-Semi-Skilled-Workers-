@@ -10,8 +10,7 @@ class _OtpData {
   _OtpData({
     required this.otp,
     required this.createdAt,
-    this.failedAttempts = 0,
-  });
+  }) : failedAttempts = 0;
 }
 
 class DemoOtpService implements OtpService {
@@ -35,7 +34,7 @@ class DemoOtpService implements OtpService {
     // Print to console for demo purposes
     if (kDebugMode) {
       print('================================================');
-      print('DEMO OTP for $phoneNumber: $generatedOtp');
+      print(' OTP for $phoneNumber: $generatedOtp');
       print('================================================');
     }
     

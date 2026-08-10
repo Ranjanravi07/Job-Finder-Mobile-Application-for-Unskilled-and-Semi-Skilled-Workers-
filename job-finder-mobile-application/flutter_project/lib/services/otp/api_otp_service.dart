@@ -1,11 +1,18 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'otp_service.dart';
 
 class ApiOtpService implements OtpService {
-  // Use 10.0.2.2 for Android emulator testing, or localhost/LAN IP as needed.
-  // In production, this would be an environment variable.
-  final String baseUrl = 'http://10.0.2.2:3000/api';
+  String get baseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:3000/api';
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:3000/api';
+    } else {
+      return 'http://localhost:3000/api';
+    }
+  }
 
   @override
   Future<void> sendOtp(String phoneNumber) async {
@@ -25,7 +32,8 @@ class ApiOtpService implements OtpService {
       if (response.statusCode == 200 && data['success'] == true) {
         return; // Success
       } else if (response.statusCode == 429) {
-        throw Exception(data['message'] ?? 'Please wait before requesting another OTP.');
+        throw Exception(
+            data['message'] ?? 'Please wait before requesting another OTP.');
       } else {
         throw Exception(data['message'] ?? 'Failed to send OTP.');
       }
@@ -70,7 +78,8 @@ class ApiOtpService implements OtpService {
           e is OtpInvalidException) {
         rethrow;
       }
-      throw Exception('Network error: Unable to verify OTP.');
+      final cleanMsg = e.toString().replaceAll('Exception: ', '');
+      throw Exception('Connection error ($baseUrl): $cleanMsg');
     }
   }
 }

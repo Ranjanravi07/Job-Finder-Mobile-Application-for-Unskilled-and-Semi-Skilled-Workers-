@@ -38,7 +38,7 @@ const List<_Preset> _presets = [
 ///
 /// Mirrors the React `SMART VOICE PARSING WIZARD` modal in `MobileSimulator.tsx`.
 class VoiceParseDialog extends StatefulWidget {
-  const VoiceParseDialog({Key? key, required this.onConfirm}) : super(key: key);
+  const VoiceParseDialog({super.key, required this.onConfirm});
 
   final void Function(Map<String, dynamic> profile) onConfirm;
 
@@ -77,7 +77,7 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppColors.slate900,
+      backgroundColor: context.appColors.slate900,
       insetPadding: EdgeInsets.all(20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
@@ -89,13 +89,14 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.auto_awesome_rounded, color: AppColors.emerald500, size: 18),
+                  Icon(Icons.auto_awesome_rounded,
+                      color: context.appColors.emerald500, size: 18),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Gemini Voice Onboarding',
                       style: TextStyle(
-                        color: AppColors.emerald400,
+                        color: context.appColors.emerald400,
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
                       ),
@@ -105,7 +106,10 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Close',
-                      style: TextStyle(color: AppColors.slate400, fontSize: 12, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                          color: context.appColors.slate600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
@@ -117,8 +121,8 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                     : 'Tap any preset speech dictation below to simulate speaking, or type your own description. '
                         'The AI will extract name, skill, location, and daily wages!',
                 style: TextStyle(
-                  color: AppColors.slate300,
-                  fontSize: 12,
+                  color: context.appColors.slate300,
+                  fontSize: 14,
                   height: 1.5,
                 ),
               ),
@@ -126,8 +130,8 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
               Text(
                 _isNe ? 'उदाहरणहरू' : 'Preset Speaking Examples',
                 style: TextStyle(
-                  color: AppColors.slate500,
-                  fontSize: 9,
+                  color: context.appColors.slate700,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1,
                 ),
@@ -148,7 +152,7 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                       decoration: BoxDecoration(
                         color: Color(0xFF0F172A),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.slate800),
+                        border: Border.all(color: context.appColors.slate800),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,8 +160,8 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                           Text(
                             _isNe ? p.labelNe : p.labelEn,
                             style: TextStyle(
-                              color: AppColors.emerald400,
-                              fontSize: 11,
+                              color: context.appColors.emerald400,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -167,8 +171,8 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: AppColors.slate400,
-                              fontSize: 10,
+                              color: context.appColors.slate600,
+                              fontSize: 13,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -182,17 +186,17 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
               TextField(
                 controller: _speechController,
                 maxLines: 3,
-                style: TextStyle(color: Colors.white, fontSize: 12),
+                style: TextStyle(color: context.appColors.white, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: _isNe
                       ? 'मेरो नाम श्याम हो। म सिकर्मी हुँ...'
                       : 'Speak/type your work interest...',
-                  hintStyle: TextStyle(color: AppColors.slate500),
+                  hintStyle: TextStyle(color: context.appColors.slate700),
                   filled: true,
                   fillColor: Color(0xFF0F172A),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.slate800),
+                    borderSide: BorderSide(color: context.appColors.slate800),
                   ),
                 ),
               ),
@@ -201,14 +205,15 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                 ElevatedButton(
                   onPressed: () => _parse(_speechController.text),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.emerald500,
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.appColors.emerald500,
+                    foregroundColor: context.appColors.white,
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
                   child: Text(
                     'Parse with Gemini AI',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -219,7 +224,7 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                   decoration: BoxDecoration(
                     color: Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.slate800),
+                    border: Border.all(color: context.appColors.slate800),
                   ),
                   child: Column(
                     children: [
@@ -227,16 +232,18 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                         height: 24,
                         width: 24,
                         child: CircularProgressIndicator(
-                          color: AppColors.emerald400,
+                          color: context.appColors.emerald400,
                           strokeWidth: 2,
                         ),
                       ),
                       SizedBox(height: 10),
                       Text(
-                        _isNe ? 'एआईले आवाज विश्लेषण गर्दैछ...' : 'AI is parsing speech...',
+                        _isNe
+                            ? 'एआईले आवाज विश्लेषण गर्दैछ...'
+                            : 'AI is parsing speech...',
                         style: TextStyle(
-                          color: AppColors.slate300,
-                          fontSize: 11,
+                          color: context.appColors.slate300,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -251,31 +258,45 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                   decoration: BoxDecoration(
                     color: Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.emerald500.withValues(alpha: 0.3)),
+                    border: Border.all(
+                        color: context.appColors.emerald500
+                            .withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.check_circle_rounded, color: AppColors.emerald400, size: 16),
+                          Icon(Icons.check_circle_rounded,
+                              color: context.appColors.emerald400, size: 16),
                           SizedBox(width: 6),
                           Text(
                             'Extracted Details',
                             style: TextStyle(
-                              color: AppColors.emerald400,
-                              fontSize: 12,
+                              color: context.appColors.emerald400,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 10),
-                      _DetailRow(icon: '👤', label: 'Name:', value: '${_parsed!['name']}'),
-                      _DetailRow(icon: '🛠️', label: 'Skill:', value: '${_parsed!['mainSkill']}'),
                       _DetailRow(
-                          icon: '💰', label: 'Wage:', value: 'Rs. ${_parsed!['expectedWage']} / day'),
-                      _DetailRow(icon: '📍', label: 'Location:', value: '${_parsed!['location']}'),
+                          icon: '👤',
+                          label: 'Name:',
+                          value: '${_parsed!['name']}'),
+                      _DetailRow(
+                          icon: '🛠️',
+                          label: 'Skill:',
+                          value: '${_parsed!['mainSkill']}'),
+                      _DetailRow(
+                          icon: '💰',
+                          label: 'Wage:',
+                          value: 'Rs. ${_parsed!['expectedWage']} / day'),
+                      _DetailRow(
+                          icon: '📍',
+                          label: 'Location:',
+                          value: '${_parsed!['location']}'),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -289,8 +310,8 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                               child: Text(
                                 'Discard',
                                 style: TextStyle(
-                                  color: AppColors.slate400,
-                                  fontSize: 11,
+                                  color: context.appColors.slate600,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -303,16 +324,18 @@ class _VoiceParseDialogState extends State<VoiceParseDialog> {
                                 widget.onConfirm(_parsed!);
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.emerald500,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                backgroundColor: context.appColors.emerald500,
+                                foregroundColor: context.appColors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
                               child: const Text(
                                 'Confirm & Save Profile',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                    fontSize: 13, fontWeight: FontWeight.w700),
                               ),
                             ),
                           ),
@@ -348,20 +371,22 @@ class _DetailRow extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           children: [
-            TextSpan(text: '$icon ', style: TextStyle(color: AppColors.slate300)),
+            TextSpan(
+                text: '$icon ',
+                style: TextStyle(color: context.appColors.slate300)),
             TextSpan(
               text: '$label ',
               style: TextStyle(
-                color: AppColors.slate300,
+                color: context.appColors.slate300,
                 fontWeight: FontWeight.w700,
-                fontSize: 11,
+                fontSize: 14,
               ),
             ),
             TextSpan(
               text: value,
               style: TextStyle(
-                color: AppColors.slate300,
-                fontSize: 11,
+                color: context.appColors.slate300,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import React from "react";
 import {
-  MapPin, Star, MoreVertical, CheckCircle, Ban, Trash2,
-  X, Phone, CreditCard, Briefcase, User,
+  MapPin, MoreVertical, CheckCircle, Ban, Trash2,
+  X, Phone, CreditCard, Briefcase, User, FileText, Check
 } from "lucide-react";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "../../../firebase";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +22,16 @@ const statusStyle: Record<Status, string> = {
   inactive: "bg-slate-500/10  text-slate-400  border border-slate-500/20",
 };
 
-/** Initials avatar */
-function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
+/** Initials avatar fallback */
+function Avatar({ name, photo, size = "md" }: { name: string; photo?: string; size?: "sm" | "md" | "lg" }) {
+  if (photo && photo.trim().length > 0) {
+    const sizeClass = size === "lg" ? "w-16 h-16" : size === "md" ? "w-10 h-10" : "w-6 h-6";
+    return (
+      <div className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 border border-border`}>
+        <img src={photo} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const sizeClass = size === "lg" ? "w-16 h-16 text-lg" : size === "md" ? "w-10 h-10 text-sm" : "w-6 h-6 text-[10px]";
   return (
@@ -31,18 +41,16 @@ function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg"
   );
 }
 
-/** Profile modal */
+/** Profile modal displaying complete Worker details & all Government IDs */
 function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void }) {
   return (
-    /* Backdrop */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
       onClick={onClose}
     >
-      {/* Card — stop propagation so clicking inside doesn't close */}
       <div
-        className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden"
+        className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header band */}
@@ -58,9 +66,7 @@ function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void
         {/* Avatar overlapping header */}
         <div className="px-6 pb-6">
           <div className="-mt-8 mb-4 flex items-end justify-between">
-            <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center font-bold text-primary text-xl ring-4 ring-card flex-shrink-0">
-              {seeker.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-            </div>
+            <Avatar name={seeker.name} photo={seeker.profilePhoto} size="lg" />
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${statusStyle[seeker.status]}`}>
               {seeker.status}
             </span>
@@ -69,13 +75,6 @@ function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void
           {/* Name + ID */}
           <h3 className="text-base font-semibold text-foreground">{seeker.name}</h3>
           <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "'DM Mono', monospace" }}>{seeker.id}</p>
-
-          {/* Rating */}
-          <div className="flex items-center gap-1 mt-2">
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <span className="text-xs font-medium text-foreground">{seeker.rating}</span>
-            <span className="text-xs text-muted-foreground ml-1">rating</span>
-          </div>
 
           <hr className="border-border my-4" />
 
@@ -98,7 +97,7 @@ function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void
                 <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Primary Skill / Role</p>
+                <p className="text-xs text-muted-foreground">Work Category / Skill</p>
                 <p className="text-sm font-medium text-foreground mt-0.5">{seeker.skill}</p>
               </div>
             </div>
@@ -114,38 +113,72 @@ function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void
               </div>
             </div>
 
-            {/* Gov ID number */}
+            {/* Primary Gov ID number */}
             <div className="flex items-start gap-3">
               <div className="w-7 h-7 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
                 <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Government ID Number</p>
+                <p className="text-xs text-muted-foreground">Primary Government ID ({seeker.govIdType || 'Citizenship'})</p>
                 <p className="text-sm font-medium text-foreground mt-0.5" style={{ fontFamily: "'DM Mono', monospace" }}>
-                  {seeker.govIdNumber}
+                  {seeker.govIdNumber || "N/A"}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Gov ID image */}
-          <div className="mt-4">
-            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <CreditCard className="w-3 h-3" /> Government ID Image
-            </p>
-            {seeker.govIdImage ? (
-              <img
-                src={seeker.govIdImage}
-                alt="Government ID"
-                className="w-full rounded-lg border border-border object-cover max-h-40"
-              />
-            ) : (
-              <div className="w-full h-28 rounded-lg border border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2">
-                <CreditCard className="w-6 h-6 text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">No ID image uploaded</p>
+          {/* Multi-Selection Government IDs Breakdown */}
+          {seeker.governmentIds && Object.keys(seeker.governmentIds).length > 0 && (
+            <div className="mt-4 border-t border-border pt-4 space-y-3">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-primary" /> Submitted Government IDs ({Object.keys(seeker.governmentIds).length})
+              </p>
+              <div className="space-y-2">
+                {Object.entries(seeker.governmentIds).map(([typeKey, idObj]) => (
+                  <div key={typeKey} className="bg-muted/40 border border-border rounded-lg p-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground capitalize flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-400" /> {typeKey}
+                      </span>
+                      <span className="font-mono text-muted-foreground">{idObj.idNumber}</span>
+                    </div>
+                    {idObj.documentFiles && idObj.documentFiles.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {idObj.documentFiles.map((docUrl, idx) => (
+                          <a key={idx} href={docUrl} target="_blank" rel="noreferrer" className="block">
+                            <img src={docUrl} alt={`${typeKey} doc ${idx + 1}`} className="w-full h-16 object-cover rounded border border-border hover:opacity-80 transition-opacity" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Gov ID image fallback if no governmentIds map */}
+          {(!seeker.governmentIds || Object.keys(seeker.governmentIds).length === 0) && (
+            <div className="mt-4">
+              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                <CreditCard className="w-3 h-3" /> Government ID Image
+              </p>
+              {seeker.govIdImage ? (
+                <a href={seeker.govIdImage} target="_blank" rel="noreferrer">
+                  <img
+                    src={seeker.govIdImage}
+                    alt="Government ID"
+                    className="w-full rounded-lg border border-border object-cover max-h-40"
+                  />
+                </a>
+              ) : (
+                <div className="w-full h-28 rounded-lg border border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2">
+                  <CreditCard className="w-6 h-6 text-muted-foreground/50" />
+                  <p className="text-xs text-muted-foreground">No ID image uploaded</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -160,13 +193,40 @@ export default function JobSeekersPanel({ search, filters, seekers, setSeekers }
 }) {
   const [selected, setSelected] = useState<Seeker | null>(null);
 
-  const approve = (id: string) =>
-    setSeekers((prev) => prev.map((s) => (s.id === id ? { ...s, status: "active" } : s)));
+  const approve = async (id: string) => {
+    if (db) {
+      try {
+        await updateDoc(doc(db, "workers", id), {
+          verificationStatus: "verified",
+        });
+      } catch (err) {
+        console.error("Failed to approve worker in Firestore:", err);
+      }
+    }
+    setSeekers((prev) => prev.map((s) => (s.id === id ? { ...s, status: "active", verificationStatus: "verified" } : s)));
+  };
 
-  const block = (id: string) =>
-    setSeekers((prev) => prev.map((s) => (s.id === id ? { ...s, status: "inactive" } : s)));
+  const block = async (id: string) => {
+    if (db) {
+      try {
+        await updateDoc(doc(db, "workers", id), {
+          verificationStatus: "inactive",
+        });
+      } catch (err) {
+        console.error("Failed to block worker in Firestore:", err);
+      }
+    }
+    setSeekers((prev) => prev.map((s) => (s.id === id ? { ...s, status: "inactive", verificationStatus: "inactive" } : s)));
+  };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
+    if (db) {
+      try {
+        await deleteDoc(doc(db, "workers", id));
+      } catch (err) {
+        console.error("Failed to delete worker from Firestore:", err);
+      }
+    }
     setSeekers((prev) => prev.filter((s) => s.id !== id));
     if (selected?.id === id) setSelected(null);
   };
@@ -180,9 +240,8 @@ export default function JobSeekersPanel({ search, filters, seekers, setSeekers }
 
     const matchStatus  = !filters?.status.length   || filters.status.includes(s.status);
     const matchSkill   = !filters?.skill.length    || filters.skill.includes(s.skill);
-    const matchRating  = !filters?.minRating       || s.rating >= filters.minRating;
 
-    return matchSearch && matchStatus && matchSkill && matchRating;
+    return matchSearch && matchStatus && matchSkill;
   });
 
   return (
@@ -197,8 +256,8 @@ export default function JobSeekersPanel({ search, filters, seekers, setSeekers }
 
       <div className="space-y-5">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Workers</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Manage registered workers — click a row to view profile</p>
+          <h2 className="text-sm font-semibold text-foreground">Jobseekers (Workers)</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Manage registered worker accounts — click a row to view profile</p>
         </div>
 
         <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -206,7 +265,7 @@ export default function JobSeekersPanel({ search, filters, seekers, setSeekers }
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  {["ID", "Name", "Skill", "Location", "Rating", "Status", "Action"].map((h) => (
+                  {["ID", "Name", "Skill", "Location", "Status", "Action"].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
@@ -219,8 +278,8 @@ export default function JobSeekersPanel({ search, filters, seekers, setSeekers }
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                      No workers found.
+                    <td colSpan={6} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                      No jobseekers registered yet.
                     </td>
                   </tr>
                 ) : (
@@ -241,9 +300,7 @@ export default function JobSeekersPanel({ search, filters, seekers, setSeekers }
                       {/* Name */}
                       <td className="px-4 py-3 text-xs font-medium text-foreground whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
-                            {seeker.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                          </div>
+                          <Avatar name={seeker.name} photo={seeker.profilePhoto} size="sm" />
                           {seeker.name}
                         </div>
                       </td>
@@ -258,14 +315,6 @@ export default function JobSeekersPanel({ search, filters, seekers, setSeekers }
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
                           {seeker.location}
-                        </span>
-                      </td>
-
-                      {/* Rating */}
-                      <td className="px-4 py-3 text-xs text-foreground whitespace-nowrap">
-                        <span className="flex items-center gap-1">
-                          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                          {seeker.rating}
                         </span>
                       </td>
 

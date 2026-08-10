@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 
 class ProfileEditScreen extends StatefulWidget {
-  const ProfileEditScreen({Key? key}) : super(key: key);
+  const ProfileEditScreen({super.key});
 
   @override
   State<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -59,8 +60,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   // Government ID types
   final List<Map<String, String>> _govIdTypes = [
     {'id': 'citizenship', 'nameEn': 'Citizenship', 'nameNe': 'नागरिकता'},
-    {'id': 'nid', 'nameEn': 'National ID (NID)', 'nameNe': 'राष्ट्रिय परिचयपत्र (NID)'},
-    {'id': 'license', 'nameEn': 'Driving License', 'nameNe': 'सवारी चालक अनुमति'},
+    {
+      'id': 'nid',
+      'nameEn': 'National ID (NID)',
+      'nameNe': 'राष्ट्रिय परिचयपत्र (NID)'
+    },
+    {
+      'id': 'license',
+      'nameEn': 'Driving License',
+      'nameNe': 'सवारी चालक अनुमति'
+    },
     {'id': 'pan', 'nameEn': 'PAN Card', 'nameNe': 'प्यान कार्ड'},
   ];
 
@@ -82,7 +91,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   void _loadProfileData() {
-    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
+    final profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
     final profile = profileProvider.profile;
 
     if (profile != null) {
@@ -131,20 +141,27 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       _isLoading = true;
     });
 
-    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
+    final profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
 
     final success = await profileProvider.updateProfile(
       name: _nameController.text.trim(),
-      nameNe: _nameNeController.text.trim().isNotEmpty ? _nameNeController.text.trim() : null,
+      nameNe: _nameNeController.text.trim().isNotEmpty
+          ? _nameNeController.text.trim()
+          : null,
       skill: _selectedSkill,
       industry: _selectedIndustry,
       location: _locationController.text.trim(),
-      locationNe: _locationNeController.text.trim().isNotEmpty ? _locationNeController.text.trim() : null,
+      locationNe: _locationNeController.text.trim().isNotEmpty
+          ? _locationNeController.text.trim()
+          : null,
       profilePhotoUrl: _profilePhotoUrl,
       governmentIdType: _selectedGovIdType,
       governmentIdNumber: _govIdNumberController.text.trim(),
       governmentIdImageUrl: _govIdImageUrl,
-      experience: _experienceController.text.trim().isNotEmpty ? _experienceController.text.trim() : null,
+      experience: _experienceController.text.trim().isNotEmpty
+          ? _experienceController.text.trim()
+          : null,
     );
 
     setState(() {
@@ -155,7 +172,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            lang == 'ne' ? 'प्रोफाइल अपडेट गरियो!' : 'Profile updated successfully!',
+            lang == 'ne'
+                ? 'प्रोफाइल अपडेट गरियो!'
+                : 'Profile updated successfully!',
           ),
           backgroundColor: Colors.green,
         ),
@@ -165,7 +184,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            lang == 'ne' ? 'अपडेट गर्न असफल। कृपया पुनः प्रयास गर्नुहोस्।' : 'Failed to update. Please try again.',
+            lang == 'ne'
+                ? 'अपडेट गर्न असफल। कृपया पुनः प्रयास गर्नुहोस्।'
+                : 'Failed to update. Please try again.',
           ),
           backgroundColor: Colors.red,
         ),
@@ -175,7 +196,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   void _showImageSourceDialog(String type) {
     final lang = ModalRoute.of(context)!.settings.arguments as String? ?? 'en';
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -238,7 +259,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final lang = ModalRoute.of(context)!.settings.arguments as String? ?? 'en';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(lang == 'ne' ? 'फोटो अपलोड गरियो (डेमो)' : 'Photo uploaded (Demo)'),
+        content: Text(
+            lang == 'ne' ? 'फोटो अपलोड गरियो (डेमो)' : 'Photo uploaded (Demo)'),
         backgroundColor: Colors.green,
       ),
     );
@@ -248,7 +270,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (!_hasChanges) return true;
 
     final lang = ModalRoute.of(context)!.settings.arguments as String? ?? 'en';
-    
+
     final shouldPop = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -287,7 +309,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
-          foregroundColor: Colors.white,
+          foregroundColor: context.appColors.white,
           title: Text(
             lang == 'ne' ? 'प्रोफाइल सम्पादन' : 'Edit Profile',
             style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold),
@@ -310,7 +332,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
-          foregroundColor: Colors.white,
+          foregroundColor: context.appColors.white,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.close),
@@ -328,15 +350,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             TextButton.icon(
               onPressed: _isLoading ? null : () => _saveChanges(lang),
               icon: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                          color: context.appColors.white, strokeWidth: 2),
                     )
-                  : const Icon(Icons.check, color: Colors.white),
+                  : Icon(Icons.check, color: context.appColors.white),
               label: Text(
                 lang == 'ne' ? 'सुरक्षित गर्नुहोस्' : 'Save',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: context.appColors.white,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -359,14 +384,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           height: 120,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white,
+                            color: context.appColors.white,
                             border: Border.all(
                               color: const Color(0xFF10B981),
                               width: 3,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -392,11 +417,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFF10B981),
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(
+                                  color: context.appColors.white, width: 2),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.camera_alt,
-                              color: Colors.white,
+                              color: context.appColors.white,
                               size: 20,
                             ),
                           ),
@@ -421,10 +447,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       ? (lang == 'ne' ? 'नाम आवश्यक छ' : 'Name is required')
                       : null,
                   decoration: InputDecoration(
-                    labelText: lang == 'ne' ? 'नाम (अंग्रेजीमा)' : 'Full Name (in English)',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: lang == 'ne'
+                        ? 'नाम (अंग्रेजीमा)'
+                        : 'Full Name (in English)',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.appColors.white,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -433,10 +462,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   controller: _nameNeController,
                   onChanged: (_) => _markAsChanged(),
                   decoration: InputDecoration(
-                    labelText: lang == 'ne' ? 'नाम (नेपालीमा) - वैकल्पिक' : 'Full Name (in Nepali) - Optional',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: lang == 'ne'
+                        ? 'नाम (नेपालीमा) - वैकल्पिक'
+                        : 'Full Name (in Nepali) - Optional',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.appColors.white,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -447,19 +479,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   keyboardType: TextInputType.phone,
                   validator: (val) {
                     if (val == null || val.isEmpty) {
-                      return lang == 'ne' ? 'फोन नम्बर आवश्यक छ' : 'Phone number is required';
+                      return lang == 'ne'
+                          ? 'फोन नम्बर आवश्यक छ'
+                          : 'Phone number is required';
                     }
                     if (val.length != 10) {
-                      return lang == 'ne' ? '१० अंकको फोन नम्बर हाल्नुहोस्' : 'Enter 10-digit phone number';
+                      return lang == 'ne'
+                          ? '१० अंकको फोन नम्बर हाल्नुहोस्'
+                          : 'Enter 10-digit phone number';
                     }
                     return null;
                   },
                   decoration: InputDecoration(
                     labelText: lang == 'ne' ? 'मोबाइल नम्बर' : 'Mobile Number',
                     prefixText: '+977 ',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.appColors.white,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -467,7 +504,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 // Professional Information Section
                 _buildSectionTitle(
                   isWorker
-                      ? (lang == 'ne' ? 'व्यावसायिक जानकारी' : 'Professional Details')
+                      ? (lang == 'ne'
+                          ? 'व्यावसायिक जानकारी'
+                          : 'Professional Details')
                       : (lang == 'ne' ? 'व्यवसाय जानकारी' : 'Business Details'),
                   Icons.work_outline,
                 ),
@@ -476,18 +515,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 // Skill selection (for workers)
                 if (isWorker) ...[
                   DropdownButtonFormField<String>(
-                    value: _selectedSkill,
+                    initialValue: _selectedSkill,
                     decoration: InputDecoration(
                       labelText: lang == 'ne' ? 'मुख्य सीप' : 'Primary Skill',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: context.appColors.white,
                     ),
-                    hint: Text(lang == 'ne' ? 'सीप छान्नुहोस्' : 'Select your skill'),
+                    hint: Text(
+                        lang == 'ne' ? 'सीप छान्नुहोस्' : 'Select your skill'),
                     items: _skillOptions.map((skill) {
                       return DropdownMenuItem(
                         value: skill['id'],
-                        child: Text(lang == 'ne' ? skill['nameNe']! : skill['nameEn']!),
+                        child: Text(
+                            lang == 'ne' ? skill['nameNe']! : skill['nameEn']!),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -498,15 +540,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-
                   TextFormField(
                     controller: _experienceController,
                     onChanged: (_) => _markAsChanged(),
                     decoration: InputDecoration(
-                      labelText: lang == 'ne' ? 'अनुभव (उदा: ५ वर्ष)' : 'Experience (e.g., 5 Years)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: lang == 'ne'
+                          ? 'अनुभव (उदा: ५ वर्ष)'
+                          : 'Experience (e.g., 5 Years)',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: context.appColors.white,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -515,18 +559,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 // Industry selection (for employers)
                 if (!isWorker) ...[
                   DropdownButtonFormField<String>(
-                    value: _selectedIndustry,
+                    initialValue: _selectedIndustry,
                     decoration: InputDecoration(
-                      labelText: lang == 'ne' ? 'व्यवसायको प्रकार' : 'Industry Type',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText:
+                          lang == 'ne' ? 'व्यवसायको प्रकार' : 'Industry Type',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: context.appColors.white,
                     ),
-                    hint: Text(lang == 'ne' ? 'उद्योग छान्नुहोस्' : 'Select your industry'),
+                    hint: Text(lang == 'ne'
+                        ? 'उद्योग छान्नुहोस्'
+                        : 'Select your industry'),
                     items: _industryOptions.map((industry) {
                       return DropdownMenuItem(
                         value: industry['id'],
-                        child: Text(lang == 'ne' ? industry['nameNe']! : industry['nameEn']!),
+                        child: Text(lang == 'ne'
+                            ? industry['nameNe']!
+                            : industry['nameEn']!),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -543,14 +593,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   controller: _locationController,
                   onChanged: (_) => _markAsChanged(),
                   validator: (val) => val == null || val.isEmpty
-                      ? (lang == 'ne' ? 'स्थान आवश्यक छ' : 'Location is required')
+                      ? (lang == 'ne'
+                          ? 'स्थान आवश्यक छ'
+                          : 'Location is required')
                       : null,
                   decoration: InputDecoration(
-                    labelText: lang == 'ne' ? 'ठेगाना (अंग्रेजीमा)' : 'Location (in English)',
-                    hintText: lang == 'ne' ? 'उदा: बालकुमारी, ललितपुर' : 'e.g., Balkumari, Lalitpur',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: lang == 'ne'
+                        ? 'ठेगाना (अंग्रेजीमा)'
+                        : 'Location (in English)',
+                    hintText: lang == 'ne'
+                        ? 'उदा: बालकुमारी, ललितपुर'
+                        : 'e.g., Balkumari, Lalitpur',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.appColors.white,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -559,10 +616,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   controller: _locationNeController,
                   onChanged: (_) => _markAsChanged(),
                   decoration: InputDecoration(
-                    labelText: lang == 'ne' ? 'ठेगाना (नेपालीमा) - वैकल्पिक' : 'Location (in Nepali) - Optional',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: lang == 'ne'
+                        ? 'ठेगाना (नेपालीमा) - वैकल्पिक'
+                        : 'Location (in Nepali) - Optional',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.appColors.white,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -575,18 +635,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 const SizedBox(height: 12),
 
                 DropdownButtonFormField<String>(
-                  value: _selectedGovIdType,
+                  initialValue: _selectedGovIdType,
                   decoration: InputDecoration(
-                    labelText: lang == 'ne' ? 'परिचय पत्रको प्रकार' : 'Government ID Type',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: lang == 'ne'
+                        ? 'परिचय पत्रको प्रकार'
+                        : 'Government ID Type',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.appColors.white,
                   ),
-                  hint: Text(lang == 'ne' ? 'परिचय पत्र छान्नुहोस्' : 'Select ID type'),
+                  hint: Text(lang == 'ne'
+                      ? 'परिचय पत्र छान्नुहोस्'
+                      : 'Select ID type'),
                   items: _govIdTypes.map((idType) {
                     return DropdownMenuItem(
                       value: idType['id'],
-                      child: Text(lang == 'ne' ? idType['nameNe']! : idType['nameEn']!),
+                      child: Text(
+                          lang == 'ne' ? idType['nameNe']! : idType['nameEn']!),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -602,20 +668,26 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   controller: _govIdNumberController,
                   onChanged: (_) => _markAsChanged(),
                   decoration: InputDecoration(
-                    labelText: _selectedGovIdType != null 
-                        ? _getIdNumberLabel(_selectedGovIdType!, lang) 
+                    labelText: _selectedGovIdType != null
+                        ? _getIdNumberLabel(_selectedGovIdType!, lang)
                         : (lang == 'ne' ? 'परिचय पत्र नम्बर' : 'ID Number'),
-                    hintText: lang == 'ne' ? 'नम्बर प्रविष्ट गर्नुहोस्' : 'Enter number',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    hintText: lang == 'ne'
+                        ? 'नम्बर प्रविष्ट गर्नुहोस्'
+                        : 'Enter number',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.appColors.white,
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return lang == 'ne' ? 'कृपया नम्बर प्रविष्ट गर्नुहोस्' : 'Please enter the ID number';
+                      return lang == 'ne'
+                          ? 'कृपया नम्बर प्रविष्ट गर्नुहोस्'
+                          : 'Please enter the ID number';
                     }
                     if (_selectedGovIdType != null) {
-                      final validationError = _validateGovIdNumber(_selectedGovIdType!, val.trim(), lang);
+                      final validationError = _validateGovIdNumber(
+                          _selectedGovIdType!, val.trim(), lang);
                       if (validationError != null) return validationError;
                     }
                     return null;
@@ -629,7 +701,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   child: Container(
                     height: 180,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.appColors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: _govIdImageUrl != null
@@ -658,11 +730,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: context.appColors.white,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 8,
                                       ),
                                     ],
@@ -697,10 +769,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       child: Center(
         child: Text(
           profile.initials,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 40,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: context.appColors.white,
           ),
         ),
       ),
@@ -744,8 +816,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          lang == 'ne' ? 'छवि अपलोड गर्न ट्याप गर्नुहोस्' : 'Tap to upload image',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+          lang == 'ne'
+              ? 'छवि अपलोड गर्न ट्याप गर्नुहोस्'
+              : 'Tap to upload image',
+          style: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
         ),
       ],
     );
@@ -756,9 +830,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       case 'citizenship':
         return lang == 'ne' ? 'नागरिकता नम्बर' : 'Citizenship ID Number';
       case 'nid':
-        return lang == 'ne' ? 'राष्ट्रिय परिचयपत्र नम्बर (NID Number)' : 'NID Number';
+        return lang == 'ne'
+            ? 'राष्ट्रिय परिचयपत्र नम्बर (NID Number)'
+            : 'NID Number';
       case 'license':
-        return lang == 'ne' ? 'सवारी चालक अनुमति नम्बर' : 'Driving License Number';
+        return lang == 'ne'
+            ? 'सवारी चालक अनुमति नम्बर'
+            : 'Driving License Number';
       case 'pan':
         return lang == 'ne' ? 'प्यान नम्बर' : 'PAN Number';
       default:
@@ -769,23 +847,25 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   String? _validateGovIdNumber(String type, String num, String lang) {
     switch (type) {
       case 'citizenship':
-        if (!RegExp(r'^[a-zA-Z0-9\-\/]+$').hasMatch(num)) {
-          return lang == 'ne' ? 'नागरिकता नम्बरको ढाँचा मिलेन' : 'Invalid Citizenship number format';
+      case 'license':
+        if (!RegExp(r'^\d+$').hasMatch(num)) {
+          return lang == 'ne'
+              ? 'नम्बर अंकमा मात्र हुनुपर्छ'
+              : 'Number must contain digits only';
         }
         break;
       case 'nid':
         if (!RegExp(r'^\d{10}$').hasMatch(num)) {
-          return lang == 'ne' ? 'राष्ट्रिय परिचयपत्र नम्बर १० अंकको हुनुपर्छ' : 'NID Number must be exactly 10 digits';
-        }
-        break;
-      case 'license':
-        if (!RegExp(r'^[a-zA-Z0-9\-]+$').hasMatch(num)) {
-          return lang == 'ne' ? 'सवारी चालक अनुमति नम्बरको ढाँचा मिलेन' : 'Invalid Driving License format';
+          return lang == 'ne'
+              ? 'राष्ट्रिय परिचयपत्र नम्बर १० अंकको हुनुपर्छ'
+              : 'NID Number must be exactly 10 digits';
         }
         break;
       case 'pan':
         if (!RegExp(r'^\d{9}$').hasMatch(num)) {
-          return lang == 'ne' ? 'प्यान नम्बर ९ अंकको हुनुपर्छ' : 'PAN Number must be exactly 9 digits';
+          return lang == 'ne'
+              ? 'प्यान नम्बर ९ अंकको हुनुपर्छ'
+              : 'PAN Number must be exactly 9 digits';
         }
         break;
     }

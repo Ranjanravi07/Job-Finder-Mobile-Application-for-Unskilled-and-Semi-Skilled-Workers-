@@ -32,7 +32,9 @@ class Conversation {
       'employerName': employerName,
       'jobTitle': jobTitle,
       'lastMessage': lastMessage,
-      'lastUpdatedAt': lastUpdatedAt != null ? Timestamp.fromDate(lastUpdatedAt!) : FieldValue.serverTimestamp(),
+      'lastUpdatedAt': lastUpdatedAt != null
+          ? Timestamp.fromDate(lastUpdatedAt!)
+          : FieldValue.serverTimestamp(),
     };
   }
 
@@ -73,7 +75,9 @@ class Message {
     return {
       'senderId': senderId,
       'text': text,
-      'timestamp': timestamp != null ? Timestamp.fromDate(timestamp!) : FieldValue.serverTimestamp(),
+      'timestamp': timestamp != null
+          ? Timestamp.fromDate(timestamp!)
+          : FieldValue.serverTimestamp(),
     };
   }
 

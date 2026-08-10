@@ -5,11 +5,11 @@ import '../theme/app_colors.dart';
 /// Mirrors the React `SIMULATED PHONE DIALER` full-screen overlay.
 class PhoneDialerOverlay extends StatefulWidget {
   const PhoneDialerOverlay({
-    Key? key,
+    super.key,
     required this.name,
     required this.phone,
     this.onHangUp,
-  }) : super(key: key);
+  });
 
   final String name;
   final String phone;
@@ -36,14 +36,15 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: AppColors.slate800,
+                    color: context.appColors.slate800,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.slate700, width: 4),
+                    border:
+                        Border.all(color: context.appColors.slate700, width: 4),
                   ),
                   child: Icon(
                     Icons.call_rounded,
                     size: 40,
-                    color: AppColors.emerald400,
+                    color: context.appColors.emerald400,
                   ),
                 ),
                 SizedBox(height: 16),
@@ -51,7 +52,7 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                   widget.name,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: context.appColors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
@@ -60,8 +61,8 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                 Text(
                   'CALLING...',
                   style: TextStyle(
-                    color: AppColors.emerald400,
-                    fontSize: 12,
+                    color: context.appColors.emerald400,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 2,
                   ),
@@ -70,7 +71,7 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                 Text(
                   '+977 ${widget.phone}',
                   style: TextStyle(
-                    color: AppColors.slate400,
+                    color: context.appColors.slate600,
                     fontSize: 14,
                     fontFamily: 'monospace',
                   ),
@@ -89,8 +90,8 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                       'This triggers a native telephone call widget (tel:) on physical iOS and Android smartphones.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: AppColors.slate500,
-                        fontSize: 10,
+                        color: context.appColors.slate700,
+                        fontSize: 13,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -105,12 +106,12 @@ class _PhoneDialerOverlayState extends State<PhoneDialerOverlay> {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: AppColors.red500,
+                        color: context.appColors.red500,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.call_end_rounded,
-                        color: Colors.white,
+                        color: context.appColors.white,
                         size: 26,
                       ),
                     ),

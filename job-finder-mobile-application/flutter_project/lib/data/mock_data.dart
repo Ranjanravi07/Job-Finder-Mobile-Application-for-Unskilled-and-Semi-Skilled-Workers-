@@ -21,14 +21,43 @@ class SkillCategory {
 }
 
 const List<SkillCategory> kSkillCategories = [
-  SkillCategory(id: 'mason', nameEn: 'Mason / Bricklayer', nameNe: 'डकर्मी (ढुंगा/ईट्टा कामदार)', icon: 'Hammer'),
-  SkillCategory(id: 'carpenter', nameEn: 'Carpenter', nameNe: 'सिकर्मी (काठ कामदार)', icon: 'Wrench'),
-  SkillCategory(id: 'electrician', nameEn: 'Electrician', nameNe: 'इलेक्ट्रीशियन (बिजुली कामदार)', icon: 'Zap'),
-  SkillCategory(id: 'plumber', nameEn: 'Plumber', nameNe: 'प्लम्बर (खानेपानी कामदार)', icon: 'Droplet'),
-  SkillCategory(id: 'painter', nameEn: 'Painter', nameNe: 'पेन्टर (रंगरोगन कामदार)', icon: 'Paintbrush'),
-  SkillCategory(id: 'driver', nameEn: 'Driver', nameNe: 'चालक (ड्राइभर)', icon: 'Car'),
-  SkillCategory(id: 'laborer', nameEn: 'General Laborer', nameNe: 'साधारण मजदुर (लेबर)', icon: 'Users'),
-  SkillCategory(id: 'domestic', nameEn: 'Domestic Helper', nameNe: 'घरेलु कामदार', icon: 'Home'),
+  SkillCategory(
+      id: 'mason',
+      nameEn: 'Mason / Bricklayer',
+      nameNe: 'डकर्मी (ढुंगा/ईट्टा कामदार)',
+      icon: 'Hammer'),
+  SkillCategory(
+      id: 'carpenter',
+      nameEn: 'Carpenter',
+      nameNe: 'सिकर्मी (काठ कामदार)',
+      icon: 'Wrench'),
+  SkillCategory(
+      id: 'electrician',
+      nameEn: 'Electrician',
+      nameNe: 'इलेक्ट्रीशियन (बिजुली कामदार)',
+      icon: 'Zap'),
+  SkillCategory(
+      id: 'plumber',
+      nameEn: 'Plumber',
+      nameNe: 'प्लम्बर (खानेपानी कामदार)',
+      icon: 'Droplet'),
+  SkillCategory(
+      id: 'painter',
+      nameEn: 'Painter',
+      nameNe: 'पेन्टर (रंगरोगन कामदार)',
+      icon: 'Paintbrush'),
+  SkillCategory(
+      id: 'driver', nameEn: 'Driver', nameNe: 'चालक (ड्राइभर)', icon: 'Car'),
+  SkillCategory(
+      id: 'laborer',
+      nameEn: 'General Laborer',
+      nameNe: 'साधारण मजदुर (लेबर)',
+      icon: 'Users'),
+  SkillCategory(
+      id: 'domestic',
+      nameEn: 'Domestic Helper',
+      nameNe: 'घरेलु कामदार',
+      icon: 'Home'),
 ];
 
 /// Short label used inside category chips / selects (first word of name).
@@ -106,7 +135,11 @@ const List<Job> kInitialJobs = [
     employerName: 'Ajay Kumar Sah',
     employerPhone: '9851098765',
     employerWhatsApp: '9851098765',
-    requiredSkills: ['Conduit Fitting', 'DB Wiring', 'Switch Board Installation'],
+    requiredSkills: [
+      'Conduit Fitting',
+      'DB Wiring',
+      'Switch Board Installation'
+    ],
     datePosted: '2026-07-07T12:00:00Z',
     lat: 27.6833,
     lng: 85.3050,
@@ -164,7 +197,8 @@ const List<WorkerProfile> kInitialWorkers = [
     expectedWageType: 'daily',
     location: 'Lagankhel, Lalitpur',
     availability: 'Immediate',
-    bio: 'Dedicated brick mason. Have worked on over 10 housing projects in Kathmandu valley.',
+    bio:
+        'Dedicated brick mason. Have worked on over 10 housing projects in Kathmandu valley.',
   ),
   WorkerProfile(
     id: 'work-2',
@@ -281,7 +315,8 @@ Map<String, List<ChatMessage>> kInitialChatMessages() => {
       'Hari Bahadur Shrestha': [
         const ChatMessage(
             sender: 'other',
-            text: 'Hi Sir, I saw your job post for brick layers. Is it still open?',
+            text:
+                'Hi Sir, I saw your job post for brick layers. Is it still open?',
             time: 'Yesterday'),
       ],
     };

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import '../providers/profile_provider.dart';
 
 import '../services/app_store.dart';
 import '../theme/app_colors.dart';
 
 /// Mirrors the React `ROLE SELECTION` screen.
 class RoleSelectionScreen extends StatelessWidget {
-  const RoleSelectionScreen({Key? key}) : super(key: key);
+  const RoleSelectionScreen({super.key});
 
   void _selectWorker(BuildContext context) {
     final store = AppStore.instance;
@@ -27,7 +25,7 @@ class RoleSelectionScreen extends StatelessWidget {
     final lang = AppStore.instance.lang;
 
     return Scaffold(
-      backgroundColor: AppColors.slate50,
+      backgroundColor: context.appColors.slate50,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -41,7 +39,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.slate900,
+                  color: context.appColors.slate900,
                 ),
               ),
               const SizedBox(height: 8),
@@ -50,7 +48,8 @@ class RoleSelectionScreen extends StatelessWidget {
                     ? 'आफ्नो आवश्यकता अनुसार भूमिका चयन गर्नुहोस्।'
                     : 'Select the portal that fits your needs.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: AppColors.slate500),
+                style:
+                    TextStyle(fontSize: 15, color: context.appColors.slate700),
               ),
               const Expanded(child: SizedBox()),
 
@@ -60,9 +59,10 @@ class RoleSelectionScreen extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.appColors.white,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.slate200, width: 1.5),
+                    border: Border.all(
+                        color: context.appColors.slate200, width: 1.5),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.02),
@@ -76,22 +76,25 @@ class RoleSelectionScreen extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.emerald500.withValues(alpha: 0.1),
+                          color: context.appColors.emerald500
+                              .withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.person_rounded,
                           size: 50,
-                          color: AppColors.emerald600,
+                          color: context.appColors.emerald600,
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        lang == 'ne' ? 'जागिर खोज्ने (कामदार)' : 'Job Seeker (Worker)',
+                        lang == 'ne'
+                            ? 'जागिर खोज्ने (कामदार)'
+                            : 'Job Seeker (Worker)',
                         style: GoogleFonts.spaceGrotesk(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.slate900,
+                          color: context.appColors.slate900,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -100,7 +103,8 @@ class RoleSelectionScreen extends StatelessWidget {
                             ? 'डकर्मी, पेन्टर, इलेक्ट्रीशियन, लेबर आदि कामहरू पाउनुहोस्।'
                             : 'Find immediate daily wage or construction works near Lalitpur.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: AppColors.slate500),
+                        style: TextStyle(
+                            fontSize: 13, color: context.appColors.slate700),
                       ),
                     ],
                   ),
@@ -115,9 +119,10 @@ class RoleSelectionScreen extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.appColors.white,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.slate200, width: 1.5),
+                    border: Border.all(
+                        color: context.appColors.slate200, width: 1.5),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.02),
@@ -131,22 +136,25 @@ class RoleSelectionScreen extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.slate900.withValues(alpha: 0.08),
+                          color: context.appColors.slate900
+                              .withValues(alpha: 0.08),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.business_center_rounded,
                           size: 50,
-                          color: AppColors.slate900,
+                          color: context.appColors.slate900,
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        lang == 'ne' ? 'रोजगारदाता / ठेकेदार' : 'Employer / Contractor',
+                        lang == 'ne'
+                            ? 'रोजगारदाता / ठेकेदार'
+                            : 'Employer / Contractor',
                         style: GoogleFonts.spaceGrotesk(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.slate900,
+                          color: context.appColors.slate900,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -155,7 +163,8 @@ class RoleSelectionScreen extends StatelessWidget {
                             ? 'आफ्नो निर्माण वा अन्य कामका लागि कामदारहरू भर्ती गर्नुहोस्।'
                             : 'Post job requirements and connect with skilled laborers.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: AppColors.slate500),
+                        style: TextStyle(
+                            fontSize: 13, color: context.appColors.slate700),
                       ),
                     ],
                   ),

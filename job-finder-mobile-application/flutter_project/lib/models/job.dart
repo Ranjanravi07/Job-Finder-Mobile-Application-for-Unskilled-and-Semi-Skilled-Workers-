@@ -16,6 +16,7 @@ class Job {
   final double lat;
   final double lng;
   final int applicantsCount;
+  final String status; // 'open' | 'closed'
 
   const Job({
     required this.id,
@@ -34,6 +35,7 @@ class Job {
     required this.lat,
     required this.lng,
     required this.applicantsCount,
+    this.status = 'open',
   });
 
   Job copyWith({
@@ -53,6 +55,7 @@ class Job {
     double? lat,
     double? lng,
     int? applicantsCount,
+    String? status,
   }) {
     return Job(
       id: id ?? this.id,
@@ -71,6 +74,7 @@ class Job {
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       applicantsCount: applicantsCount ?? this.applicantsCount,
+      status: status ?? this.status,
     );
   }
 
@@ -91,6 +95,7 @@ class Job {
         'lat': lat,
         'lng': lng,
         'applicantsCount': applicantsCount,
+        'status': status,
       };
 
   factory Job.fromMap(Map<String, dynamic> map) => Job(
@@ -107,8 +112,9 @@ class Job {
         employerWhatsApp: map['employerWhatsApp'] as String? ?? '',
         requiredSkills: (map['requiredSkills'] as List?)?.cast<String>() ?? [],
         datePosted: map['datePosted'] as String? ?? '',
-        lat: (map['lat'] as num?)?.toDouble() ?? 0,
-        lng: (map['lng'] as num?)?.toDouble() ?? 0,
+        lat: (map['lat'] as num?)?.toDouble() ?? 27.7172,
+        lng: (map['lng'] as num?)?.toDouble() ?? 85.3240,
         applicantsCount: (map['applicantsCount'] as num?)?.toInt() ?? 0,
+        status: map['status'] as String? ?? 'open',
       );
 }

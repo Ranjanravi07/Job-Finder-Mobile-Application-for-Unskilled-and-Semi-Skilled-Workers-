@@ -21,7 +21,8 @@ class VoiceParser {
     } else {
       // Nepali: मेरो नाम X हो
       final neMatch =
-          RegExp(r'मेरो नाम\s+([\u0900-\u097F\s]{2,30}?)(?=हो|।|\.|$)').firstMatch(text);
+          RegExp(r'मेरो नाम\s+([\u0900-\u097F\s]{2,30}?)(?=हो|।|\.|$)')
+              .firstMatch(text);
       if (neMatch != null) {
         result['name'] = neMatch.group(1)!.trim();
       }
@@ -62,7 +63,8 @@ class VoiceParser {
     result['mainSkill'] = skill ?? 'laborer';
 
     // ---- Experience -----------------------------------------------------
-    final expMatch = RegExp(r'(\d+)\s*(?:years|yrs|वर्ष|बर्ष)').firstMatch(text);
+    final expMatch =
+        RegExp(r'(\d+)\s*(?:years|yrs|वर्ष|बर्ष)').firstMatch(text);
     if (expMatch != null) {
       result['experience'] = '${expMatch.group(1)} Years';
     } else {
@@ -70,15 +72,16 @@ class VoiceParser {
     }
 
     // ---- Wage -----------------------------------------------------------
-    final wageMatch =
-        RegExp(r'(?:expect|expecting|daily wage|daily pay|ज्याला|प्रतिदिन)[\s:एघार]\D*?(\d{3,5})')
-            .firstMatch(text);
+    final wageMatch = RegExp(
+            r'(?:expect|expecting|daily wage|daily pay|ज्याला|प्रतिदिन)[\s:एघार]\D*?(\d{3,5})')
+        .firstMatch(text);
     if (wageMatch != null) {
       result['expectedWage'] = int.tryParse(wageMatch.group(1)!) ?? 1000;
     } else {
       // fall back to the first standalone 3-4 digit number
       final anyWage = RegExp(r'\b(\d{3,4})\b').firstMatch(text);
-      result['expectedWage'] = anyWage != null ? (int.tryParse(anyWage.group(1)!) ?? 1000) : 1000;
+      result['expectedWage'] =
+          anyWage != null ? (int.tryParse(anyWage.group(1)!) ?? 1000) : 1000;
     }
 
     // ---- Location -------------------------------------------------------

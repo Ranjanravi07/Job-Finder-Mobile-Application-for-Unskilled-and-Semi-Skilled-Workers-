@@ -19,14 +19,14 @@ class UserProfile {
   final double? rating;
   final int? jobsCompleted;
   final String? experience; // e.g., '5 Years'
-  
+
   // Job Category and Work Preferences (for workers)
   final String? jobCategory; // laborer, electrician, plumber, driver, etc.
   final String? preferredLocation; // Preferred work location
   final String? workType; // 'full-time', 'part-time', 'daily-wage', 'contract'
   final String? expectedSalary; // Minimum expected salary
   final String? shiftPreference; // 'day', 'night', 'flexible'
-  
+
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String status; // 'pending', 'active', 'inactive'
@@ -175,12 +175,16 @@ class UserProfile {
 
   /// Get display name based on language
   String getDisplayName(String lang) {
-    return lang == 'ne' && nameNe != null && nameNe!.isNotEmpty ? nameNe! : name;
+    return lang == 'ne' && nameNe != null && nameNe!.isNotEmpty
+        ? nameNe!
+        : name;
   }
 
   /// Get display location based on language
   String getDisplayLocation(String lang) {
-    return lang == 'ne' && locationNe != null && locationNe!.isNotEmpty ? locationNe! : location;
+    return lang == 'ne' && locationNe != null && locationNe!.isNotEmpty
+        ? locationNe!
+        : location;
   }
 
   /// Get initials for avatar

@@ -13,6 +13,8 @@ class EmployerProfile {
   final List<String> govIdFiles;
   final String profilePhoto;
 
+  final Map<String, Map<String, dynamic>>? governmentIds;
+
   const EmployerProfile({
     required this.id,
     required this.name,
@@ -26,6 +28,7 @@ class EmployerProfile {
     this.govIdNum = '',
     this.govIdFiles = const [],
     this.profilePhoto = '',
+    this.governmentIds,
   });
 
   EmployerProfile copyWith({
@@ -41,6 +44,7 @@ class EmployerProfile {
     String? govIdNum,
     List<String>? govIdFiles,
     String? profilePhoto,
+    Map<String, Map<String, dynamic>>? governmentIds,
   }) {
     return EmployerProfile(
       id: id ?? this.id,
@@ -55,6 +59,7 @@ class EmployerProfile {
       govIdNum: govIdNum ?? this.govIdNum,
       govIdFiles: govIdFiles ?? this.govIdFiles,
       profilePhoto: profilePhoto ?? this.profilePhoto,
+      governmentIds: governmentIds ?? this.governmentIds,
     );
   }
 
@@ -71,6 +76,7 @@ class EmployerProfile {
         'govIdNum': govIdNum,
         'govIdFiles': govIdFiles,
         'profilePhoto': profilePhoto,
+        if (governmentIds != null) 'governmentIds': governmentIds,
       };
 
   factory EmployerProfile.fromMap(Map<String, dynamic> map) => EmployerProfile(
@@ -86,6 +92,9 @@ class EmployerProfile {
         govIdNum: map['govIdNum'] as String? ?? '',
         govIdFiles: (map['govIdFiles'] as List?)?.cast<String>() ?? [],
         profilePhoto: map['profilePhoto'] as String? ?? '',
+        governmentIds: (map['governmentIds'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), Map<String, dynamic>.from(v as Map)),
+        ),
       );
 
   static String _parseVerificationStatus(Map<String, dynamic> map) {

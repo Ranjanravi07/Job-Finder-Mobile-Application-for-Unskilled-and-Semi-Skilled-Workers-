@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { auth, db } from "../firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Login from "./components/Login";
 import {
@@ -22,7 +22,6 @@ import {
   Menu,
   X,
   MapPin,
-  Star,
   Clock,
   HardHat,
   LogOut,
@@ -31,6 +30,10 @@ import {
   Moon,
   Monitor,
   SlidersHorizontal,
+  ShieldCheck,
+  UserCheck,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   AreaChart,
@@ -50,6 +53,7 @@ import JobSeekersPanel from "./components/panels/JobSeekersPanel";
 import EmployersPanel from "./components/panels/EmployersPanel";
 import JobListingsPanel from "./components/panels/JobListingsPanel";
 import ApplicationsPanel from "./components/panels/ApplicationsPanel";
+import KYCPanel from "./components/panels/KYCPanel";
 import PlacementsPanel from "./components/panels/PlacementsPanel";
 import UserAccountsPanel from "./components/panels/UserAccountsPanel";
 import ReportsPanel from "./components/panels/ReportsPanel";
@@ -70,11 +74,10 @@ export interface ActiveFilters {
   skill: string[];       // multi-select
   industry: string[];    // multi-select (employers)
   jobType: string[];     // multi-select (job listings)
-  minRating: number;     // seekers
 }
 
 const defaultFilters: ActiveFilters = {
-  status: [], skill: [], industry: [], jobType: [], minRating: 0,
+  status: [], skill: [], industry: [], jobType: [],
 };
 
 // Options per section
@@ -82,15 +85,14 @@ const FILTER_CONFIG: Record<string, { label: string; key: keyof ActiveFilters; o
   seekers: [
     { label: "Status",      key: "status",    options: ["pending", "active", "inactive"] },
     { label: "Skill",       key: "skill",     options: ["Construction", "Domestic Help", "Factory Work", "Security Guard", "Delivery Rider"] },
-    { label: "Min Rating",  key: "minRating", options: ["4.0", "4.5", "4.8"] },
   ],
   employers: [
     { label: "Status",   key: "status",   options: ["pending", "active", "inactive"] },
     { label: "Industry", key: "industry", options: ["Construction", "Domestic", "Factory", "Security", "Logistics"] },
   ],
-  applications: [
-    { label: "Status", key: "status", options: ["hired", "pending", "rejected"] },
-    { label: "Skill",  key: "skill",  options: ["Construction", "Domestic Help", "Factory Work", "Security Guard", "Delivery Rider"] },
+  kyc: [
+    { label: "Status", key: "status", options: ["pending", "verified", "rejected", "blocked"] },
+    { label: "Role",  key: "skill",  options: ["Worker", "Employer"] },
   ],
   jobs: [
     { label: "Status", key: "status",  options: ["open", "closed", "paused"] },
@@ -99,7 +101,7 @@ const FILTER_CONFIG: Record<string, { label: string; key: keyof ActiveFilters; o
 };
 
 // Panels that support filtering
-const FILTERABLE = new Set(["seekers", "employers", "applications", "jobs"]);
+const FILTERABLE = new Set(["seekers", "employers", "kyc", "jobs"]);
 
 import {
   registrationData,
@@ -124,6 +126,8 @@ const statusStyle: Record<string, string> = {
   hired: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
   pending: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
   rejected: "bg-rose-500/10 text-rose-400 border border-rose-500/20",
+  verified: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+  blocked: "bg-slate-500/10 text-slate-400 border border-slate-500/20",
 };
 
 const activityDot: Record<string, string> = {
@@ -132,6 +136,7 @@ const activityDot: Record<string, string> = {
   worker: "bg-sky-400",
   flag: "bg-rose-400",
   system: "bg-slate-400",
+  kyc: "bg-amber-400",
 };
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -161,7 +166,7 @@ export default function App() {
   const [currentUid, setCurrentUid] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(defaultFilters);
   const [authLoading, setAuthLoading] = useState(true);
-  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' }>>([
+  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' | 'kyc' }>>([
     { id: "init-1", message: "Welcome to Job Finder Admin", time: new Date(), type: "worker" },
     { id: "init-2", message: "New employer SunBuild Corp. registered", time: new Date(Date.now() - 300000), type: "employer" },
     { id: "init-3", message: "12 new worker profiles approved", time: new Date(Date.now() - 3600000), type: "worker" },
@@ -248,11 +253,165 @@ export default function App() {
   }, [auth, db]);
 
   // ─── Lifted data state ───────────────────────────────────────────────────────
-  const [seekerList,   setSeekerList]   = useState<Seeker[]>(seekerData);
-  const [employerList, setEmployerList] = useState<Employer[]>(employerData);
-  const [jobList,      setJobList]      = useState<Job[]>(jobData);
-  const [appData,      setAppData]      = useState<Application[]>(appDataInitial);
+  const [seekerList,   setSeekerList]   = useState<Seeker[]>([]);
+  const [employerList, setEmployerList] = useState<Employer[]>([]);
+  const [jobList,      setJobList]      = useState<Job[]>([]);
+  const [appData,      setAppData]      = useState<Application[]>([]);
   const [placements,   setPlacements]   = useState<Placement[]>(placementsInitial);
+
+  // ─── Live Firestore data subscription for Employers, Workers, Jobs & Applications ─────────────────
+  useEffect(() => {
+    if (!db) {
+      setEmployerList(employerData);
+      setSeekerList(seekerData);
+      setJobList(jobData);
+      setAppData(appDataInitial);
+      return;
+    }
+
+    // Stream Employers
+    const employersQuery = query(collection(db, "employers"));
+    const unsubEmployers = onSnapshot(
+      employersQuery,
+      (snapshot) => {
+        const liveEmployers: Employer[] = snapshot.docs.map((d) => {
+          const data = d.data();
+          const isVerified = data.verificationStatus === "verified";
+          const isInactive =
+            data.verificationStatus === "rejected" ||
+            data.verificationStatus === "blocked" ||
+            data.verificationStatus === "inactive";
+          return {
+            id: d.id,
+            name: data.companyName || data.name || "Unknown Employer",
+            contactPerson: data.name || "N/A",
+            industry: data.role || data.type || "Construction",
+            location: data.location || "N/A",
+            phone: data.phone || "N/A",
+            workers: data.workersCount || 0,
+            status: isVerified ? "active" : isInactive ? "inactive" : "pending",
+            govIdNumber: data.govIdNum || "",
+            govIdImage:
+              data.govIdFiles && data.govIdFiles.length > 0
+                ? data.govIdFiles[0]
+                : "",
+            verificationStatus: data.verificationStatus || "pending",
+            governmentIds: data.governmentIds || null,
+          };
+        });
+        setEmployerList(liveEmployers);
+      },
+      (err) => {
+        console.error("Failed to stream Firestore employers:", err);
+      }
+    );
+
+    // Stream Workers
+    const workersQuery = query(collection(db, "workers"));
+    const unsubWorkers = onSnapshot(
+      workersQuery,
+      (snapshot) => {
+        const liveWorkers: Seeker[] = snapshot.docs.map((d) => {
+          const data = d.data();
+          const isVerified = data.verificationStatus === "verified";
+          const isInactive =
+            data.verificationStatus === "rejected" ||
+            data.verificationStatus === "blocked" ||
+            data.verificationStatus === "inactive";
+          return {
+            id: d.id,
+            name: data.name || "Unknown Worker",
+            phone: data.phone || "N/A",
+            skill: data.mainSkill || data.skill || "Laborer",
+            location: data.location || "N/A",
+            rating: data.rating || 5.0,
+            status: isVerified ? "active" : isInactive ? "inactive" : "pending",
+            verificationStatus: data.verificationStatus || "pending",
+            govIdNumber: data.govIdNum || "",
+            govIdImage:
+              data.govIdFiles && data.govIdFiles.length > 0
+                ? data.govIdFiles[0]
+                : "",
+            profilePhoto: data.profilePhoto || "",
+            govIdType: data.govIdType || "citizenship",
+            govIdFiles: data.govIdFiles || [],
+            requestedUpdate: data.requestedUpdate || false,
+            rejectionReason: data.rejectionReason,
+            governmentIds: data.governmentIds || null,
+          };
+        });
+        setSeekerList(liveWorkers);
+      },
+      (err) => {
+        console.error("Failed to stream Firestore workers:", err);
+      }
+    );
+
+    // Stream Jobs
+    const jobsQuery = query(collection(db, "jobs"));
+    const unsubJobs = onSnapshot(
+      jobsQuery,
+      (snapshot) => {
+        const liveJobs: Job[] = snapshot.docs.map((d) => {
+          const data = d.data();
+          const wageVal = data.wage || 0;
+          const wType = (data.wageType || "daily").toLowerCase() === "monthly" ? "Monthly" : "Daily";
+          return {
+            id: d.id,
+            title: data.title || "Untitled Job",
+            employer: data.employerName || "Employer",
+            employerId: data.employerId || "",
+            location: data.location || "N/A",
+            salary: `Rs. ${wageVal} / ${wType.toLowerCase()}`,
+            wage: wageVal,
+            wageType: wType,
+            category: data.category || "General",
+            description: data.description || "",
+            requiredSkills: data.requiredSkills || [],
+            type: wType as "Daily" | "Monthly",
+            posted: data.datePosted ? new Date(data.datePosted).toLocaleDateString() : "Just now",
+            applicants: data.applicantCount || data.applicantsCount || 0,
+            status: (data.status || "open") as "open" | "closed" | "paused",
+          };
+        });
+        setJobList(liveJobs);
+      },
+      (err) => {
+        console.error("Failed to stream Firestore jobs:", err);
+      }
+    );
+
+    // Stream Applications
+    const appsQuery = query(collection(db, "applications"));
+    const unsubApps = onSnapshot(
+      appsQuery,
+      (snapshot) => {
+        const liveApps: Application[] = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            worker: data.workerName || "Worker",
+            skill: data.workerSkill || "Laborer",
+            employer: data.employerName || "Employer",
+            location: data.location || "Lalitpur",
+            status: (data.status || "pending") as "hired" | "pending" | "rejected",
+            date: data.appliedAt ? new Date(data.appliedAt).toLocaleDateString() : "Today",
+          };
+        });
+        setAppData(liveApps);
+      },
+      (err) => {
+        console.error("Failed to stream Firestore applications:", err);
+      }
+    );
+
+    return () => {
+      unsubEmployers();
+      unsubWorkers();
+      unsubJobs();
+      unsubApps();
+    };
+  }, [db]);
 
   // Derive placements from hired applications
   useEffect(() => {
@@ -264,6 +423,8 @@ export default function App() {
   const totalEmployers  = employerList.length;
   const openJobs        = jobList.filter((j) => j.status === "open").length;
   const totalPlacements = placements.length;
+  const pendingKYC      = seekerList.filter(s => s.verificationStatus === "pending").length + 
+                         employerList.filter(e => e.verificationStatus === "pending").length;
 
   // ─── Live activity log derived from notifications ──────────────────────────
   const [activityLog, setActivityLog] = useState<Array<{ text: string; time: string; type: string }>>([]);
@@ -282,7 +443,7 @@ export default function App() {
 
   // ─── Notification logic based on activity ─────────────────────────────────────
   useEffect(() => {
-    const newNotifications: Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' }> = [];
+    const newNotifications: Array<{ id: string; message: string; time: Date; type: 'worker' | 'employer' | 'job' | 'placement' | 'kyc' }> = [];
 
     // Check for new workers (last 5)
     const recentWorkers = seekerList.slice(-5);
@@ -344,6 +505,35 @@ export default function App() {
       }
     });
 
+    // Check for pending KYC requests
+    const pendingWorkerKYC = seekerList.filter(s => s.verificationStatus === "pending" && !s.requestedUpdate).slice(-3);
+    pendingWorkerKYC.forEach((worker) => {
+      const id = `kyc-worker-${worker.id}`;
+      if (worker.id && !seenIds.current.has(id)) {
+        seenIds.current.add(id);
+        newNotifications.push({
+          id,
+          message: `New KYC submission from worker: ${worker.name}`,
+          time: new Date(),
+          type: 'kyc'
+        });
+      }
+    });
+
+    const pendingEmployerKYC = employerList.filter(e => e.verificationStatus === "pending" && !e.requestedUpdate).slice(-2);
+    pendingEmployerKYC.forEach((employer) => {
+      const id = `kyc-employer-${employer.id}`;
+      if (employer.id && !seenIds.current.has(id)) {
+        seenIds.current.add(id);
+        newNotifications.push({
+          id,
+          message: `New KYC submission from employer: ${employer.name}`,
+          time: new Date(),
+          type: 'kyc'
+        });
+      }
+    });
+
     if (newNotifications.length > 0) {
       setNotifications(prev => [...newNotifications.reverse(), ...prev].slice(0, 20));
     }
@@ -354,7 +544,7 @@ export default function App() {
     { icon: HardHat,         label: "Job Seekers",  id: "seekers",      badge: totalWorkers.toString() },
     { icon: Building2,       label: "Employers",    id: "employers",    badge: totalEmployers.toString() },
     { icon: Briefcase,       label: "Job Listings", id: "jobs",         badge: openJobs.toString() },
-    { icon: FileText,        label: "Applications", id: "applications" },
+    { icon: ShieldCheck,     label: "KYC Updates",  id: "kyc",          badge: pendingKYC > 0 ? pendingKYC.toString() : undefined },
     { icon: CheckCircle,     label: "Placements",   id: "placements" },
     { icon: Users,           label: "User Accounts",id: "accounts" },
     { icon: Activity,        label: "Reports",      id: "reports" },
@@ -369,7 +559,7 @@ export default function App() {
   ];
 
   const recentWorkers = seekerList.slice(0, 4).map((s, i) => ({
-    name: s.name, skill: s.skill, location: s.location, rating: s.rating,
+    name: s.name, skill: s.skill, location: s.location,
     joined: "Dec " + (28 - i),
   }));
 
@@ -389,12 +579,8 @@ export default function App() {
     });
   };
 
-  const setRatingFilter = (value: number) => {
-    setActiveFilters((prev) => ({ ...prev, minRating: prev.minRating === value ? 0 : value }));
-  };
-
   const activeFilterCount = activeFilters.status.length + activeFilters.skill.length +
-    activeFilters.industry.length + activeFilters.jobType.length + (activeFilters.minRating > 0 ? 1 : 0);
+    activeFilters.industry.length + activeFilters.jobType.length;
 
   const handleProfileSave = async (username: string, email: string) => {
     setAdminProfile({ username, email });
@@ -554,7 +740,7 @@ export default function App() {
             <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <input
               className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-full"
-              placeholder="Search workers, employers, applications..."
+              placeholder="Search workers, employers, KYC requests..."
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               autoComplete="off"
@@ -605,18 +791,6 @@ export default function App() {
                         {group.label}
                       </DropdownMenuLabel>
                       {group.options.map((opt) => {
-                        if (group.key === "minRating") {
-                          const val = parseFloat(opt);
-                          return (
-                            <DropdownMenuCheckboxItem
-                              key={opt}
-                              checked={activeFilters.minRating === val}
-                              onCheckedChange={() => setRatingFilter(val)}
-                            >
-                              ≥ {opt} ★
-                            </DropdownMenuCheckboxItem>
-                          );
-                        }
                         const arr = activeFilters[group.key] as string[];
                         return (
                           <DropdownMenuCheckboxItem
@@ -693,6 +867,7 @@ export default function App() {
                             n.type === "worker" ? "bg-sky-400" :
                             n.type === "employer" ? "bg-violet-400" :
                             n.type === "placement" ? "bg-emerald-400" :
+                            n.type === "kyc" ? "bg-amber-400" :
                             "bg-amber-400";
                           return (
                             <div key={n.id} className="flex gap-3 px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border last:border-0">
@@ -907,11 +1082,11 @@ export default function App() {
             <div className="lg:col-span-2 bg-card border border-border rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <div>
-                  <h2 className="text-sm font-semibold text-foreground">Recent Applications</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Latest job application activity</p>
+                  <h2 className="text-sm font-semibold text-foreground">Recent KYC Requests</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Latest identity verification activity</p>
                 </div>
                 <button
-                  onClick={() => handleNavChange("applications")}
+                  onClick={() => handleNavChange("kyc")}
                   className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
                   View all →
                 </button>
@@ -920,7 +1095,7 @@ export default function App() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      {["ID", "Worker", "Skill", "Employer", "Location", "Status", "Date"].map((h) => (
+                      {["User", "Role", "ID Type", "ID Number", "Location", "Status", "Date"].map((h) => (
                         <th
                           key={h}
                           className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
@@ -932,32 +1107,30 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentApplications.map((app, i) => (
+                    {seekerList.slice(0, 5).map((user, i) => (
                       <tr
-                        key={app.id}
+                        key={user.id}
                         className={`hover:bg-muted/40 transition-colors ${
-                          i < recentApplications.length - 1 ? "border-b border-border" : ""
+                          i < Math.min(5, seekerList.length) - 1 ? "border-b border-border" : ""
                         }`}
                       >
-                        <td className="px-4 py-3 text-xs text-muted-foreground" style={{ fontFamily: "'DM Mono', monospace" }}>
-                          {app.id}
-                        </td>
-                        <td className="px-4 py-3 text-xs font-medium text-foreground whitespace-nowrap">{app.worker}</td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{app.skill}</td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{app.employer}</td>
+                        <td className="px-4 py-3 text-xs font-medium text-foreground whitespace-nowrap">{user.name}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap capitalize">Worker</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">Citizenship</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap font-mono">{user.govIdNumber}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                           <span className="flex items-center gap-1">
                             <MapPin className="w-2.5 h-2.5" />
-                            {app.location}
+                            {user.location}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${statusStyle[app.status]}`}>
-                            {app.status}
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${statusStyle[user.status]}`}>
+                            {user.status}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap" style={{ fontFamily: "'DM Mono', monospace" }}>
-                          {app.date}
+                          {(new Date().toISOString().split('T')[0])}
                         </td>
                       </tr>
                     ))}
@@ -986,11 +1159,7 @@ export default function App() {
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <div className="flex items-center gap-0.5 justify-end">
-                          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                          <span className="text-xs font-mono text-foreground">{w.rating}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "'DM Mono', monospace" }}>
+                        <p className="text-xs text-muted-foreground" style={{ fontFamily: "'DM Mono', monospace" }}>
                           {w.joined}
                         </p>
                       </div>
@@ -1036,7 +1205,7 @@ export default function App() {
           {activeNav === "seekers" && <JobSeekersPanel search={globalSearch} filters={activeFilters} seekers={seekerList} setSeekers={setSeekerList} />}
           {activeNav === "employers" && <EmployersPanel search={globalSearch} filters={activeFilters} employers={employerList} setEmployers={setEmployerList} />}
           {activeNav === "jobs" && <JobListingsPanel search={globalSearch} filters={activeFilters} jobs={jobList} setJobs={setJobList} />}
-          {activeNav === "applications" && <ApplicationsPanel search={globalSearch} filters={activeFilters} appData={appData} setAppData={setAppData} />}
+          {activeNav === "kyc" && <KYCPanel search={globalSearch} filters={activeFilters} />}
           {activeNav === "placements" && <PlacementsPanel search={globalSearch} placements={placements} />}
           {activeNav === "accounts" && <UserAccountsPanel search={globalSearch} adminProfile={adminProfile} onProfileChange={handleProfileSave} />}
           {activeNav === "reports" && <ReportsPanel search={globalSearch} totalWorkers={totalWorkers} totalEmployers={totalEmployers} totalPlacements={totalPlacements} openJobs={openJobs} seekerList={seekerList} employerList={employerList} jobList={jobList} appData={appData} />}

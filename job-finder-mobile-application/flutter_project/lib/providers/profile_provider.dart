@@ -24,13 +24,13 @@ class ProfileProvider with ChangeNotifier {
 
     try {
       final doc = await _firestore.collection('profiles').doc(userId).get();
-      
+
       if (doc.exists) {
         _profile = UserProfile.fromFirestore(doc);
       } else {
         _profile = null;
       }
-      
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
