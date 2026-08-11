@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import type { ActiveFilters } from "../App";
+import { StorageDocumentLink } from "../../components/ui/StorageDocumentLink";
 
 export interface KYCRequest {
   id: string;
@@ -488,18 +489,43 @@ export default function KYCPanel({ search, filters }: {
                 </div>
               </div>
 
-              {/* Government ID Documents */}
+              {/* Government ID Documents Breakdown */}
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">Government ID Documents</p>
-                {selectedKYC.govIdFiles.length > 0 ? (
+                {selectedKYC.governmentIds && Object.keys(selectedKYC.governmentIds).length > 0 ? (
+                  <div className="space-y-4">
+                    {Object.entries(selectedKYC.governmentIds).map(([typeKey, idObj]) => (
+                      <div key={typeKey} className="border border-border rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold text-sm capitalize">{typeKey}</span>
+                          <span className="font-mono text-xs text-muted-foreground">{idObj.idNumber}</span>
+                        </div>
+                        {idObj.documentFiles && idObj.documentFiles.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-3">
+                            {idObj.documentFiles.map((fileUrl, index) => (
+                              <StorageDocumentLink
+                                key={index}
+                                path={fileUrl}
+                                label={`Document ${index + 1}`}
+                                isImagePreview={true}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No documents uploaded</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : selectedKYC.govIdFiles.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
                     {selectedKYC.govIdFiles.map((file, index) => (
-                      <div key={index} className="border border-border rounded-lg p-3">
-                        <div className="aspect-video bg-muted rounded flex items-center justify-center">
-                          <FileText className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2 truncate">{file}</p>
-                      </div>
+                      <StorageDocumentLink
+                        key={index}
+                        path={file}
+                        label={`Document ${index + 1}`}
+                        isImagePreview={true}
+                      />
                     ))}
                   </div>
                 ) : (

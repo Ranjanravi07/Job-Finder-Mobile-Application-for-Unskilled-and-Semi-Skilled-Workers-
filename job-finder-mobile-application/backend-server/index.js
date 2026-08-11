@@ -89,12 +89,12 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: true,
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
     methods: ['GET', 'POST'],
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -602,6 +602,7 @@ app.post(
 
 app.post(
   '/api/register',
+  verifyOtpRateLimiter,
   async (req, res) => {
 
     try {
@@ -772,6 +773,13 @@ app.post(
       // Prepare profile
       // --------------------------------------------------------
 
+      // Sanitize profileData
+      const sanitizedProfileData = { ...profileData };
+      delete sanitizedProfileData.role;
+      delete sanitizedProfileData.adminRole;
+      delete sanitizedProfileData.verificationStatus;
+      delete sanitizedProfileData.isVerified;
+      
       const profile = {
         uid,
         phoneNumber: phone,
@@ -780,7 +788,7 @@ app.post(
         verifiedPhone: true,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-        ...profileData,
+        ...sanitizedProfileData,
       };
 
 

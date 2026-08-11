@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if user is Admin
+    // Admins log in via Firebase Console email/password (provider: password)
+    // Mobile users log in via custom token from Node.js backend (provider: custom)
+    function isAdmin() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is the owner
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ------------------------------------------------------------------------
+    // WORKERS COLLECTION
+    // ------------------------------------------------------------------------
+    match /workers/{workerId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isOwner(workerId) 
+                    && request.resource.data.role == 'worker'
+                    && request.resource.data.verificationStatus != 'verified'
+                    && request.resource.data.role != 'admin';
+
+      allow update: if isAdmin() || 
+                    (isOwner(workerId) 
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'phone', 'location', 'skill', 'experience', 'bio', 'profilePic', 'govIdType', 'govIdNum', 'govIdFiles', 'updatedAt', 'fcmToken', 'governmentIds', 'verificationStatus'])
+                     // For verificationStatus, they can only set it to 'pending' if it was changed
+                     && (!('verificationStatus' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.verificationStatus == 'pending')
+                     && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'adminRole'])));
+      
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------------
+    // EMPLOYERS COLLECTION
+    // ------------------------------------------------------------------------
+    match /employers/{employerId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isOwner(employerId) 
+                    && request.resource.data.role == 'employer'
+                    && request.resource.data.verificationStatus != 'verified'
+                    && request.resource.data.role != 'admin';
+
+      allow update: if isAdmin() || 
+                    (isOwner(employerId) 
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'phone', 'location', 'companyName', 'bio', 'profilePic', 'govIdType', 'govIdNum', 'govIdFiles', 'updatedAt', 'fcmToken', 'governmentIds', 'verificationStatus'])
+                     && (!('verificationStatus' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.verificationStatus == 'pending')
+                     && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'adminRole'])));
+      
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------------
+    // PROFILES COLLECTION (Legacy/Fallback)
+    // ------------------------------------------------------------------------
+    match /profiles/{workerId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || (isOwner(workerId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus', 'role', 'adminRole'])));
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------------
+    // JOBS COLLECTION
+    // ------------------------------------------------------------------------
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && request.resource.data.employerId == request.auth.uid;
+      
+      allow update: if isAdmin() || (isAuthenticated() && resource.data.employerId == request.auth.uid && request.resource.data.employerId == resource.data.employerId);
+      
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.employerId == request.auth.uid);
+    }
+
+    // ------------------------------------------------------------------------
+    // APPLICATIONS COLLECTION
+    // ------------------------------------------------------------------------
+    match /applications/{applicationId} {
+      allow read: if isAdmin() || (isAuthenticated() && (resource.data.workerId == request.auth.uid || resource.data.employerId == request.auth.uid));
+      
+      allow create: if isAuthenticated() 
+                    && request.resource.data.workerId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      
+      allow update: if isAdmin() || 
+                    (isAuthenticated() 
+                     && resource.data.employerId == request.auth.uid
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+                     && request.resource.data.workerId == resource.data.workerId
+                     && request.resource.data.jobId == resource.data.jobId
+                     && request.resource.data.employerId == resource.data.employerId);
+                     
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------------
+    // CONVERSATIONS & MESSAGES
+    // ------------------------------------------------------------------------
+    match /conversations/{conversationId} {
+      allow read, update: if isAdmin() || (isAuthenticated() && (resource.data.workerId == request.auth.uid || resource.data.employerId == request.auth.uid));
+      
+      allow create: if isAdmin() || (isAuthenticated() && (request.resource.data.workerId == request.auth.uid || request.resource.data.employerId == request.auth.uid));
+      
+      match /messages/{messageId} {
+        allow read: if isAdmin() || (isAuthenticated() && (get(/databases/$(database)/documents/conversations/$(conversationId)).data.workerId == request.auth.uid || get(/databases/$(database)/documents/conversations/$(conversationId)).data.employerId == request.auth.uid));
+        
+        allow create: if isAdmin() || (isAuthenticated() && request.resource.data.senderId == request.auth.uid && (get(/databases/$(database)/documents/conversations/$(conversationId)).data.workerId == request.auth.uid || get(/databases/$(database)/documents/conversations/$(conversationId)).data.employerId == request.auth.uid));
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // NOTIFICATIONS
+    // ------------------------------------------------------------------------
+    match /notifications/{notificationId} {
+      allow read, update: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+    
+    // ------------------------------------------------------------------------
+    // USERS COLLECTION
+    // ------------------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------------
+    // FALLBACK
+    // ------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,11 +15,13 @@ const firebaseConfig = {
 let app: any;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  storage = getStorage(app);
 
   // Set auth persistence to LOCAL to ensure auth state survives page refreshes
   setPersistence(auth, browserLocalPersistence).catch((err) => {
@@ -28,5 +31,5 @@ try {
   console.error("Firebase initialization error:", err);
 }
 
-export { auth, db };
-export const isFirebaseConfigured = !!auth && !!db;
+export { auth, db, storage };
+export const isFirebaseConfigured = !!auth && !!db && !!storage;

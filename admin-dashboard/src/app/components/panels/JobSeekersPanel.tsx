@@ -15,6 +15,8 @@ import {
 } from "../../components/ui/dropdown-menu";
 import type { ActiveFilters } from "../App";
 import { type Seeker, type SeekerStatus as Status } from "../../data";
+import { StorageImage } from "../../components/ui/StorageImage";
+import { StorageDocumentLink } from "../../components/ui/StorageDocumentLink";
 
 const statusStyle: Record<Status, string> = {
   active:   "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
@@ -27,8 +29,8 @@ function Avatar({ name, photo, size = "md" }: { name: string; photo?: string; si
   if (photo && photo.trim().length > 0) {
     const sizeClass = size === "lg" ? "w-16 h-16" : size === "md" ? "w-10 h-10" : "w-6 h-6";
     return (
-      <div className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 border border-border`}>
-        <img src={photo} alt={name} className="w-full h-full object-cover" />
+      <div className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 border border-border bg-muted`}>
+        <StorageImage path={photo} alt={name} className="w-full h-full object-cover" />
       </div>
     );
   }
@@ -145,9 +147,12 @@ function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void
                     {idObj.documentFiles && idObj.documentFiles.length > 0 && (
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {idObj.documentFiles.map((docUrl, idx) => (
-                          <a key={idx} href={docUrl} target="_blank" rel="noreferrer" className="block">
-                            <img src={docUrl} alt={`${typeKey} doc ${idx + 1}`} className="w-full h-16 object-cover rounded border border-border hover:opacity-80 transition-opacity" />
-                          </a>
+                          <StorageDocumentLink 
+                            key={idx} 
+                            path={docUrl} 
+                            label={`${typeKey} doc ${idx + 1}`}
+                            isImagePreview={true}
+                          />
                         ))}
                       </div>
                     )}
@@ -164,13 +169,16 @@ function ProfileModal({ seeker, onClose }: { seeker: Seeker; onClose: () => void
                 <CreditCard className="w-3 h-3" /> Government ID Image
               </p>
               {seeker.govIdImage ? (
-                <a href={seeker.govIdImage} target="_blank" rel="noreferrer">
-                  <img
-                    src={seeker.govIdImage}
+                <div className="w-full h-32 rounded-lg border border-border overflow-hidden bg-muted/40 relative">
+                  <StorageImage
+                    path={seeker.govIdImage}
                     alt="Government ID"
-                    className="w-full rounded-lg border border-border object-cover max-h-40"
+                    className="w-full h-full object-cover"
                   />
-                </a>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 transition-opacity">
+                    <StorageDocumentLink path={seeker.govIdImage} label="View Full Image" className="text-white hover:text-primary-foreground" />
+                  </div>
+                </div>
               ) : (
                 <div className="w-full h-28 rounded-lg border border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2">
                   <CreditCard className="w-6 h-6 text-muted-foreground/50" />
