@@ -18,14 +18,14 @@ class ApiOtpService implements OtpService {
   Future<void> sendOtp(String phoneNumber) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/sendOtp'),
+        Uri.parse('$baseUrl/auth/send-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'phoneNumber': phoneNumber,
           'channel': 'sms',
           'purpose': 'login',
         }),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 
@@ -47,14 +47,14 @@ class ApiOtpService implements OtpService {
   Future<bool> verifyOtp(String phoneNumber, String otp) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/verifyOtp'),
+        Uri.parse('$baseUrl/auth/verify-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'phoneNumber': phoneNumber,
           'otp': otp,
           'purpose': 'login',
         }),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 

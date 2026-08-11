@@ -416,15 +416,43 @@ class AppStore extends ChangeNotifier {
     }
     
     try {
-      await otpService.verifyOtp(phone, otpCode.trim());
-      
-      // Set mock user id based on phone.
-      final mockId = 'worker-$phone';
-      setUserId(mockId);
+      await otpService.verifyOtp(phone, otpCode.trim()).timeout(const Duration(seconds: 15), onTimeout: () {
+        throw Exception('OTP Verification timed out. Please check your connection.');
+      });
 
-      final existingWorker = workers.any((w) => w.phone == phone);
-      final existingEmployer = employers.any((e) => e.phone == phone);
-      onVerified(existingWorker, existingEmployer);
+      // Normalize phone for unique identification (e.g. +97798...)
+      final normalizedPhone = phone.startsWith('+977') ? phone : '+977$phone';
+      
+      WorkerProfile? workerDoc;
+      EmployerProfile? employerDoc;
+
+      try {
+        // Find existing profiles by normalized phone number
+        workerDoc = await FirebaseService.instance.getWorkerProfileByPhone(normalizedPhone)
+            .timeout(const Duration(seconds: 10));
+        employerDoc = await FirebaseService.instance.getEmployerProfileByPhone(normalizedPhone)
+            .timeout(const Duration(seconds: 10));
+      } catch (dbErr) {
+        print('Firestore fetch error: $dbErr');
+        throw Exception('Database request timed out or failed. Please check your internet connection.');
+      }
+
+      // If they exist, use their exact document ID to preserve their session.
+      // If not, generate a deterministic UID based on their phone number.
+      final String determinedUid = workerDoc?.id ?? employerDoc?.id ?? 'uid_${normalizedPhone.replaceAll('+', '')}';
+      
+      setUserId(determinedUid);
+
+      if (workerDoc != null) {
+        workers = [workerDoc];
+        _persistWorkers();
+      }
+      if (employerDoc != null) {
+        employers = [employerDoc];
+        _persistEmployers();
+      }
+
+      onVerified(workerDoc != null, employerDoc != null);
     } catch (e) {
       onError(e.toString());
     }
@@ -508,10 +536,11 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateWorkerProfile(Map<String, dynamic> updated, String profileId) {
+  Future<void> updateWorkerProfile(Map<String, dynamic> updated, String profileId) async {
+    WorkerProfile? updatedProfile;
     workers = workers.map((w) {
       if (w.id == profileId) {
-        return w.copyWith(
+        updatedProfile = w.copyWith(
           name: updated['name'] as String? ?? w.name,
           phone: updated['phone'] as String? ?? w.phone,
           location: updated['location'] as String? ?? w.location,
@@ -523,10 +552,14 @@ class AppStore extends ChangeNotifier {
           verificationStatus: 'pending',
           governmentIds: updated['governmentIds'] as Map<String, Map<String, dynamic>>? ?? w.governmentIds,
         );
+        return updatedProfile!;
       }
       return w;
     }).toList().cast<WorkerProfile>();
     _persistWorkers();
+    if (updatedProfile != null) {
+      await FirebaseService.instance.saveWorkerProfile(updatedProfile!);
+    }
     notifyListeners();
   }
 
@@ -608,10 +641,11 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateEmployerProfile(Map<String, dynamic> updated, String profileId) {
+  Future<void> updateEmployerProfile(Map<String, dynamic> updated, String profileId) async {
+    EmployerProfile? updatedProfile;
     employers = employers.map((e) {
       if (e.id == profileId) {
-        return e.copyWith(
+        updatedProfile = e.copyWith(
           name: updated['name'] as String? ?? e.name,
           phone: updated['phone'] as String? ?? e.phone,
           role: updated['role'] as String? ?? e.role,
@@ -623,22 +657,27 @@ class AppStore extends ChangeNotifier {
           verificationStatus: 'pending',
           governmentIds: updated['governmentIds'] as Map<String, Map<String, dynamic>>? ?? e.governmentIds,
         );
+        return updatedProfile!;
       }
       return e;
     }).toList().cast<EmployerProfile>();
     _persistEmployers();
+    if (updatedProfile != null) {
+      await FirebaseService.instance.saveEmployerProfile(updatedProfile!);
+    }
     notifyListeners();
   }
 
-  Future<void> applyForJob(String jobId) async {
+  Future<void> applyForJob(Job job) async {
     final active = activeWorker;
     final newApp = JobApplication(
       id: 'app-${DateTime.now().millisecondsSinceEpoch}',
-      jobId: jobId,
+      jobId: job.id,
       workerId: active?.id ?? 'work-1',
       workerName: active?.name ?? 'Hari Bahadur Shrestha',
       workerPhone: active?.phone ?? '9845551122',
       workerSkill: active?.mainSkill ?? 'mason',
+      employerId: job.employerId,
       status: 'pending',
       appliedAt: DateTime.now().toIso8601String(),
     );
@@ -715,6 +754,7 @@ class AppStore extends ChangeNotifier {
       return app;
     }).toList();
     _persistApplications();
+    await FirebaseService.instance.updateApplicationStatus(appId, status);
     notifyListeners();
 
     if (status == 'accepted' && updatedApp != null && activeEmployer != null) {

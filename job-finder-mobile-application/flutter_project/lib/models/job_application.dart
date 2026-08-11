@@ -6,6 +6,7 @@ class JobApplication {
   final String workerName;
   final String workerPhone;
   final String workerSkill;
+  final String employerId; // Added for Employer global queries
   final String status; // 'pending' | 'accepted' | 'rejected'
   final String appliedAt;
 
@@ -16,6 +17,7 @@ class JobApplication {
     required this.workerName,
     required this.workerPhone,
     required this.workerSkill,
+    this.employerId = '',
     this.status = 'pending',
     required this.appliedAt,
   });
@@ -27,6 +29,7 @@ class JobApplication {
     String? workerName,
     String? workerPhone,
     String? workerSkill,
+    String? employerId,
     String? status,
     String? appliedAt,
   }) {
@@ -37,6 +40,7 @@ class JobApplication {
       workerName: workerName ?? this.workerName,
       workerPhone: workerPhone ?? this.workerPhone,
       workerSkill: workerSkill ?? this.workerSkill,
+      employerId: employerId ?? this.employerId,
       status: status ?? this.status,
       appliedAt: appliedAt ?? this.appliedAt,
     );
@@ -49,6 +53,7 @@ class JobApplication {
         'workerName': workerName,
         'workerPhone': workerPhone,
         'workerSkill': workerSkill,
+        'employerId': employerId,
         'status': status,
         'appliedAt': appliedAt,
       };
@@ -60,6 +65,7 @@ class JobApplication {
         workerName: map['workerName'] as String? ?? '',
         workerPhone: map['workerPhone'] as String? ?? '',
         workerSkill: map['workerSkill'] as String? ?? '',
+        employerId: map['employerId'] as String? ?? '',
         status: map['status'] as String? ?? 'pending',
         appliedAt: map['appliedAt'] as String? ?? '',
       );

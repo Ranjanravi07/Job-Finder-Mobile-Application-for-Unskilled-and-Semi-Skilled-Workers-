@@ -169,7 +169,7 @@ app.get('/health', (req, res) => {
 // ============================================================
 
 app.post(
-  '/api/sendOtp',
+  '/api/auth/send-otp',
   sendOtpRateLimiter,
   async (req, res) => {
 
@@ -298,7 +298,7 @@ app.post(
 // ============================================================
 
 app.post(
-  '/api/verifyOtp',
+  '/api/auth/verify-otp',
   verifyOtpRateLimiter,
   async (req, res) => {
 

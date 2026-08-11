@@ -127,52 +127,7 @@ export default function KYCPanel({ search, filters }: {
       
       return () => unsubscribeWorkers();
     } else {
-      // Use dummy data for demo if Firebase is not available
-      const dummyData: KYCRequest[] = [
-        {
-          id: "W-1042",
-          userId: "W-1042",
-          userName: "Ramon dela Cruz",
-          userRole: "worker",
-          phone: "+63 912 345 6789",
-          location: "Manila",
-          govIdType: "citizenship",
-          govIdNumber: "PSN-2024-00142",
-          govIdFiles: [],
-          verificationStatus: "pending",
-          submissionDate: new Date().toISOString(),
-          requestedUpdate: false,
-        },
-        {
-          id: "W-1041",
-          userId: "W-1041",
-          userName: "Maria Santos",
-          userRole: "worker",
-          phone: "+63 917 234 5678",
-          location: "Quezon City",
-          govIdType: "citizenship",
-          govIdNumber: "PSN-2024-00187",
-          govIdFiles: [],
-          verificationStatus: "verified",
-          submissionDate: new Date(Date.now() - 86400000).toISOString(),
-          requestedUpdate: false,
-        },
-        {
-          id: "E-201",
-          userId: "E-201",
-          userName: "SunBuild Corp.",
-          userRole: "employer",
-          phone: "+63 912 100 2001",
-          location: "Manila",
-          govIdType: "business",
-          govIdNumber: "BIR-2024-E0201",
-          govIdFiles: [],
-          verificationStatus: "pending",
-          submissionDate: new Date().toISOString(),
-          requestedUpdate: false,
-        },
-      ];
-      setKYCRequests(dummyData);
+      setKYCRequests([]);
       setLoading(false);
     }
   }, []);

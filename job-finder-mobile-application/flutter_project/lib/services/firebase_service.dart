@@ -71,6 +71,40 @@ class FirebaseService {
     });
   }
 
+  /// Get applications for a specific worker
+  Stream<List<JobApplication>> getApplicationsForWorker(String workerId) {
+    return _firestore
+        .collection('applications')
+        .where('workerId', isEqualTo: workerId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        if (!data.containsKey('id')) {
+          data['id'] = doc.id;
+        }
+        return JobApplication.fromMap(data);
+      }).toList();
+    });
+  }
+
+  /// Get applications for a specific employer
+  Stream<List<JobApplication>> getApplicationsForEmployer(String employerId) {
+    return _firestore
+        .collection('applications')
+        .where('employerId', isEqualTo: employerId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        if (!data.containsKey('id')) {
+          data['id'] = doc.id;
+        }
+        return JobApplication.fromMap(data);
+      }).toList();
+    });
+  }
+
   /// Get worker profile by ID
   Future<WorkerProfile?> getWorkerProfile(String workerId) async {
     try {
@@ -105,6 +139,50 @@ class FirebaseService {
       }
     } catch (e) {
       print('Error reading employer profile: $e');
+    }
+    return null;
+  }
+
+  /// Get worker profile by phone
+  Future<WorkerProfile?> getWorkerProfileByPhone(String phone) async {
+    try {
+      final query = await _firestore.collection('workers').where('phone', isEqualTo: phone).limit(1).get();
+      if (query.docs.isNotEmpty) {
+        final data = query.docs.first.data();
+        if (!data.containsKey('id')) {
+          data['id'] = query.docs.first.id;
+        }
+        return WorkerProfile.fromMap(data);
+      }
+      
+      // Fallback check profiles
+      final profilesQuery = await _firestore.collection('profiles').where('phone', isEqualTo: phone).limit(1).get();
+      if (profilesQuery.docs.isNotEmpty) {
+        final data = profilesQuery.docs.first.data();
+        if (!data.containsKey('id')) {
+          data['id'] = profilesQuery.docs.first.id;
+        }
+        return WorkerProfile.fromMap(data);
+      }
+    } catch (e) {
+      print('Error querying worker profile by phone: $e');
+    }
+    return null;
+  }
+
+  /// Get employer profile by phone
+  Future<EmployerProfile?> getEmployerProfileByPhone(String phone) async {
+    try {
+      final query = await _firestore.collection('employers').where('phone', isEqualTo: phone).limit(1).get();
+      if (query.docs.isNotEmpty) {
+        final data = query.docs.first.data();
+        if (!data.containsKey('id')) {
+          data['id'] = query.docs.first.id;
+        }
+        return EmployerProfile.fromMap(data);
+      }
+    } catch (e) {
+      print('Error querying employer profile by phone: $e');
     }
     return null;
   }
@@ -215,6 +293,22 @@ class FirebaseService {
     });
   }
 
+  /// Get all active workers
+  Stream<List<WorkerProfile>> streamWorkers() {
+    return _firestore
+        .collection('workers')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        if (!data.containsKey('id')) {
+          data['id'] = doc.id;
+        }
+        return WorkerProfile.fromMap(data);
+      }).toList();
+    });
+  }
+
   /// Get active (open) jobs for workers
   Stream<List<Job>> streamActiveJobs() {
     return _firestore
@@ -230,6 +324,17 @@ class FirebaseService {
         return Job.fromMap(data);
       }).toList();
     });
+  }
+
+  /// Get a single job by ID
+  Future<Job?> getJob(String jobId) async {
+    final doc = await _firestore.collection('jobs').doc(jobId).get();
+    if (doc.exists && doc.data() != null) {
+      final data = doc.data()!;
+      if (!data.containsKey('id')) data['id'] = doc.id;
+      return Job.fromMap(data);
+    }
+    return null;
   }
 
   /// Create a new job in Firestore

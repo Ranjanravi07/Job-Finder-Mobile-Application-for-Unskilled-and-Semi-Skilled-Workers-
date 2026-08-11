@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
 import '../models/job.dart';
+import '../models/job_application.dart';
 import '../models/conversation.dart';
 import '../services/chat_service.dart';
 import '../models/worker_profile.dart';
@@ -159,7 +160,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         // Header
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: context.appColors.slate900,
+          color: context.appColors.white,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -196,20 +197,20 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         // Search + view toggle
         Container(
           padding: EdgeInsets.all(12),
-          color: context.appColors.slate900.withValues(alpha: 0.95),
+          color: context.appColors.white,
           child: Row(
             children: [
               Expanded(
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
-                    color: context.appColors.white,
+                    color: context.appColors.slate100,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.search_rounded,
-                          size: 18, color: context.appColors.slate600),
+                          size: 18, color: context.appColors.slate500),
                       SizedBox(width: 6),
                       Expanded(
                         child: TextField(
@@ -217,12 +218,12 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                             hintText: _t('Search jobs...', 'काम खोज्नुहोस्...'),
                             hintStyle: TextStyle(
                                 fontSize: 14,
-                                color: context.appColors.slate600),
+                                color: context.appColors.slate500),
                             border: InputBorder.none,
                             isDense: true,
                           ),
                           style: TextStyle(
-                              fontSize: 14, color: context.appColors.slate800),
+                              fontSize: 14, color: context.appColors.slate900),
                           onChanged: (v) => store.setSearchQuery(v),
                         ),
                       ),
@@ -453,31 +454,37 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   }
 
   Widget _jobCard(Job job) {
-    final isApplied = store.applications.any((app) => app.jobId == job.id);
-    final myApp =
-        store.applications.where((app) => app.jobId == job.id).toList();
-    final status = myApp.isNotEmpty ? myApp.first.status : null;
+    final active = store.activeWorker;
+    return StreamBuilder<List<JobApplication>>(
+      stream: active != null 
+          ? FirebaseService.instance.getApplicationsForWorker(active.id)
+          : const Stream.empty(),
+      builder: (context, snapshot) {
+        final applications = snapshot.data ?? [];
+        final isApplied = applications.any((app) => app.jobId == job.id);
+        final myApp = applications.where((app) => app.jobId == job.id).toList();
+        final status = myApp.isNotEmpty ? myApp.first.status : null;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.appColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.appColors.slate100),
-        boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 6)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        return Container(
+          margin: EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: context.appColors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.appColors.slate100),
+            boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 6)],
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
                       job.title,
                       style: TextStyle(
                         fontSize: 14,
@@ -651,7 +658,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                                     );
                                     return;
                                   }
-                                  store.applyForJob(job.id);
+                                  store.applyForJob(job);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: context.appColors.emerald500,
@@ -676,6 +683,8 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         ],
       ),
     );
+      },
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -683,128 +692,157 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   // ---------------------------------------------------------------------
   Widget _buildApplicationsTab() {
     final active = store.activeWorker;
-    final myApps =
-        store.applications.where((app) => app.workerId == active?.id).toList();
+    if (active == null) return const SizedBox.shrink();
 
-    if (myApps.isEmpty) {
-      return Center(
-        child: Text(
-          'No submitted applications yet. Use one-tap apply!',
-          style: TextStyle(fontSize: 14, color: context.appColors.slate600),
-        ),
-      );
-    }
+    return StreamBuilder<List<JobApplication>>(
+      stream: FirebaseService.instance.getApplicationsForWorker(active.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: myApps.length,
-      itemBuilder: (context, index) {
-        final app = myApps[index];
-        final job = store.jobs.where((j) => j.id == app.jobId).toList();
-        final jobInfo = job.isNotEmpty ? job.first : null;
-        return Container(
-          margin: EdgeInsets.only(bottom: 12),
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: context.appColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.appColors.slate100),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          jobInfo?.title ?? 'Unknown Job',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: context.appColors.slate900,
+        final myApps = snapshot.data ?? [];
+
+        if (myApps.isEmpty) {
+          return Center(
+            child: Text(
+              _t('No submitted applications yet. Use one-tap apply!',
+                  'कुनै आवेदन छैन। एक-ट्याप अप्लाई प्रयोग गर्नुहोस्!'),
+              style: TextStyle(fontSize: 14, color: context.appColors.slate600),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: myApps.length,
+          itemBuilder: (context, index) {
+            final app = myApps[index];
+            return FutureBuilder<Job?>(
+              future: FirebaseService.instance.getJob(app.jobId),
+              builder: (context, jobSnapshot) {
+                final jobInfo = jobSnapshot.data;
+                final isLoading = jobSnapshot.connectionState == ConnectionState.waiting;
+                final status = app.status;
+
+                return Container(
+                  margin: EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: context.appColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: context.appColors.slate100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (isLoading)
+                                  const SizedBox(
+                                    height: 16,
+                                    width: 100,
+                                    child: LinearProgressIndicator(),
+                                  )
+                                else
+                                  Text(
+                                    jobInfo?.title ?? 'Unknown Job',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: context.appColors.slate900,
+                                    ),
+                                  ),
+                                SizedBox(height: 2),
+                                if (!isLoading)
+                                  Text.rich(
+                                    TextSpan(
+                                      text: _t('Employer: ', 'रोजगारदाता: '),
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: context.appColors.slate700),
+                                      children: [
+                                        TextSpan(
+                                          text: jobInfo?.employerName ?? 'N/A',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            color: context.appColors.slate900,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
+                          _statusBadge(status),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: context.appColors.slate50,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        SizedBox(height: 2),
-                        Text.rich(
-                          TextSpan(
-                            text: _t('Employer: ', 'रोजगारदाता: '),
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: context.appColors.slate700),
-                            children: [
-                              TextSpan(
-                                text: jobInfo?.employerName ?? 'N/A',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: context.appColors.slate700,
-                                ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _Meta(
+                                  label: _t('Location', 'ठेगाना').toUpperCase(),
+                                  value: jobInfo?.location ?? 'Nepal'),
+                            ),
+                            Expanded(
+                              child: _Meta(
+                                label: _t('Offered Wage', 'प्रस्तावित ज्याला')
+                                    .toUpperCase(),
+                                value: 'Rs. ${jobInfo?.wage ?? 1200}/day',
+                                valueColor: context.appColors.emerald600,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (status == 'accepted') ...[
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _startCall(
+                              jobInfo?.employerName ?? 'Contractor',
+                              jobInfo?.employerPhone ?? '9851044321',
+                            ),
+                            icon: Icon(Icons.call_rounded, size: 14),
+                            label: Text(
+                              _t('Call Employer Now', 'रोजगारदातालाई कल गर्नुहोस्'),
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w700),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.appColors.emerald500,
+                              foregroundColor: context.appColors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  _statusBadge(app.status),
-                ],
-              ),
-              SizedBox(height: 10),
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: context.appColors.slate50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _Meta(
-                          label: _t('Location', 'ठेगाना').toUpperCase(),
-                          value: jobInfo?.location ?? 'Nepal'),
-                    ),
-                    Expanded(
-                      child: _Meta(
-                        label: _t('Offered Wage', 'प्रस्तावित ज्याला')
-                            .toUpperCase(),
-                        value: 'Rs. ${jobInfo?.wage ?? 1200}/day',
-                        valueColor: context.appColors.emerald600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (app.status == 'accepted') ...[
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _startCall(
-                      jobInfo?.employerName ?? 'Contractor',
-                      jobInfo?.employerPhone ?? '9851044321',
-                    ),
-                    icon: Icon(Icons.call_rounded, size: 14),
-                    label: Text(
-                      _t('Call Employer Now', 'रोजगारदातालाई कल गर्नुहोस्'),
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.appColors.emerald500,
-                      foregroundColor: context.appColors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -875,7 +913,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         final conversations = snapshot.data ?? [];
         if (conversations.isEmpty) {
           return Center(
-              child: Text(_t('No active chats yet.', 'कुनै च्याट छैन।'),
+              child: Text('No chats available',
                   style: TextStyle(color: context.appColors.slate700)));
         }
 
@@ -1421,7 +1459,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       : context.appColors.emerald700,
                 ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
+              ElevatedButton.icon(
                 onPressed: () {
                   _editDraft = active;
                   setState(() => _editingProfile = true);
@@ -1432,17 +1470,16 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                       'प्रोफाइल विवरण परिमार्जन गर्नुहोस्'),
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: context.appColors.emerald600,
-                  backgroundColor: context.appColors.slate50,
-                  side: BorderSide(color: context.appColors.slate200),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: context.appColors.white,
+                  backgroundColor: context.appColors.slate900,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 8),
-              OutlinedButton.icon(
+              ElevatedButton.icon(
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -1459,10 +1496,9 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
                   _t('Update KYC', 'KYC अपडेट गर्नुहोस्'),
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: context.appColors.slate700,
-                  backgroundColor: context.appColors.white,
-                  side: BorderSide(color: context.appColors.slate300),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: context.appColors.white,
+                  backgroundColor: context.appColors.slate900,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),

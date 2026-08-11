@@ -164,6 +164,7 @@ export default function App() {
   const [adminProfile, setAdminProfile] = useState({ username: "Admin", email: "" });
   const [loginDate, setLoginDate] = useState(() => new Date());
   const [currentUid, setCurrentUid] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(defaultFilters);
   const [notifications, setNotifications] = useState<Array<{
     id: string;
@@ -179,6 +180,7 @@ export default function App() {
   }>>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const seenIds = useRef<Set<string>>(new Set());
 
   const unreadNotificationCount = notifications.filter((n) => !n.isRead).length;
 

@@ -7,6 +7,7 @@ import '../models/conversation.dart';
 import '../services/chat_service.dart';
 import '../services/firebase_service.dart';
 import '../models/employer_profile.dart';
+import '../models/worker_profile.dart';
 import '../services/app_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/update_kyc_dialog.dart';
@@ -169,7 +170,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
         // Header
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: context.appColors.slate900,
+          color: context.appColors.white,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -184,7 +185,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                       Text(
                         _t('Employer Portal', 'काम दिने पोर्टल'),
                         style: TextStyle(
-                          color: context.appColors.slate100,
+                          color: context.appColors.slate900,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -431,140 +432,164 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              ...store.workers.map((worker) {
-                return Container(
-                  margin: EdgeInsets.only(bottom: 10),
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: context.appColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.appColors.slate100),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+              StreamBuilder<List<WorkerProfile>>(
+                stream: FirebaseService.instance.streamWorkers(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  final workers = snapshot.data ?? [];
+                  if (workers.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        _t('No available workers.', 'कुनै कामदार उपलब्ध छैन।'),
+                        style: TextStyle(
+                            color: context.appColors.slate700, fontSize: 14),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: workers.map((worker) {
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 10),
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: context.appColors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: context.appColors.slate100),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  worker.name,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                    color: context.appColors.slate900,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: context.appColors.slate100,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        worker.mainSkill.toUpperCase(),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        worker.name,
                                         style: TextStyle(
-                                          fontSize: 13,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.w900,
-                                          color: context.appColors.slate600,
+                                          color: context.appColors.slate900,
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '• ${worker.experience} exp',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: context.appColors.slate700,
+                                      SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: context.appColors.slate100,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              worker.mainSkill.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w900,
+                                                color: context.appColors.slate600,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '• ${worker.experience} exp',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: context.appColors.slate700,
+                                            ),
+                                          ),
+                                        ],
                                       ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: context.appColors.emerald50,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'Rs. ${worker.expectedWage}/day',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: context.appColors.emerald600,
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: context.appColors.emerald50,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              'Rs. ${worker.expectedWage}/day',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                color: context.appColors.emerald600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      _t('Invitation to apply sent successfully!',
-                                          'निमन्त्रणा पठाइयो!'),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            _t('Invitation to apply sent successfully!',
+                                                'निमन्त्रणा पठाइयो!'),
+                                          ),
+                                          backgroundColor:
+                                              context.appColors.emerald500,
+                                        ),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: context.appColors.slate100,
+                                      foregroundColor: context.appColors.slate800,
+                                      side: BorderSide.none,
+                                      padding:
+                                          const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
-                                    backgroundColor:
-                                        context.appColors.emerald500,
+                                    child: Text(
+                                      _t('Invite to Job', 'कामको लागि बोलाउनुहोस्'),
+                                      style: const TextStyle(
+                                          fontSize: 14, fontWeight: FontWeight.w700),
+                                    ),
                                   ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: context.appColors.slate100,
-                                foregroundColor: context.appColors.slate800,
-                                side: BorderSide.none,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              ),
-                              child: Text(
-                                _t('Invite to Job', 'कामको लागि बोलाउनुहोस्'),
-                                style: const TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.w700),
-                              ),
+                                const SizedBox(width: 8),
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      _startCall(worker.name, worker.phone),
+                                  icon: Icon(Icons.call_rounded, size: 14),
+                                  label: Text(_t('Call', 'कल')),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: context.appColors.emerald500,
+                                    foregroundColor: context.appColors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(
-                            onPressed: () =>
-                                _startCall(worker.name, worker.phone),
-                            icon: Icon(Icons.call_rounded, size: 14),
-                            label: Text(_t('Call', 'कल')),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.appColors.emerald500,
-                              foregroundColor: context.appColors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              }),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -814,147 +839,170 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
   // APPLICANTS TAB
   // ---------------------------------------------------------------------
   Widget _buildApplicantsTab() {
-    if (store.applications.isEmpty) {
-      return Center(
-        child: Text(
-          'No applicants yet.',
-          style: TextStyle(fontSize: 14, color: context.appColors.slate600),
-        ),
-      );
-    }
+    final active = store.activeEmployer;
+    if (active == null) return const SizedBox.shrink();
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: store.applications.length,
-      itemBuilder: (context, index) {
-        final app = store.applications[index];
-        final jobs = store.jobs.where((j) => j.id == app.jobId).toList();
-        final jobInfo = jobs.isNotEmpty ? jobs.first : null;
-        return Container(
-          margin: EdgeInsets.only(bottom: 12),
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: context.appColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.appColors.slate100),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          app.workerName,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: context.appColors.slate900,
+    return StreamBuilder<List<JobApplication>>(
+      stream: FirebaseService.instance.getApplicationsForEmployer(active.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        final myApps = snapshot.data ?? [];
+
+        if (myApps.isEmpty) {
+          return Center(
+            child: Text(
+              _t('No applicants yet.', 'कुनै आवेदक छैनन्।'),
+              style: TextStyle(fontSize: 14, color: context.appColors.slate600),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: myApps.length,
+          itemBuilder: (context, index) {
+            final app = myApps[index];
+            return FutureBuilder<Job?>(
+              future: FirebaseService.instance.getJob(app.jobId),
+              builder: (context, jobSnapshot) {
+                final jobInfo = jobSnapshot.data;
+                final isLoading = jobSnapshot.connectionState == ConnectionState.waiting;
+                final status = app.status;
+
+                return Container(
+                  margin: EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: context.appColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: context.appColors.slate100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  app.workerName,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.appColors.slate900,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  app.workerSkill.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.appColors.slate600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          _statusBadge(status),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: context.appColors.slate50,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        SizedBox(height: 2),
-                        Text.rich(
-                          TextSpan(
-                            text: 'Applied to: ',
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: context.appColors.slate700),
-                            children: [
-                              TextSpan(
-                                text: jobInfo?.title ?? 'N/A',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: context.appColors.slate700,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _meta(
+                                _t('Applied For', 'आवेदन गरिएको पद').toUpperCase(),
+                                isLoading ? 'Loading...' : (jobInfo?.title ?? 'Unknown Job'),
+                              ),
+                            ),
+                            Expanded(
+                              child: _meta(
+                                _t('Contact', 'सम्पर्क').toUpperCase(),
+                                app.workerPhone,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (status == 'pending') ...[
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  FirebaseService.instance.updateApplicationStatus(app.id, 'rejected');
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: context.appColors.red600,
+                                  side: BorderSide(
+                                      color: context.appColors.red200),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: Text(_t('Reject', 'अस्वीकार')),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  FirebaseService.instance.updateApplicationStatus(app.id, 'accepted');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: context.appColors.emerald600,
+                                  foregroundColor: context.appColors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: Text(_t('Accept', 'स्वीकार')),
+                              ),
+                            ),
+                          ] else if (status == 'accepted') ...[
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => _startCall(app.workerName, app.workerPhone),
+                                icon: Icon(Icons.call_rounded, size: 14),
+                                label: Text(
+                                  _t('Call Worker', 'कामदारलाई कल गर्नुहोस्'),
+                                  style: TextStyle(
+                                      fontSize: 14, fontWeight: FontWeight.w700),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: context.appColors.emerald500,
+                                  foregroundColor: context.appColors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                  _statusBadge(app.status),
-                ],
-              ),
-              SizedBox(height: 10),
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: context.appColors.slate50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _meta('CATEGORY', app.workerSkill.toUpperCase()),
-                    ),
-                    Expanded(
-                      child: _meta('EXPECTED WAGE', 'Rs. 1,200/day'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  if (app.status == 'pending') ...[
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () =>
-                            store.updateApplicantStatus(app.id, 'rejected'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: context.appColors.red500,
-                          backgroundColor: context.appColors.slate100,
-                          side: BorderSide.none,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        child: Text(
-                          _t('Reject', 'अस्वीकार'),
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            store.updateApplicantStatus(app.id, 'accepted'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.appColors.emerald500,
-                          foregroundColor: context.appColors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        child: Text(
-                          _t('Accept', 'स्वीकार गर्नुहोस्'),
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () =>
-                          _startCall(app.workerName, app.workerPhone),
-                      icon: Icon(Icons.call_rounded, size: 14),
-                      label: Text(_t('Call', 'फोन')),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.appColors.slate900,
-                        foregroundColor: context.appColors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -1046,7 +1094,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
         final conversations = snapshot.data ?? [];
         if (conversations.isEmpty) {
           return Center(
-              child: Text(_t('No active chats yet.', 'कुनै च्याट छैन।'),
+              child: Text('No chats available',
                   style: TextStyle(color: context.appColors.slate700)));
         }
 
@@ -1581,7 +1629,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                   valueColor: context.appColors.blue600,
                 ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
+              ElevatedButton.icon(
                 onPressed: () {
                   _editDraft = active;
                   setState(() => _editingProfile = true);
@@ -1592,17 +1640,16 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                       'प्रोफाइल विवरण परिमार्जन गर्नुहोस्'),
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: context.appColors.brandBlue,
-                  backgroundColor: context.appColors.slate50,
-                  side: BorderSide(color: context.appColors.slate200),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: context.appColors.white,
+                  backgroundColor: context.appColors.slate900,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 8),
-              OutlinedButton.icon(
+              ElevatedButton.icon(
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -1619,10 +1666,9 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                   _t('Update KYC', 'KYC अपडेट गर्नुहोस्'),
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: context.appColors.slate700,
-                  backgroundColor: context.appColors.white,
-                  side: BorderSide(color: context.appColors.slate300),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: context.appColors.white,
+                  backgroundColor: context.appColors.slate900,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
