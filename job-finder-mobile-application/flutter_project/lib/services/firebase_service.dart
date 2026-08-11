@@ -146,7 +146,11 @@ class FirebaseService {
   /// Get worker profile by phone
   Future<WorkerProfile?> getWorkerProfileByPhone(String phone) async {
     try {
-      final query = await _firestore.collection('workers').where('phone', isEqualTo: phone).limit(1).get();
+      final String rawPhone = phone.replaceAll('+977', '');
+      final String normalizedPhone = '+977$rawPhone';
+      final phoneList = {phone, rawPhone, normalizedPhone}.toList();
+
+      final query = await _firestore.collection('workers').where('phone', whereIn: phoneList).limit(1).get();
       if (query.docs.isNotEmpty) {
         final data = query.docs.first.data();
         if (!data.containsKey('id')) {
@@ -156,7 +160,7 @@ class FirebaseService {
       }
       
       // Fallback check profiles
-      final profilesQuery = await _firestore.collection('profiles').where('phone', isEqualTo: phone).limit(1).get();
+      final profilesQuery = await _firestore.collection('profiles').where('phone', whereIn: phoneList).limit(1).get();
       if (profilesQuery.docs.isNotEmpty) {
         final data = profilesQuery.docs.first.data();
         if (!data.containsKey('id')) {
@@ -173,7 +177,11 @@ class FirebaseService {
   /// Get employer profile by phone
   Future<EmployerProfile?> getEmployerProfileByPhone(String phone) async {
     try {
-      final query = await _firestore.collection('employers').where('phone', isEqualTo: phone).limit(1).get();
+      final String rawPhone = phone.replaceAll('+977', '');
+      final String normalizedPhone = '+977$rawPhone';
+      final phoneList = {phone, rawPhone, normalizedPhone}.toList();
+
+      final query = await _firestore.collection('employers').where('phone', whereIn: phoneList).limit(1).get();
       if (query.docs.isNotEmpty) {
         final data = query.docs.first.data();
         if (!data.containsKey('id')) {

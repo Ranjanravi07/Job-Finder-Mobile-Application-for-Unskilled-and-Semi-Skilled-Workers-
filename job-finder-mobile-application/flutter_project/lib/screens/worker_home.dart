@@ -274,9 +274,10 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
               // Apply existing filters: category, location, wage, search
               final filtered = firebaseJobs.where((job) {
-                if (store.selectedCategory != 'all' &&
-                    job.category != store.selectedCategory) {
-                  return false;
+                if (store.selectedCategory != 'all') {
+                  final sc = store.selectedCategory.trim().toLowerCase();
+                  final jc = job.category.trim().toLowerCase();
+                  if (sc != jc) return false;
                 }
                 if (store.selectedLocationFilter != 'all' &&
                     store.selectedLocationFilter != 'any') {

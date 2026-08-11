@@ -58,6 +58,8 @@ import PlacementsPanel from "./components/panels/PlacementsPanel";
 import UserAccountsPanel from "./components/panels/UserAccountsPanel";
 import ReportsPanel from "./components/panels/ReportsPanel";
 import SettingsPanel from "./components/panels/SettingsPanel";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { DuplicateChecker } from "./components/DuplicateChecker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1165,8 +1167,12 @@ export default function App() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-5">
-          {activeNav === "dashboard" && (
+        <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-background/95 scroll-smooth">
+          {/* Duplicate Check Warning */}
+          <DuplicateChecker />
+
+          <main className="w-full px-6 py-6 pb-24">
+            {activeNav === "dashboard" && (
             <div className="space-y-5">
               {/* KPI Cards */}
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -1458,7 +1464,8 @@ export default function App() {
           {activeNav === "accounts" && <UserAccountsPanel search={globalSearch} adminProfile={adminProfile} onProfileChange={handleProfileSave} />}
           {activeNav === "reports" && <ReportsPanel search={globalSearch} totalWorkers={totalWorkers} totalEmployers={totalEmployers} totalPlacements={totalPlacements} openJobs={openJobs} seekerList={seekerList} employerList={employerList} jobList={jobList} appData={appData} />}
           {activeNav === "settings" && <SettingsPanel search={globalSearch} username={adminProfile.username} email={adminProfile.email} onSave={handleProfileSave} />}
-        </main>
+          </main>
+        </div>
       </div>
     </div>
   );

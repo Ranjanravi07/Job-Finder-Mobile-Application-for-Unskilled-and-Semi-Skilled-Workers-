@@ -421,7 +421,8 @@ class AppStore extends ChangeNotifier {
       });
 
       // Normalize phone for unique identification (e.g. +97798...)
-      final normalizedPhone = phone.startsWith('+977') ? phone : '+977$phone';
+      final rawPhone = phone.replaceAll('+977', '');
+      final normalizedPhone = '+977$rawPhone';
       
       WorkerProfile? workerDoc;
       EmployerProfile? employerDoc;
@@ -469,6 +470,32 @@ class AppStore extends ChangeNotifier {
     List<String>? govIdFiles,
     Map<String, Map<String, dynamic>>? governmentIds,
   }) async {
+    final String rawPhone = phone.replaceAll('+977', '');
+    final String normalizedPhone = rawPhone.isEmpty ? '' : '+977$rawPhone';
+    
+    // ONE-ACCOUNT-PER-PHONE: Prevent duplicate creation if account exists
+    if (normalizedPhone.isNotEmpty) {
+      final existingWorker = await FirebaseService.instance.getWorkerProfileByPhone(normalizedPhone);
+      final existingEmployer = await FirebaseService.instance.getEmployerProfileByPhone(normalizedPhone);
+      
+      if (existingWorker != null || existingEmployer != null) {
+        final determinedUid = existingWorker?.id ?? existingEmployer!.id;
+        setUserId(determinedUid);
+        
+        if (existingWorker != null) {
+          workers = [existingWorker];
+          _persistWorkers();
+          setRole('worker');
+        } else if (existingEmployer != null) {
+          employers = [existingEmployer];
+          _persistEmployers();
+          setRole('employer');
+        }
+        notifyListeners();
+        throw Exception('This mobile number is already registered. Please login with your existing account.');
+      }
+    }
+
     final authUid = FirebaseAuth.instance.currentUser?.uid;
     final String uid = (authUid != null && authUid.isNotEmpty)
         ? authUid
@@ -507,7 +534,7 @@ class AppStore extends ChangeNotifier {
     final newProfile = WorkerProfile(
       id: uid,
       name: (name ?? '').isNotEmpty ? name! : 'Anonymous Worker',
-      phone: phone.isNotEmpty ? phone : '9845112233',
+      phone: normalizedPhone.isNotEmpty ? normalizedPhone : '9845112233',
       mainSkill: (mainSkill ?? '').isNotEmpty ? mainSkill! : 'laborer',
       experience: (experience ?? '').isNotEmpty ? experience! : 'Fresher',
       expectedWage: 1000,
@@ -574,6 +601,32 @@ class AppStore extends ChangeNotifier {
     String? profilePhoto,
     Map<String, Map<String, dynamic>>? governmentIds,
   }) async {
+    final String rawPhone = phone.replaceAll('+977', '');
+    final String normalizedPhone = rawPhone.isEmpty ? '' : '+977$rawPhone';
+    
+    // ONE-ACCOUNT-PER-PHONE: Prevent duplicate creation if account exists
+    if (normalizedPhone.isNotEmpty) {
+      final existingWorker = await FirebaseService.instance.getWorkerProfileByPhone(normalizedPhone);
+      final existingEmployer = await FirebaseService.instance.getEmployerProfileByPhone(normalizedPhone);
+      
+      if (existingWorker != null || existingEmployer != null) {
+        final determinedUid = existingWorker?.id ?? existingEmployer!.id;
+        setUserId(determinedUid);
+        
+        if (existingWorker != null) {
+          workers = [existingWorker];
+          _persistWorkers();
+          setRole('worker');
+        } else if (existingEmployer != null) {
+          employers = [existingEmployer];
+          _persistEmployers();
+          setRole('employer');
+        }
+        notifyListeners();
+        throw Exception('This mobile number is already registered. Please login with your existing account.');
+      }
+    }
+
     final authUid = FirebaseAuth.instance.currentUser?.uid;
     final String uid = (authUid != null && authUid.isNotEmpty)
         ? authUid
@@ -613,7 +666,7 @@ class AppStore extends ChangeNotifier {
       id: uid,
       name: (name ?? '').isNotEmpty ? name! : 'Anonymous Employer',
       companyName: (companyName ?? '').isNotEmpty ? companyName! : 'Individual Project',
-      phone: phone.isNotEmpty ? phone : '9851012345',
+      phone: normalizedPhone.isNotEmpty ? normalizedPhone : '9851012345',
       location: (location ?? '').isNotEmpty ? location! : 'Balkumari, Lalitpur',
       verificationStatus: 'pending',
       type: 'individual',

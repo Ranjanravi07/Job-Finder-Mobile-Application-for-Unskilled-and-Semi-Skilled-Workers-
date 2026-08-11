@@ -101,23 +101,38 @@ class _EmployerProfileCreationScreenState
       };
     }
 
-    await store.createEmployerProfile(
-      name: _nameController.text.trim(),
-      role: _roleController.text.trim(),
-      location: _locController.text.trim(),
-      companyName: _companyController.text.trim().isNotEmpty
-          ? _companyController.text.trim()
-          : 'Individual',
-      govIdType: primaryType,
-      govIdNum: primaryNum.trim(),
-      govIdFiles: _files.values.toList(),
-      profilePhoto: _photoPath,
-      governmentIds: govMap,
-    );
+    try {
+      await store.createEmployerProfile(
+        name: _nameController.text.trim(),
+        role: _roleController.text.trim(),
+        location: _locController.text.trim(),
+        companyName: _companyController.text.trim().isNotEmpty
+            ? _companyController.text.trim()
+            : 'Individual',
+        govIdType: primaryType,
+        govIdNum: primaryNum.trim(),
+        govIdFiles: _files.values.toList(),
+        profilePhoto: _photoPath,
+        governmentIds: govMap,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: context.appColors.red500,
+          ),
+        );
+      }
+    }
 
     if (mounted) {
       setState(() => _isSubmitting = false);
-      Navigator.pushReplacementNamed(context, '/employer-home');
+      if (store.role == 'worker') {
+        Navigator.pushReplacementNamed(context, '/worker-home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/employer-home');
+      }
     }
   }
 

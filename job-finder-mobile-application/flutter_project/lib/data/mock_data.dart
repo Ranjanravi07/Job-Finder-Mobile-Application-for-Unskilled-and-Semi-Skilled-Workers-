@@ -21,43 +21,19 @@ class SkillCategory {
 }
 
 const List<SkillCategory> kSkillCategories = [
-  SkillCategory(
-      id: 'mason',
-      nameEn: 'Mason / Bricklayer',
-      nameNe: 'डकर्मी (ढुंगा/ईट्टा कामदार)',
-      icon: 'Hammer'),
-  SkillCategory(
-      id: 'carpenter',
-      nameEn: 'Carpenter',
-      nameNe: 'सिकर्मी (काठ कामदार)',
-      icon: 'Wrench'),
-  SkillCategory(
-      id: 'electrician',
-      nameEn: 'Electrician',
-      nameNe: 'इलेक्ट्रीशियन (बिजुली कामदार)',
-      icon: 'Zap'),
-  SkillCategory(
-      id: 'plumber',
-      nameEn: 'Plumber',
-      nameNe: 'प्लम्बर (खानेपानी कामदार)',
-      icon: 'Droplet'),
-  SkillCategory(
-      id: 'painter',
-      nameEn: 'Painter',
-      nameNe: 'पेन्टर (रंगरोगन कामदार)',
-      icon: 'Paintbrush'),
-  SkillCategory(
-      id: 'driver', nameEn: 'Driver', nameNe: 'चालक (ड्राइभर)', icon: 'Car'),
-  SkillCategory(
-      id: 'laborer',
-      nameEn: 'General Laborer',
-      nameNe: 'साधारण मजदुर (लेबर)',
-      icon: 'Users'),
-  SkillCategory(
-      id: 'domestic',
-      nameEn: 'Domestic Helper',
-      nameNe: 'घरेलु कामदार',
-      icon: 'Home'),
+  SkillCategory(id: 'laborer', nameEn: 'Laborer', nameNe: 'मजदुर', icon: 'Users'),
+  SkillCategory(id: 'electrician', nameEn: 'Electrician', nameNe: 'इलेक्ट्रिसियन', icon: 'Zap'),
+  SkillCategory(id: 'plumber', nameEn: 'Plumber', nameNe: 'प्लम्बर', icon: 'Droplet'),
+  SkillCategory(id: 'driver', nameEn: 'Driver', nameNe: 'ड्राइभर', icon: 'Car'),
+  SkillCategory(id: 'painter', nameEn: 'Painter', nameNe: 'पेन्टर', icon: 'Paintbrush'),
+  SkillCategory(id: 'carpenter', nameEn: 'Carpenter', nameNe: 'सिकर्मी', icon: 'Wrench'),
+  SkillCategory(id: 'mason', nameEn: 'Mason', nameNe: 'डकर्मी', icon: 'Hammer'),
+  SkillCategory(id: 'cleaner', nameEn: 'Cleaner', nameNe: 'सफाई गर्ने', icon: 'Home'),
+  SkillCategory(id: 'farmer', nameEn: 'Farmer', nameNe: 'किसान', icon: 'Sun'),
+  SkillCategory(id: 'cook', nameEn: 'Cook', nameNe: 'भान्छे', icon: 'Coffee'),
+  SkillCategory(id: 'welder', nameEn: 'Welder', nameNe: 'वेल्डर', icon: 'Settings'),
+  SkillCategory(id: 'tailor', nameEn: 'Tailor', nameNe: 'सुचिकार', icon: 'Scissors'),
+  SkillCategory(id: 'others', nameEn: 'Others', nameNe: 'अन्य', icon: 'List'),
 ];
 
 /// Short label used inside category chips / selects (first word of name).

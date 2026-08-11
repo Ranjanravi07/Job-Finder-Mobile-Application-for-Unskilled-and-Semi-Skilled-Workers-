@@ -146,21 +146,36 @@ class _WorkerProfileCreationScreenState
       };
     }
 
-    await store.createWorkerProfile(
-      name: _nameController.text.trim(),
-      mainSkill: _selectedCategory,
-      experience: _expController.text.trim(),
-      location: _locationController.text.trim(),
-      profilePhoto: _photoPath,
-      govIdType: primaryType,
-      govIdNum: primaryNum.trim(),
-      govIdFiles: _files.values.toList(),
-      governmentIds: govMap,
-    );
+    try {
+      await store.createWorkerProfile(
+        name: _nameController.text.trim(),
+        mainSkill: _selectedCategory,
+        experience: _expController.text.trim(),
+        location: _locationController.text.trim(),
+        profilePhoto: _photoPath,
+        govIdType: primaryType,
+        govIdNum: primaryNum.trim(),
+        govIdFiles: _files.values.toList(),
+        governmentIds: govMap,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: context.appColors.red500,
+          ),
+        );
+      }
+    }
 
     if (mounted) {
       setState(() => _isSubmitting = false);
-      Navigator.pushReplacementNamed(context, '/worker-home');
+      if (store.role == 'employer') {
+        Navigator.pushReplacementNamed(context, '/employer-home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/worker-home');
+      }
     }
   }
 
